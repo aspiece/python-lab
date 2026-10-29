@@ -5,7 +5,7 @@ const sample='# Welcome to Python Lab!\n# Write Python and click Run.\n\nname = 
 let initial={};try{initial=JSON.parse(localStorage.getItem(storageKey))||{}}catch{}
 let inputHistory=[],activeRun=null,commandHistory=[],historyIndex=0,terminalMode='shell';let filename=initial.filename||'main.py',code=typeof initial.code==='string'?initial.code:sample,editor=null,worker=null,ready=false,running=false,runStart=0,runSerial=0,saveTimer;
 const files=(initial.files && typeof initial.files==='object')?initial.files:{};const dirs=new Set(Array.isArray(initial.dirs)?initial.dirs:[]);let cwd=initial.cwd||'';
-function normalize(path,base=cwd){const parts=[];for(const p of (path.startsWith('/')?path:('/'+base+'/'+path)).split('/')){if(!p||p==='.')continue;if(p==='..')parts.pop();else if(/^[\\w. -]+$/.test(p))parts.push(p);else throw Error('Invalid path component: '+p);}return parts.join('/');}
+function normalize(path,base=cwd){const parts=[];for(const p of (path.startsWith('/')?path:('/'+base+'/'+path)).split('/')){if(!p||p==='.')continue;if(p==='..')parts.pop();else if(/^[\w. -]+$/.test(p))parts.push(p);else throw Error('Invalid path component: '+p);}return parts.join('/');}
 function parent(path){return path.includes('/')?path.slice(0,path.lastIndexOf('/')):'';}
 function ensureDirs(path){let cur='';for(const p of path.split('/').filter(Boolean)){cur=cur?cur+'/'+p:p;dirs.add(cur);}}
 function displayPath(){return '~/python-lab'+(cwd?'/'+cwd:'');}
