@@ -2,3 +2,5 @@
 #args{width:100%;min-height:31px;background:#1b2534;border:1px solid #3c495b;border-radius:5px;color:#e0e9f5;padding:7px;font:12px Consolas,monospace}#addFileBtn{margin:8px 12px;text-align:left;border:1px dashed #4f6076;width:calc(100% - 24px)}#fileList{max-height:40vh;overflow-y:auto}#testBtn{color:#9ee8bb}@media(max-width:560px){#testBtn{font-size:10px}#args{min-height:27px}}
 
 [hidden]{display:none!important}#terminalPrompt{display:flex;gap:10px;align-items:center;padding:7px 0;color:#7ed6a1}#terminalInput{flex:1;background:transparent;color:#e6f3ff;border:0;border-bottom:1px solid #4d6680;outline:0;font:13px/1.6 Consolas,monospace;min-width:0}#terminalInput:focus{border-color:#78baff}.terminal-chevron{font-weight:750}.console-main{min-height:0}
+
+.file-context-menu{position:fixed;z-index:999;background:#202b3b;border:1px solid #4a5c74;border-radius:8px;padding:5px;min-width:155px;box-shadow:0 8px 28px #0008}.file-context-menu button{display:block;width:100%;text-align:left;padding:9px 12px}.file-context-menu button[data-action=delete]{color:#f3a0a0}.folder-item{color:#e2c477}
