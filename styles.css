@@ -4,3 +4,5 @@
 [hidden]{display:none!important}#terminalPrompt{display:flex;gap:10px;align-items:center;padding:7px 0;color:#7ed6a1}#terminalInput{flex:1;background:transparent;color:#e6f3ff;border:0;border-bottom:1px solid #4d6680;outline:0;font:13px/1.6 Consolas,monospace;min-width:0}#terminalInput:focus{border-color:#78baff}.terminal-chevron{font-weight:750}.console-main{min-height:0}
 
 .file-context-menu{position:fixed;z-index:999;background:#202b3b;border:1px solid #4a5c74;border-radius:8px;padding:5px;min-width:155px;box-shadow:0 8px 28px #0008}.file-context-menu button{display:block;width:100%;text-align:left;padding:9px 12px}.file-context-menu button[data-action=delete]{color:#f3a0a0}.folder-item{color:#e2c477}
+
+#terminalPrompt{display:flex;align-items:center;gap:9px;white-space:nowrap}.terminal-chevron{font:12px Consolas,monospace;white-space:nowrap;flex:none;color:#87dfa5}#terminalInput{min-width:40px}.folder-item{text-align:left}.file-item{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
