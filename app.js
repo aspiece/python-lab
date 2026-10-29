@@ -16,7 +16,7 @@ function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localSt
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
 function append(s,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=s;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;}
 function updateButtons(){$('runBtn').disabled=!ready||running;$('stopBtn').disabled=!running;}
-function setFilename(n){filename=normalize(n||'main.py','');if(!filename.endsWith('.py'))filename+='.py';ensureDirs(parent(filename));$('tabFilename').textContent=filename;$('sideFilename').textContent=filename;persist();}
+function setFilename(n){filename=normalize(n||'main.py','');if(!filename.endsWith('.py'))filename+='.py';ensureDirs(parent(filename));$('tabFilename').textContent=filename;const side=$('sideFilename');if(side)side.textContent=filename;persist();}
 function workspaceSnapshot(){files[filename]=getCode();}
 function chooseFile(next){setFilename(next);setCode(files[next]??'');renderFiles();}
 function modifyEntry(type,oldPath,action){
@@ -43,7 +43,7 @@ function modifyEntry(type,oldPath,action){
     const movedDirs=[...dirs].map(movePath);dirs.clear();for(const p of movedDirs)dirs.add(p);
     filename=movePath(filename);cwd=movePath(cwd);
   }
-  $('tabFilename').textContent=filename;$('sideFilename').textContent=filename;renderFiles();persist();
+  $('tabFilename').textContent=filename;const side=$('sideFilename');if(side)side.textContent=filename;renderFiles();persist();
 }
 function entryMenu(event,type,path){event.preventDefault();const menu=$('fileContextMenu');menu.hidden=false;menu.style.left=Math.min(event.clientX,innerWidth-175)+'px';menu.style.top=Math.min(event.clientY,innerHeight-145)+'px';menu.dataset.type=type;menu.dataset.path=path;}
 async function downloadProject(){
