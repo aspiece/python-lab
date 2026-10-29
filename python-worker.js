@@ -28,7 +28,7 @@ self.onmessage=async ({data})=>{
     await init();
     let inputs=data.stdin?data.stdin.replace(/\r\n/g,'\n').split('\n'):[];
     const userFiles=data.files||{};
-    const safePath=p=>typeof p==='string'&&p.split('/').every(x=>x&&!['.','..'].includes(x)&&/^[\\w. -]+$/.test(x));
+    const safePath=p=>typeof p==='string'&&p.split('/').every(x=>x&&!['.','..'].includes(x)&&/^[\w. -]+$/.test(x));
     const base='/home/pyodide';
     const dirs=[...(data.dirs||[]),...Object.keys(userFiles).map(n=>n.includes('/')?n.slice(0,n.lastIndexOf('/')):'')].filter(Boolean);
     for(const dir of dirs.sort((a,b)=>a.length-b.length)){
