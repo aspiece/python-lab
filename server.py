@@ -96,7 +96,17 @@ async def terminal(ws: WebSocket):
             reader_task.cancel()
         shutil.rmtree(folder, ignore_errors=True)
 
-app.mount("/", StaticFiles(directory=ROOT, html=True), name="static")
+@app.get("/")
+async def homepage():
+    return FileResponse(ROOT / "index.html")
+
+@app.get("/{filename}")
+async def static_file(filename: str):
+    allowed = {"index.html", "app.js", "styles.css", "python-worker.js", "local-terminal.js"}
+    if filename not in allowed:
+        return JSONResponse({"detail":"Not found"}, status_code=404)
+    return FileResponse(ROOT / filename)
+
 
 if __name__ == "__main__":
     import uvicorn
