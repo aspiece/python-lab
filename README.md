@@ -36,3 +36,32 @@ GitHub Pages: Settings → Pages → Deploy from branch → main → /(root).
 
 ## Roadmap
 Live interactive terminal; complete workspace file manager (including CSV/image/binary files); per-project archives; test/run configurations; reliable CS50P package catalog; classroom assignment templates.
+
+
+## Local real terminal (CS50P)
+
+The public GitHub Pages website remains browser-only. For actual terminal input, Python CLI tools, pip and pytest, run the local backend:
+
+1. Install Python 3.12+ (on Windows check **Add Python to PATH**).
+2. Download this repository (Code → Download ZIP) or run `git clone https://github.com/aspiece/python-lab.git`.
+3. Open a terminal inside the repository folder.
+4. On Windows:
+   ```powershell
+   py -m venv .venv
+   .venv\\Scripts\\activate
+   python -m pip install -r requirements.txt
+   python server.py
+   ```
+   On macOS/Linux:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   python -m pip install -r requirements.txt
+   python server.py
+   ```
+5. Open **http://127.0.0.1:8000** (not the GitHub Pages URL).
+6. Type commands in the terminal: `python main.py`, `python -m pytest -q`, `python -m pip install pytest`, `dir` (Windows), `ls` (macOS/Linux). Run and Tests sync the current editor workspace to a temporary terminal directory.
+
+**Important:** This locally bound development backend launches real shell commands with your computer's permissions. It is **not sandboxed**. Run only on a machine you control. Do not expose port 8000 to the internet, reverse proxy it, disable the localhost restriction, or use it as a public student server. Each connection uses an ephemeral workspace deleted on disconnect; files written only in the terminal will not automatically sync back into the editor. A production classroom deployment requires per-user isolated containers or microVMs, access controls, and resource limits.
+
+If the shell does not start on Windows, confirm `pywinpty` installed successfully in your virtual environment. An internet connection is still required for the editor and runtime CDN assets.
