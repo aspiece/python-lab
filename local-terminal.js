@@ -17,7 +17,7 @@
  function connect(){socket=new WebSocket(url);socket.onopen=()=>{connected=true;term.clear();term.focus();document.getElementById('runtimeStatus').textContent='Local terminal ready';};socket.onmessage=e=>{let m=JSON.parse(e.data);if(m.type==='output')term.write(m.data);};socket.onclose=()=>{connected=false;term.write('\r\n[Terminal disconnected; reload to reconnect]\r\n');};}
  connect();
  term.onData(data=>{if(connected)socket.send(JSON.stringify({type:'input',data}))});
- const sync=()=>{let files={};try{files=JSON.parse(localStorage.getItem('python-lab-v1')||'{}').files||{};}catch{}const name=document.getElementById('tabFilename')?.textContent||'main.py';const monacoEditor=window.monaco?.editor?.getEditors?.()?.[0];const fallback=document.getElementById('fallbackEditor');if(monacoEditor)files[name]=monacoEditor.getValue();else if(fallback)files[name]=fallback.value;return {name,files};};
+ const sync=()=>{const workspace=window.pythonLabWorkspace?.();return {name:workspace?.filename||'main.py',files:workspace?.files||{}};};
  // Capture clicks before the legacy browser worker. Real shell runs current editor file.
  run.addEventListener('click',event=>{if(!connected)return;event.stopImmediatePropagation();event.preventDefault();const {name,files}=sync();socket.send(JSON.stringify({type:'files',files}));socket.send(JSON.stringify({type:'input',data:'python "'+name.replace(/["\\]/g,'')+'"\r'}));term.focus();},true);
  stop.addEventListener('click',event=>{if(!connected)return;event.stopImmediatePropagation();event.preventDefault();socket.send(JSON.stringify({type:'input',data:'\x03'}));term.focus();},true);
