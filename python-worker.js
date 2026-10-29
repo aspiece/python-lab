@@ -28,15 +28,25 @@ self.onmessage=async ({data})=>{
     await init();
     let inputs=data.stdin?data.stdin.replace(/\r\n/g,'\n').split('\n'):[];
     const userFiles=data.files||{};
-    for(const [name,text] of Object.entries(userFiles)){
-      if(!/^[\w.\-]+$/.test(name))continue;
-      pyodide.FS.writeFile('/home/pyodide/'+name,text,{encoding:'utf8'});
+    const safePath=p=>typeof p==='string'&&p.split('/').every(x=>x&&!['.','..'].includes(x)&&/^[\\w. -]+$/.test(x));
+    const base='/home/pyodide';
+    const dirs=[...(data.dirs||[]),...Object.keys(userFiles).map(n=>n.includes('/')?n.slice(0,n.lastIndexOf('/')):'')].filter(Boolean);
+    for(const dir of dirs.sort((a,b)=>a.length-b.length)){
+      if(!safePath(dir))continue;
+      let current=base;
+      for(const segment of dir.split('/')){current+='/'+segment;try{pyodide.FS.mkdir(current);}catch{}}
     }
-    pyodide.FS.chdir('/home/pyodide');
+    for(const [name,text] of Object.entries(userFiles)){
+      if(!safePath(name)||typeof text!=='string')continue;
+      pyodide.FS.writeFile(base+'/'+name,text,{encoding:'utf8'});
+    }
+    const cwd=(data.cwd&&safePath(data.cwd))?data.cwd:'';
+    pyodide.FS.chdir(base+'/'+cwd);
     pyodide.globals.set('__lab_source',data.code);
     pyodide.globals.set('__lab_filename',data.filename||'main.py');
     pyodide.globals.set('__lab_stdin',inputs);
     pyodide.globals.set('__lab_args',data.args||[]);
+    pyodide.globals.set('__lab_cwd',cwd);
     await pyodide.loadPackagesFromImports(data.code);
     const names=[...data.code.matchAll(/^\s*(?:from|import)\s+(emoji|pyfiglet|inflect|requests|validators|tabulate|pytest|PIL|cowsay)(?:\b|\.)/gm)].map(m=>m[1]);
     if(names.length){
@@ -69,6 +79,7 @@ def __lab_input(prompt=''):
     return answer
 builtins.input=__lab_input
 sys.argv=[__lab_filename]+list(__lab_args)
+sys.path.insert(0, os.getcwd())
 try:
     try:
         exec(compile(__lab_source, __lab_filename, 'exec'), {'__name__':'__main__','__file__':__lab_filename})
@@ -76,7 +87,8 @@ try:
         __lab_needs_input = True
 finally:
     builtins.input=__lab_original_input
-    sys.argv=__lab_old_argv`;
+    sys.argv=__lab_old_argv
+    if sys.path and sys.path[0] == os.getcwd(): sys.path.pop(0)`;
     try {
       await pyodide.runPythonAsync(script);
       if(pyodide.globals.get('__lab_needs_input')) message('needInput');
