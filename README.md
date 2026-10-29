@@ -1,3 +1,19 @@
+## Project folders (browser edition)
+
+Create folders using **+ New folder** in Explorer or terminal commands:
+
+```text
+mkdir week0
+cd week0
+touch hello.py
+ls
+pwd
+cd ..
+mkdir -p week1/tests
+```
+
+Folders appear in Explorer and are saved in browser local storage alongside Python files. Click a folder to make it your current terminal directory. Use **+ Add file** and specify `week0/hello.py` to organize a new file; nested directories are mirrored in Pyodide's virtual filesystem so Python scripts can access project-relative files. `ls` lists the current directory (or a specified directory). This is a simulated filesystem, not your computer's real filesystem. Keep backups by downloading important files.
+
 ## Browser simulated terminal (GitHub Pages)
 
 The public website now accepts a subset of commands directly in its terminal input field: `help`, `python FILE.py [args]`, `python -m pytest`, `pytest`, `ls`/`dir`, `pwd`, `cat FILE`, `touch FILE`, `clear`/`cls`. Command history: Up/Down arrows. Python code executes using Pyodide. `pip install`, directory navigation, and arbitrary system commands are not fully supported.
