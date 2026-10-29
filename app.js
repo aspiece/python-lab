@@ -22,26 +22,26 @@ function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'te
 function resetFile(){files[filename]=getCode();let name=prompt('New Python filename','main.py');if(!name)return;setFilename(name);setCode(files[filename]||'# New Python program\n\n');renderFiles();$('stdin').value='';persist();}
 function showShell(){if(!ready||running)return;terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';$('terminalInput').focus();}
 function shellCommand(line){
-  files[filename]=getCode();const args=line.trim().match(/(?:[^\\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
-  append('~/python-lab $ '+line+'\\n');
+  files[filename]=getCode();const args=line.trim().match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
+  append('~/python-lab $ '+line+'\n');
   if(!args.length){showShell();return;}
   const cmd=args[0],rest=args.slice(1);
   if(cmd==='clear'||cmd==='cls'){$('output').textContent='';}
-  else if(cmd==='help')append('Commands: python FILE.py [args], python -m pytest, pytest, ls, dir, pwd, cat FILE, touch FILE, mkdir DIR, pip list, pip install PACKAGE, clear, help\\nNote: A browser simulation, not a system shell.\\n');
-  else if(cmd==='ls'||cmd==='dir')append(Object.keys(files).sort().join('    ')+'\\n');
-  else if(cmd==='pwd')append('/home/pyodide\\n');
-  else if(cmd==='cat'||cmd==='type')append(files[rest[0]]===undefined?'File not found\\n':files[rest[0]]+'\\n');
-  else if(cmd==='touch'){const name=rest[0];if(name&&/^[\\w.\\-]+$/.test(name)){files[name]??='';renderFiles();persist();}else append('Usage: touch filename\\n');}
-  else if(cmd==='mkdir'||cmd==='cd')append('This version supports flat project files only.\\n');
-  else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible packages. Try: pip install <package>\\n');
+  else if(cmd==='help')append('Commands: python FILE.py [args], python -m pytest, pytest, ls, dir, pwd, cat FILE, touch FILE, mkdir DIR, pip list, pip install PACKAGE, clear, help\nNote: A browser simulation, not a system shell.\n');
+  else if(cmd==='ls'||cmd==='dir')append(Object.keys(files).sort().join('    ')+'\n');
+  else if(cmd==='pwd')append('/home/pyodide\n');
+  else if(cmd==='cat'||cmd==='type')append(files[rest[0]]===undefined?'File not found\n':files[rest[0]]+'\n');
+  else if(cmd==='touch'){const name=rest[0];if(name&&/^[\w.\\-]+$/.test(name)){files[name]??='';renderFiles();persist();}else append('Usage: touch filename\n');}
+  else if(cmd==='mkdir'||cmd==='cd')append('This version supports flat project files only.\n');
+  else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible packages. Try: pip install <package>\n');
   else if((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest'||cmd==='pytest')executeVirtualTest();
   else if((cmd==='python'||cmd==='python3')&&rest[0]?.endsWith('.py')){executePython(rest[0],rest.slice(1),line);return;}
-  else if(cmd==='pip'&&rest[0]==='install'&&rest[1]){runWorkerCode('import micropip\\nimport asyncio\\nawait micropip.install('+JSON.stringify(rest.slice(1))+')',line);return;}
-  else append(cmd+': command not supported in the browser terminal\\n','error-line');
+  else if(cmd==='pip'&&rest[0]==='install'&&rest[1]){runWorkerCode('import micropip\nimport asyncio\nawait micropip.install('+JSON.stringify(rest.slice(1))+')',line);return;}
+  else append(cmd+': command not supported in the browser terminal\n','error-line');
   showShell();
 }
 function runWorkerCode(code,command){if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();updateButtons();activeRun={code,filename:'__command__.py',files:{...files},args:[],command};inputHistory=[];sendExecution();}
-function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/^test_.*\\.py$/.test(n))){append('No test_*.py files found\\n','error-line');showShell();return;}runWorkerCode('import pytest\\npytest.main(["-q","--tb=short"])','python -m pytest -q');}
+function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/^test_.*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["-q","--tb=short"])','python -m pytest -q');}
 $('newBtn').addEventListener('click',()=>{const d=$('confirmDialog');if(d.showModal)d.showModal();else if(confirm('Create a new file?'))resetFile();});
 $('confirmDialog').addEventListener('close',()=>{if($('confirmDialog').returnValue==='confirm')resetFile();});
 $('openBtn').addEventListener('click',()=>$('fileInput').click());$('saveBtn').addEventListener('click',download);$('runBtn').addEventListener('click',run);$('stopBtn').addEventListener('click',stop);$('clearBtn').addEventListener('click',()=>$('output').textContent='');$('terminalInput').addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.max(0,historyIndex-1);e.currentTarget.value=commandHistory[historyIndex]||'';}else if(e.key==='ArrowDown'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.min(commandHistory.length,historyIndex+1);e.currentTarget.value=commandHistory[historyIndex]||'';}else if(e.key==='Enter'){e.preventDefault();const answer=e.currentTarget.value;e.currentTarget.value='';if(terminalMode==='input'&&activeRun){inputHistory.push(answer);setStatus('Running…');sendExecution();}else if(terminalMode==='shell'){if(answer.trim())commandHistory.push(answer);historyIndex=commandHistory.length;shellCommand(answer);}}});$('stdin').addEventListener('input',persist);$('args').value=initial.args||'';$('args').addEventListener('input',persist);$('addFileBtn').addEventListener('click',()=>{let name=prompt('Name the new Python file','test_main.py');if(!name)return;files[filename]=getCode();setFilename(name);setCode(files[filename]||'# '+filename+'\n');renderFiles();});$('testBtn').addEventListener('click',executeVirtualTest);fallback.addEventListener('input',persist);
