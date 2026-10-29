@@ -36,7 +36,20 @@ self.onmessage=async ({data})=>{
     pyodide.globals.set('__lab_source',data.code);
     pyodide.globals.set('__lab_filename',data.filename||'main.py');
     pyodide.globals.set('__lab_stdin',inputs);
+    pyodide.globals.set('__lab_args',data.args||[]);
     await pyodide.loadPackagesFromImports(data.code);
+    const names=[...data.code.matchAll(/^\s*(?:from|import)\s+(emoji|pyfiglet|inflect|requests|validators|tabulate|pytest|PIL|cowsay)(?:\b|\.)/gm)].map(m=>m[1]);
+    if(names.length){
+      await pyodide.loadPackage('micropip');
+      const mp=pyodide.pyimport('micropip');
+      for(const name of [...new Set(names)]){
+        const pkg=name==='PIL'?'pillow':name;
+        message('output',{text:'Checking package: '+pkg+'\n'});
+        try{await mp.install(pkg);}catch(err){message('output',{text:'Package install failed ('+pkg+'): '+String(err)+'\n',stream:'stderr'});}
+      }
+      mp.destroy?.();
+    }
+
     const script=`import sys, builtins, os
 from io import StringIO
 __lab_original_input = builtins.input
@@ -53,7 +66,7 @@ def __lab_input(prompt=''):
     print(answer, flush=True)
     return answer
 builtins.input=__lab_input
-sys.argv=[__lab_filename]
+sys.argv=[__lab_filename]+list(__lab_args)
 try:
     exec(compile(__lab_source, __lab_filename, 'exec'), {'__name__':'__main__','__file__':__lab_filename})
 finally:
