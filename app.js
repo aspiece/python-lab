@@ -12,7 +12,7 @@ function displayPath(){return '~/python-lab'+(cwd?'/'+cwd:'');}
  const fallback=$('fallbackEditor');fallback.value=code;$('stdin').value=typeof initial.stdin==='string'?initial.stdin:'Alex';
 function getCode(){return editor?editor.getValue():fallback.value;}window.pythonLabWorkspace=()=>{files[filename]=getCode();return {filename,files:{...files},dirs:[...dirs],cwd};};
 function setCode(s){if(editor)editor.setValue(s);else fallback.value=s;persist();}
-function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd}));}catch{setStatus('Storage unavailable','error');}},220);}
+function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded]}));}catch{setStatus('Storage unavailable','error');}},220);}
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
 function append(s,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=s;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;}
 function updateButtons(){$('runBtn').disabled=!ready||running;$('stopBtn').disabled=!running;}
@@ -53,7 +53,33 @@ async function downloadProject(){
   try{const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='python-lab-project.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);}
   catch(err){alert('Unable to download ZIP: '+err.message);}
 }
-function renderFiles(){const host=$('fileList');host.textContent='';const folderNames=[...dirs].sort((a,b)=>a.localeCompare(b));for(const folder of folderNames){const row=document.createElement('button');row.className='file-item folder-item';row.style.paddingLeft=(14+folder.split('/').length*12)+'px';row.textContent='📁 '+folder.split('/').pop();row.title=folder;row.addEventListener('contextmenu',e=>entryMenu(e,'folder',folder));row.onclick=()=>{cwd=folder;persist();showShell();};host.append(row);}for(const name of [...new Set([filename,...Object.keys(files)])].sort()){const btn=document.createElement('button');btn.className='file-item'+(name===filename?' active':'');btn.style.paddingLeft=(14+name.split('/').length*12)+'px';btn.textContent='🐍 '+name.split('/').pop();btn.title=name;btn.addEventListener('contextmenu',e=>entryMenu(e,'file',name));btn.onclick=()=>{if(name===filename)return;files[filename]=getCode();setFilename(name);setCode(files[name]||'');renderFiles();};host.append(btn);}}
+const expanded=new Set(Array.isArray(initial.expanded)?initial.expanded:[...dirs]);
+function renderFiles(){
+ const host=$('fileList');host.textContent='';
+ const allFiles=[...new Set([filename,...Object.keys(files)])];
+ function children(folder,depth){
+  const folders=[...dirs].filter(d=>parent(d)===folder).sort((a,b)=>a.localeCompare(b));
+  for(const path of folders){
+   const row=document.createElement('button');row.className='file-item folder-item';
+   row.style.paddingLeft=(12+depth*16)+'px';row.title=path;
+   row.textContent=(expanded.has(path)?'▾ ':'▸ ')+'📁 '+path.split('/').pop();
+   row.setAttribute('aria-expanded',String(expanded.has(path)));
+   row.addEventListener('contextmenu',e=>entryMenu(e,'folder',path));
+   row.onclick=()=>{if(expanded.has(path))expanded.delete(path);else expanded.add(path);cwd=path;renderFiles();updatePrompt();persist();};
+   host.append(row);
+   if(expanded.has(path))children(path,depth+1);
+  }
+  for(const path of allFiles.filter(p=>parent(p)===folder).sort()){
+   const btn=document.createElement('button');btn.className='file-item'+(path===filename?' active':'');
+   btn.style.paddingLeft=(26+depth*16)+'px';btn.textContent='🐍 '+path.split('/').pop();btn.title=path;
+   btn.addEventListener('contextmenu',e=>entryMenu(e,'file',path));
+   btn.onclick=()=>{if(path===filename)return;files[filename]=getCode();setFilename(path);setCode(files[path]??'');renderFiles();};
+   host.append(btn);
+  }
+ }
+ children('',0);
+}
+function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
 function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=11');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')append(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;$('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){Object.assign(files,data.files||{});renderFiles();persist();}if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
 function sendExecution(){if(!activeRun)return;$('terminalPrompt').hidden=true;$('output').textContent='';append('$ '+(activeRun.command||('python '+activeRun.filename))+'\n\n');worker.postMessage({type:'run',...activeRun,stdin:inputHistory.join('\n')});}
 function executePython(name,args=[],command=''){files[filename]=getCode();name=(name in files)?name:normalize(name);if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();inputHistory=[];updateButtons();setStatus('Running…');activeRun={code:files[name],filename:name,files:{...files},dirs:[...dirs],cwd:parent(name),args,command};sendExecution();persist();}
@@ -61,7 +87,7 @@ function run(){executePython(filename,$('args').value.trim()?$('args').value.tri
 function stop(){if(!running)return;terminalMode='shell';activeRun=null;inputHistory=[];$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
 function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'text/x-python;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function resetFile(){files[filename]=getCode();let name=prompt('New Python filename',cwd?cwd+'/main.py':'main.py');if(!name)return;setFilename(name);setCode(files[filename]||'# New Python program\n\n');renderFiles();$('stdin').value='';persist();}
-function showShell(){if(!ready||running)return;terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';$('terminalInput').focus();}
+function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';$('terminalInput').focus();}
 function shellCommand(line){
   files[filename]=getCode();const args=line.trim().match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
   append(displayPath()+' $ '+line+'\n');
@@ -74,7 +100,7 @@ function shellCommand(line){
   else if(cmd==='cat'||cmd==='type')append(files[normalize(rest[0]||'')]===undefined?'File not found\n':files[normalize(rest[0])]+'\n');
   else if(cmd==='touch'){if(!rest[0])append('Usage: touch FILE\n');else{const p=normalize(rest[0]);if(!dirs.has(parent(p))&&parent(p))append('No such directory\n','error-line');else {files[p]??='';renderFiles();persist();}}}
   else if(cmd==='mkdir'){if(!rest[0])append('Usage: mkdir [-p] DIRECTORY\n');else{const recursive=rest[0]==='-p';const target=normalize(rest[recursive?1:0]||'');if(!target)append('Invalid directory\n','error-line');else if(dirs.has(target))append('Directory already exists\n');else if(!recursive&&parent(target)&&!dirs.has(parent(target)))append('Parent directory does not exist (try mkdir -p)\n','error-line');else{ensureDirs(target);renderFiles();persist();}}}
-  else if(cmd==='cd'){const target=rest.length?normalize(rest[0]):'';if(!target||dirs.has(target)){cwd=target;persist();}else append('cd: no such directory: '+rest[0]+'\n','error-line');}
+  else if(cmd==='cd'){const target=rest.length?normalize(rest[0]):'';if(!target||dirs.has(target)){cwd=target;updatePrompt();persist();}else append('cd: no such directory: '+rest[0]+'\n','error-line');}
 else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible packages. Try: pip install <package>\n');
   else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){executeVirtualTest();return;}
   else if((cmd==='python'||cmd==='python3')&&rest[0]?.endsWith('.py')){executePython(rest[0],rest.slice(1),line);return;}
@@ -90,7 +116,7 @@ $('confirmDialog').addEventListener('close',()=>{if($('confirmDialog').returnVal
 $('openBtn').addEventListener('click',()=>$('fileInput').click());$('saveBtn').addEventListener('click',download);$('runBtn').addEventListener('click',run);$('stopBtn').addEventListener('click',stop);$('clearBtn').addEventListener('click',()=>$('output').textContent='');$('terminalInput').addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.max(0,historyIndex-1);e.currentTarget.value=commandHistory[historyIndex]||'';}else if(e.key==='ArrowDown'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.min(commandHistory.length,historyIndex+1);e.currentTarget.value=commandHistory[historyIndex]||'';}else if(e.key==='Enter'){e.preventDefault();const answer=e.currentTarget.value;e.currentTarget.value='';if(terminalMode==='input'&&activeRun){inputHistory.push(answer);setStatus('Running…');sendExecution();}else if(terminalMode==='shell'){if(answer.trim())commandHistory.push(answer);historyIndex=commandHistory.length;shellCommand(answer);}}});$('stdin').addEventListener('input',persist);$('args').value=initial.args||'';$('args').addEventListener('input',persist);$('addFolderBtn').addEventListener('click',()=>{const input=prompt('Folder path',cwd?cwd+'/week0':'week0');if(!input)return;try{const path=normalize(input,'');if(!path||dirs.has(path))return;ensureDirs(path);renderFiles();persist();}catch(err){append(err.message+'\n','error-line');}});$('addFileBtn').addEventListener('click',()=>{let name=prompt('Name the new Python file',cwd?cwd+'/test_main.py':'test_main.py');if(!name)return;files[filename]=getCode();setFilename(name);setCode(files[filename]||'# '+filename+'\n');renderFiles();});$('testBtn').addEventListener('click',executeVirtualTest);fallback.addEventListener('input',persist);
 $('fileInput').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{if(f.size>1048576)throw Error('File must be under 1 MB');files[filename]=getCode();setFilename(cwd?cwd+'/'+f.name:f.name);setCode(await f.text());renderFiles();}catch(err){append('Open failed: '+err.message+'\n','error-line');}e.target.value='';});
 window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run();}if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();download();}});
-setFilename(filename);renderFiles();createWorker();
+setFilename(filename);renderFiles();updatePrompt();createWorker();
 function enableFallback(){fallback.hidden=false;$('editor').style.display='none';}
 if(typeof window.require==='function'){try{const base='https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/';window.MonacoEnvironment={getWorkerUrl:()=> 'data:text/javascript;charset=utf-8,'+encodeURIComponent("self.MonacoEnvironment={baseUrl:'"+base+"'};importScripts('"+base+"vs/base/worker/workerMain.js');")};window.require.config({paths:{vs:base+'vs'}});window.require(['vs/editor/editor.main'],()=>{try{editor=monaco.editor.create($('editor'),{value:code,language:'python',theme:'vs-dark',fontSize:14,lineHeight:23,minimap:{enabled:false},automaticLayout:true,scrollBeyondLastLine:false,tabSize:4,insertSpaces:true,fontFamily:'Consolas, monospace',padding:{top:18},wordWrap:'on'});editor.onDidChangeModelContent(persist);fallback.hidden=true;}catch{enableFallback();}},enableFallback);}catch{enableFallback();}}else enableFallback();
 })();
