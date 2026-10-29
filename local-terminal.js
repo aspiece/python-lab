@@ -14,7 +14,7 @@
  term.open(document.getElementById('localTerminal'));term.write('Connecting to local Python terminal...\r\n');
  let socket,connected=false;
  const url=(location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/api/terminal';
- function connect(){socket=new WebSocket(url);socket.onopen=()=>{connected=true;term.clear();term.focus();document.getElementById('runtimeStatus').textContent='Local terminal ready';};socket.onmessage=e=>{let m=JSON.parse(e.data);if(m.type==='output')term.write(m.data);};socket.onclose=()=>{connected=false;term.write('\r\n[Terminal disconnected; reload to reconnect]\r\n');};}
+ function connect(){socket=new WebSocket(url);socket.onopen=()=>{connected=true;run.disabled=false;stop.disabled=false;term.clear();term.focus();document.getElementById('runtimeStatus').textContent='Local terminal ready';};socket.onmessage=e=>{let m=JSON.parse(e.data);if(m.type==='output')term.write(m.data);};socket.onclose=()=>{connected=false;term.write('\r\n[Terminal disconnected; reload to reconnect]\r\n');};}
  connect();
  term.onData(data=>{if(connected)socket.send(JSON.stringify({type:'input',data}))});
  const sync=()=>{const workspace=window.pythonLabWorkspace?.();return {name:workspace?.filename||'main.py',files:workspace?.files||{}};};
@@ -23,6 +23,7 @@
  stop.addEventListener('click',event=>{if(!connected)return;event.stopImmediatePropagation();event.preventDefault();socket.send(JSON.stringify({type:'input',data:'\x03'}));term.focus();},true);
  // The CLI is primary. Disable the legacy worker controls only while local terminal is active.
  const buttons=document.querySelector('.actions');const note=document.createElement('span');note.textContent='Terminal: type commands below';note.style='font-size:11px;color:#95b4d7';buttons?.prepend(note);
+ const testBtn=document.getElementById('testBtn');testBtn?.addEventListener('click',event=>{if(!connected)return;event.stopImmediatePropagation();event.preventDefault();const {files}=sync();socket.send(JSON.stringify({type:'files',files}));socket.send(JSON.stringify({type:'input',data:'python -m pytest -q\r'}));term.focus();},true);
  const prompt=document.querySelector('.input-pane');if(prompt)prompt.hidden=true;
  const resize=new ResizeObserver(()=>{term.resize(Math.max(30,Math.floor(panel.clientWidth/8.2)),Math.max(5,Math.floor(panel.clientHeight/17)));if(connected)socket.send(JSON.stringify({type:'resize',cols:term.cols,rows:term.rows}));});resize.observe(panel);
 })();
