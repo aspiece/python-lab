@@ -6,14 +6,14 @@ A free, browser-based Python IDE powered by Monaco Editor and Pyodide. Public si
 - Run Python in a Web Worker, with visible initialization errors, status and Stop
 - Syntax highlighting, local autosave, Python file import/export
 - Multiple editable Python source files in browser storage
-- Pre-entered responses for `input()` (one response per line)
+- Terminal-style input prompt: type a response in the terminal and press Enter when the program asks for input (initial implementation replays the program with prior answers, so code with side effects may run more than once)
 - Command-line arguments for `sys.argv`
 - Test button to run `test_*.py` files with `pytest`
 - Attempts to install several pure-Python CS50P libraries (emoji, pyfiglet, inflect, requests, validators, tabulate, cowsay); Pyodide includes pytest and Pillow
 
 ## CS50P compatibility
 **Not an equivalent replacement for CS50 Codespaces.** Simple exercises can run here, and more CS50P features are being added. However browser restrictions mean:
-- Input is supplied in advance, not through a live interactive terminal
+- Input is entered in the terminal when requested, but currently uses replay rather than a suspended process; programs with side effects, random values, persistent state, or file writes can behave differently than native Python
 - Network calls (including requests to external APIs) depend on CORS and may fail
 - Some packages with native dependencies are unavailable
 - Work is stored locally in the browser; download and back up important files
