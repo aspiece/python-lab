@@ -1,3 +1,11 @@
+## Project management (browser edition)
+
+In Explorer, **right-click a file or folder** to **Rename**, **Move** (enter a full project-relative destination path), or **Delete** (requires confirmation). Renaming or moving a folder updates its nested files and directories, including the open editor's path. The destination parent folder must already exist. Deleting a folder removes everything inside it and cannot be undone.
+
+Use **Project ZIP** in the toolbar to export all project files and empty directories as a ZIP backup. **Download File** still exports only the currently open Python source file. ZIP generation requires the JSZip library to load from jsDelivr.
+
+This workspace lives in the current browser's local storage, so downloading project backups is recommended. The public site still uses a simulated terminal and replay-based input.
+
 ## Project folders (browser edition)
 
 Create folders using **+ New folder** in Explorer or terminal commands:
