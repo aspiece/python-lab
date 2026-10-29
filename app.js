@@ -1,0 +1,28 @@
+(() => {
+'use strict';
+const $=id=>document.getElementById(id),storageKey='python-lab-v1';
+const sample='# Welcome to Python Lab!\n# Write Python and click Run.\n\nname = input("What is your name? ")\nprint(f"Hello, {name}!")\n\nfor number in range(1, 6):\n    print(f"Count: {number}")\n';
+let initial={};try{initial=JSON.parse(localStorage.getItem(storageKey))||{}}catch{}
+let filename=initial.filename||'main.py',code=typeof initial.code==='string'?initial.code:sample,editor=null,worker=null,ready=false,running=false,runStart=0,runSerial=0,saveTimer;
+const fallback=$('fallbackEditor');fallback.value=code;$('stdin').value=typeof initial.stdin==='string'?initial.stdin:'Alex';
+function getCode(){return editor?editor.getValue():fallback.value;}
+function setCode(s){if(editor)editor.setValue(s);else fallback.value=s;persist();}
+function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value}));}catch{setStatus('Storage unavailable','error');}},220);}
+function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
+function append(s,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=s;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;}
+function updateButtons(){$('runBtn').disabled=!ready||running;$('stopBtn').disabled=!running;}
+function setFilename(n){filename=(n||'main.py').replace(/[^\w.\-]/g,'_');if(!filename.endsWith('.py'))filename+='.py';$('tabFilename').textContent=filename;$('sideFilename').textContent=filename;persist();}
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Click Run to execute your code.\n','success-line');}if(data.type==='output')append(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='done'){running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');}if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
+function run(){if(!ready||running)return;running=true;runStart=performance.now();updateButtons();setStatus('Running…');$('output').textContent='';append('$ python '+filename+'\n\n');worker.postMessage({type:'run',code:getCode(),stdin:$('stdin').value});persist();}
+function stop(){if(!running)return;append('\n■ Execution stopped. Restarting Python runtime…\n','error-line');createWorker();}
+function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'text/x-python;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function resetFile(){setFilename('main.py');setCode('# New Python program\n\n');$('stdin').value='';persist();}
+$('newBtn').addEventListener('click',()=>{const d=$('confirmDialog');if(d.showModal)d.showModal();else if(confirm('Create a new file?'))resetFile();});
+$('confirmDialog').addEventListener('close',()=>{if($('confirmDialog').returnValue==='confirm')resetFile();});
+$('openBtn').addEventListener('click',()=>$('fileInput').click());$('saveBtn').addEventListener('click',download);$('runBtn').addEventListener('click',run);$('stopBtn').addEventListener('click',stop);$('clearBtn').addEventListener('click',()=>$('output').textContent='');$('stdin').addEventListener('input',persist);fallback.addEventListener('input',persist);
+$('fileInput').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{if(f.size>1048576)throw Error('File must be under 1 MB');setFilename(f.name);setCode(await f.text());}catch(err){append('Open failed: '+err.message+'\n','error-line');}e.target.value='';});
+window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run();}if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();download();}});
+setFilename(filename);createWorker();
+function enableFallback(){fallback.hidden=false;$('editor').style.display='none';}
+if(typeof window.require==='function'){try{const base='https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/';window.MonacoEnvironment={getWorkerUrl:()=> 'data:text/javascript;charset=utf-8,'+encodeURIComponent("self.MonacoEnvironment={baseUrl:'"+base+"'};importScripts('"+base+"vs/base/worker/workerMain.js');")};window.require.config({paths:{vs:base+'vs'}});window.require(['vs/editor/editor.main'],()=>{try{editor=monaco.editor.create($('editor'),{value:code,language:'python',theme:'vs-dark',fontSize:14,lineHeight:23,minimap:{enabled:false},automaticLayout:true,scrollBeyondLastLine:false,tabSize:4,insertSpaces:true,fontFamily:'Consolas, monospace',padding:{top:18},wordWrap:'on'});editor.onDidChangeModelContent(persist);fallback.hidden=true;}catch{enableFallback();}},enableFallback);}catch{enableFallback();}}else enableFallback();
+})();
