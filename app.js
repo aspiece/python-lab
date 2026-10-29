@@ -36,7 +36,7 @@ function shellCommand(line){
   else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible packages. Try: pip install <package>\n');
   else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){executeVirtualTest();return;}
   else if((cmd==='python'||cmd==='python3')&&rest[0]?.endsWith('.py')){executePython(rest[0],rest.slice(1),line);return;}
-  else if(cmd==='pip'&&rest[0]==='install'&&rest[1]){runWorkerCode('import micropip\nimport asyncio\nawait micropip.install('+JSON.stringify(rest.slice(1))+')',line);return;}
+  else if(cmd==='pip'&&rest[0]==='install'&&rest[1]){append('Automatic package installation is available when a supported package is imported in Python. Direct pip install is not yet supported here.\n','error-line');}
   else append(cmd+': command not supported in the browser terminal\n','error-line');
   showShell();
 }
