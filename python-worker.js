@@ -56,25 +56,31 @@ __lab_original_input = builtins.input
 __lab_old_argv = sys.argv[:]
 __lab_old_cwd = os.getcwd()
 __lab_iterator = iter(__lab_stdin)
+class __LabNeedInput(Exception): pass
+__lab_needs_input = False
 def __lab_input(prompt=''):
     if prompt:
         print(prompt, end='', flush=True)
     try:
         answer = next(__lab_iterator)
     except StopIteration:
-        raise EOFError('No input remaining. Add answers in Program Input, one per line.')
+        raise __LabNeedInput()
     print(answer, flush=True)
     return answer
 builtins.input=__lab_input
 sys.argv=[__lab_filename]+list(__lab_args)
 try:
-    exec(compile(__lab_source, __lab_filename, 'exec'), {'__name__':'__main__','__file__':__lab_filename})
+    try:
+        exec(compile(__lab_source, __lab_filename, 'exec'), {'__name__':'__main__','__file__':__lab_filename})
+    except __LabNeedInput:
+        __lab_needs_input = True
 finally:
     builtins.input=__lab_original_input
     sys.argv=__lab_old_argv`;
     try {
       await pyodide.runPythonAsync(script);
-      message('done',{success:true});
+      if(pyodide.globals.get('__lab_needs_input')) message('needInput');
+      else message('done',{success:true});
     } catch(err) {
       message('output',{text:String(err)+'\n',stream:'stderr'});
       message('done',{success:false});
