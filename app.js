@@ -5,7 +5,7 @@ const sample='# Welcome to Python Lab!\n# Write Python and click Run.\n\nname = 
 let initial={};try{initial=JSON.parse(localStorage.getItem(storageKey))||{}}catch{}
 let inputHistory=[],activeRun=null;let filename=initial.filename||'main.py',code=typeof initial.code==='string'?initial.code:sample,editor=null,worker=null,ready=false,running=false,runStart=0,runSerial=0,saveTimer;
 const files=(initial.files && typeof initial.files==='object')?initial.files:{}; const fallback=$('fallbackEditor');fallback.value=code;$('stdin').value=typeof initial.stdin==='string'?initial.stdin:'Alex';
-function getCode(){return editor?editor.getValue():fallback.value;}
+function getCode(){return editor?editor.getValue():fallback.value;}window.pythonLabWorkspace=()=>{files[filename]=getCode();return {filename,files:{...files}};};
 function setCode(s){if(editor)editor.setValue(s);else fallback.value=s;persist();}
 function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files}));}catch{setStatus('Storage unavailable','error');}},220);}
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
