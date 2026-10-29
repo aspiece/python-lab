@@ -27,13 +27,13 @@ function modifyEntry(type,oldPath,action){
     if(type==='folder'){for(const p of Object.keys(files))if(p.startsWith(oldPath+'/'))delete files[p];for(const p of [...dirs])if(p===oldPath||p.startsWith(oldPath+'/'))dirs.delete(p);}
     else delete files[oldPath];
     if(type==='folder'&&(cwd===oldPath||cwd.startsWith(oldPath+'/')))cwd='';
-    if(!(filename in files)){const remaining=Object.keys(files).sort();if(remaining.length)chooseFile(remaining[0]);else{filename='main.py';files[filename]='# New Python program\\n';setFilename(filename);setCode(files[filename]);}}
+    if(!(filename in files)){const remaining=Object.keys(files).sort();if(remaining.length)chooseFile(remaining[0]);else{filename='main.py';files[filename]='# New Python program\n';setFilename(filename);setCode(files[filename]);}}
     renderFiles();persist();return;
   }
   const name=prompt(action==='move'?'Move to path (including name):':'Rename (new name or path):',oldPath);
   if(name===null)return;
   let dest;
-  try{dest=normalize(name,'');if(!dest||dest===oldPath)return;if(type==='file'&&!dest.endsWith('.py'))throw Error('Python files must end in .py');if(type==='folder'&&dest.startsWith(oldPath+'/'))throw Error('Cannot move a folder inside itself');if((type==='folder'&&dirs.has(dest))||Object.hasOwn(files,dest)||[...dirs].some(d=>d===dest&&type==='file'))throw Error('Destination already exists');if(parent(dest)&&!dirs.has(parent(dest)))throw Error('Destination folder does not exist');}
+  try{dest=normalize(name,'');if(!dest||dest===oldPath)return;if(type==='file'&&!dest.endsWith('.py'))throw Error('Python files must end in .py');if(type==='folder'&&dest.startsWith(oldPath+'/'))throw Error('Cannot move a folder inside itself');if(type==='folder'&&Object.keys(files).some(p=>p.startsWith(oldPath+'/')&&Object.hasOwn(files,dest+p.slice(oldPath.length))))throw Error('Destination has conflicting files');if((type==='folder'&&dirs.has(dest))||Object.hasOwn(files,dest)||[...dirs].some(d=>d===dest&&type==='file'))throw Error('Destination already exists');if(parent(dest)&&!dirs.has(parent(dest)))throw Error('Destination folder does not exist');}
   catch(err){alert(err.message);return;}
   if(type==='file'){files[dest]=files[oldPath];delete files[oldPath];if(filename===oldPath)filename=dest;}
   else {
@@ -50,7 +50,7 @@ async function downloadProject(){
   workspaceSnapshot();
   if(typeof JSZip==='undefined'){alert('ZIP library unavailable. Check your internet connection.');return;}
   const zip=new JSZip();for(const dir of dirs)zip.folder(dir);for(const [path,content] of Object.entries(files))zip.file(path,content);
-  try{const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='python-lab-project.zip';link.click();setTimeout(()=>URL.revokeObjectURL(url),3000);}
+  try{const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='python-lab-project.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);}
   catch(err){alert('Unable to download ZIP: '+err.message);}
 }
 function renderFiles(){const host=$('fileList');host.textContent='';const folderNames=[...dirs].sort((a,b)=>a.localeCompare(b));for(const folder of folderNames){const row=document.createElement('button');row.className='file-item folder-item';row.style.paddingLeft=(14+folder.split('/').length*12)+'px';row.textContent='📁 '+folder.split('/').pop();row.title=folder;row.addEventListener('contextmenu',e=>entryMenu(e,'folder',folder));row.onclick=()=>{cwd=folder;persist();showShell();};host.append(row);}for(const name of [...new Set([filename,...Object.keys(files)])].sort()){const btn=document.createElement('button');btn.className='file-item'+(name===filename?' active':'');btn.style.paddingLeft=(14+name.split('/').length*12)+'px';btn.textContent='🐍 '+name.split('/').pop();btn.title=name;btn.addEventListener('contextmenu',e=>entryMenu(e,'file',name));btn.onclick=()=>{if(name===filename)return;files[filename]=getCode();setFilename(name);setCode(files[name]||'');renderFiles();};host.append(btn);}}
