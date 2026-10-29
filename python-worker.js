@@ -1,5 +1,5 @@
 /* Python Lab worker: isolated Python runtime, visible errors, package discovery. */
-const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/';
+const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/';
 let pyodide, initialized=false, initializing;
 function message(type, extra={}) { self.postMessage({type,...extra}); }
 async function init() {
