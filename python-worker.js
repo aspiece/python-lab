@@ -1,5 +1,76 @@
-/* Python runs in a dedicated worker so the editor remains responsive. */
-const PYODIDE_BASE='https://cdn.jsdelivr.net/pyodide/v314.0.7/full/';
-let pyodide;let initialized=false;
-async function init(){if(initialized)return;importScripts(PYODIDE_BASE+'pyodide.js');pyodide=await loadPyodide({indexURL:PYODIDE_BASE});initialized=true;self.postMessage({type:'ready'});}
-self.onmessage=async({data})=>{try{if(data.type==='init'){await init();return;}if(data.type!=='run')return;await init();const lines=data.stdin?data.stdin.replace(/\r\n/g,'\n').split('\n'):[];const print=(s,stream='stdout')=>self.postMessage({type:'output',text:s+'\n',stream});pyodide.setStdout({batched:s=>print(s)});pyodide.setStderr({batched:s=>print(s,'stderr')});pyodide.globals.set('__lab_inputs',pyodide.toPy(lines));pyodide.runPython("import builtins\n__lab_original_input = builtins.input\n__lab_input_index = 0\ndef __lab_input(prompt=''):\n    global __lab_input_index\n    if prompt: print(prompt, end='')\n    if __lab_input_index >= len(__lab_inputs):\n        raise EOFError('No more input available. Add answers in the Program Input panel.')\n    value = __lab_inputs[__lab_input_index]\n    __lab_input_index += 1\n    print(value)\n    return value\nbuiltins.input = __lab_input");try{pyodide.globals.set('__lab_source',data.code);await pyodide.runPythonAsync("exec(compile(__lab_source, 'main.py', 'exec'), {'__name__':'__main__','__file__':'main.py'})");self.postMessage({type:'done',success:true});}catch(err){print(String(err),'stderr');self.postMessage({type:'done',success:false});}finally{pyodide.runPython('builtins.input = __lab_original_input');}}catch(err){self.postMessage({type:'fatal',message:String(err)});}};
+/* Python Lab worker: isolated Python runtime, visible errors, package discovery. */
+const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/';
+let pyodide, initialized=false, initializing;
+function message(type, extra={}) { self.postMessage({type,...extra}); }
+async function init() {
+  if(initialized)return;
+  if(initializing)return initializing;
+  initializing=(async()=>{
+    try {
+      importScripts(PYODIDE_BASE+'pyodide.js');
+      if(typeof loadPyodide!=='function')throw Error('Pyodide loader was unavailable');
+      pyodide=await loadPyodide({indexURL:PYODIDE_BASE});
+      pyodide.setStdout({batched:s=>message('output',{text:s+'\n'})});
+      pyodide.setStderr({batched:s=>message('output',{text:s+'\n',stream:'stderr'})});
+      initialized=true;
+      message('ready');
+    } catch(err) {
+      initializing=null;
+      throw err;
+    }
+  })();
+  return initializing;
+}
+self.onmessage=async ({data})=>{
+  try {
+    if(data.type==='init'){await init();return;}
+    if(data.type!=='run')return;
+    await init();
+    let inputs=data.stdin?data.stdin.replace(/\r\n/g,'\n').split('\n'):[];
+    const userFiles=data.files||{};
+    for(const [name,text] of Object.entries(userFiles)){
+      if(!/^[\w.\-]+$/.test(name))continue;
+      pyodide.FS.writeFile('/home/pyodide/'+name,text,{encoding:'utf8'});
+    }
+    pyodide.FS.chdir('/home/pyodide');
+    pyodide.globals.set('__lab_source',data.code);
+    pyodide.globals.set('__lab_filename',data.filename||'main.py');
+    pyodide.globals.set('__lab_stdin',inputs);
+    await pyodide.loadPackagesFromImports(data.code);
+    const script=`import sys, builtins, os
+from io import StringIO
+__lab_original_input = builtins.input
+__lab_old_argv = sys.argv[:]
+__lab_old_cwd = os.getcwd()
+__lab_iterator = iter(__lab_stdin)
+def __lab_input(prompt=''):
+    if prompt:
+        print(prompt, end='', flush=True)
+    try:
+        answer = next(__lab_iterator)
+    except StopIteration:
+        raise EOFError('No input remaining. Add answers in Program Input, one per line.')
+    print(answer, flush=True)
+    return answer
+builtins.input=__lab_input
+sys.argv=[__lab_filename]
+try:
+    exec(compile(__lab_source, __lab_filename, 'exec'), {'__name__':'__main__','__file__':__lab_filename})
+finally:
+    builtins.input=__lab_original_input
+    sys.argv=__lab_old_argv`;
+    try {
+      await pyodide.runPythonAsync(script);
+      message('done',{success:true});
+    } catch(err) {
+      message('output',{text:String(err)+'\n',stream:'stderr'});
+      message('done',{success:false});
+    } finally {
+      const changed={};
+      for(const name of Object.keys(userFiles)){
+        try{changed[name]=pyodide.FS.readFile('/home/pyodide/'+name,{encoding:'utf8'});}catch{}
+      }
+      message('files',{files:changed});
+    }
+  }catch(err){message('fatal',{message:String(err)+(err&&err.stack?'\n'+err.stack:'')});}
+};
