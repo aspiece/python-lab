@@ -72,3 +72,28 @@
 .browser-terminal .xterm{height:100%}
 .browser-terminal .xterm-viewport{scrollbar-width:thin}
 .browser-terminal .xterm-screen{cursor:text}
+
+
+/* Phase 3 — diagnostics and test result panels */
+.panel-title-tabs{display:flex;min-width:0;align-items:center;height:100%;gap:2px;overflow-x:auto;scrollbar-width:none}
+.panel-title-tabs::-webkit-scrollbar{display:none}
+.panel-header .panel-tab{border-radius:0;height:100%;padding:5px 13px;font-size:11px;letter-spacing:.3px;font-weight:650;white-space:nowrap;color:#8f9eb5;flex:none;border-bottom:2px solid transparent}
+.panel-header .panel-tab.active{color:#e5f0ff;border-bottom-color:#79baff;background:#202d3c}
+.panel-header .panel-tab:hover{background:#2d3a4a;color:#fff}
+.panel-header .panel-tab span{font-size:10px;color:#ffadb0;margin-left:4px}
+.panel-header .panel-actions{flex:none}
+.analysis-view{display:none;flex:1;min-width:0;min-height:0;overflow:auto;padding:12px 15px;background:#111821}
+.console-layout.show-problems .console-main,.console-layout.show-tests .console-main,
+.console-layout.show-problems .input-pane,.console-layout.show-tests .input-pane{display:none!important}
+.console-layout.show-problems #problemsView,.console-layout.show-tests #testsView{display:block}
+.analysis-results{display:flex;flex-direction:column;gap:3px}
+.analysis-result{display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;border:1px solid transparent;border-radius:4px;white-space:normal;gap:4px;padding:8px 10px;background:#1a2432;color:#d9e6f7;line-height:1.35}
+.analysis-result:hover{background:#2c3d50;border-color:#4e6680}
+.analysis-result strong{font-size:12px;font-weight:550}
+.analysis-location{color:#93acc9;font:11px Consolas,monospace}
+.problem-result strong,.test-result.failed strong,.test-result.error strong{color:#ffaeb5}
+.test-result.passed strong{color:#8be0ae}
+.test-result.skipped strong{color:#d9c38d}
+.test-detail{color:#f2b9b9;font:11px/1.5 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.analysis-empty,.analysis-summary{font-size:12px;color:#a1b4cb;padding:10px;margin:0}
+@media(max-width:560px){.panel-header .panel-tab{padding:6px 9px;font-size:10px}.panel-header #clearBtn{display:none}.analysis-view{padding:8px}}
