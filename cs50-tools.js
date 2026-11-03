@@ -36,9 +36,12 @@
  function submissionFiles(problem){
   const workspace=callbacks.workspace?.()||{};
   const files=workspace.files||{},names=Object.keys(files);
-  const prefix=names.find(name=>
-    name.startsWith(problem.slug+'/')||new RegExp('^'+problem.slug+'-\\d+/').test(name)
-  )?.split('/')[0]||'';
+  const sameProblemFolder=folder=>folder===problem.slug||new RegExp('^'+problem.slug+'-\\d+$').test(folder);
+  const activeFolder=String(workspace.filename||'').split('/').length>1?
+    String(workspace.filename).split('/')[0]:'';
+  const cwdFolder=String(workspace.cwd||'').split('/')[0];
+  const preferredFolder=[activeFolder,cwdFolder].find(folder=>sameProblemFolder(folder));
+  const prefix=preferredFolder||names.find(name=>sameProblemFolder(name.split('/')[0]))?.split('/')[0]||'';
   const selected={};
   if(prefix){
    for(const [path,value] of Object.entries(files)){
