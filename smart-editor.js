@@ -86,7 +86,7 @@
   const failed=tests.filter(t=>t.outcome==='failed').length;
   const skipped=tests.filter(t=>t.outcome==='skipped').length;
   const errored=tests.filter(t=>t.outcome==='error').length;
-  if(summary)summary.textContent=total?passed+' passed · '+failed+' failed · '+skipped+' skipped · '+errored+' errors':'No tests collected. Review terminal output for details.';
+  if(summary)summary.textContent=report.error?'Test runner error: '+report.error:total?passed+' passed · '+failed+' failed · '+skipped+' skipped · '+errored+' errors':'No tests collected. Review terminal output for details.';
   for(const t of tests){
    const row=document.createElement('button');row.className='analysis-result test-result '+t.outcome;
    const title=document.createElement('strong');title.textContent=(t.outcome==='passed'?'✓':t.outcome==='skipped'?'–':'✕')+' '+t.name;
@@ -127,7 +127,7 @@
    state.problems=(Array.isArray(data.problems)?data.problems:[]).filter(p=>p&&typeof p.file==='string');
    updateMarkers();renderProblems();
   }else if(data.type==='testResults'){
-   state.tests={running:false,tests:Array.isArray(data.tests)?data.tests:[],exitCode:data.exitCode};renderTests();
+   state.tests={running:false,tests:Array.isArray(data.tests)?data.tests:[],exitCode:data.exitCode,error:data.error||''};renderTests();
   }
  }
  function beginTests(){state.tests={running:true,tests:[]};renderTests();setView('tests');}
@@ -159,7 +159,7 @@
    }
   });
  }
- function attach(options){Object.assign(state,options);if(!state.monaco||!state.editor)return;registerProviders();onOpened();renderProblems();renderTests();schedule();}
+ function attach(options){Object.assign(state,options);if(state.monaco&&state.editor){registerProviders();onOpened();}renderProblems();renderTests();schedule();}
  for(const [id,view] of [['terminalPanelBtn','terminal'],['problemsPanelBtn','problems'],['testsPanelBtn','tests']])$(id)?.addEventListener('click',()=>setView(view));
  renderProblems();renderTests();
  window.pythonLabSmart={attach,onWorkerReady:schedule,onWorkerMessage,onOpened,schedule,beginTests,setView};
