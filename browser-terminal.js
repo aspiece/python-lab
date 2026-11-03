@@ -47,10 +47,13 @@
    const span=document.createElement('span');
    span.className=cls;span.textContent=text;
    historyEl.append(span);
-   const size=segments.reduce((total,item)=>total+item.text.length,0);
+   let size=segments.reduce((total,item)=>total+item.text.length,0);
    if(size>MAX_CHARS||segments.length>MAX_SEGMENTS){
-    while(segments.length>1&&(segments.length>MAX_SEGMENTS||segments.reduce((n,v)=>n+v.text.length,0)>MAX_CHARS)){
-     segments.shift();
+    while(segments.length>MAX_SEGMENTS){size-=segments.shift().text.length;}
+    while(size>MAX_CHARS&&segments.length){
+     const first=segments[0],remove=Math.min(size-MAX_CHARS,first.text.length);
+     first.text=first.text.slice(remove);size-=remove;
+     if(!first.text)segments.shift();
     }
     renderAll();
    }
@@ -141,7 +144,10 @@
    const matches=host.complete?.(head)||[];
    if(matches.length===1){
     const rest=input.value.slice(input.selectionEnd);
-    setLine(matches[0]+(matches[0].endsWith('/')?'':' ')+rest);
+    const completed=matches[0]+(matches[0].endsWith('/')?'':' ');
+    input.value=completed+rest;
+    input.selectionStart=input.selectionEnd=completed.length;
+    fitInput();
    }else if(matches.length>1){
     appendText(matches.join('    ')+'\n','terminal-hints');
    }
