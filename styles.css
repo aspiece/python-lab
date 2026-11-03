@@ -131,3 +131,27 @@
 .template-choice span{color:#9eb8d0;font-size:12px}
 @media(max-width:650px){.trace-columns{grid-template-columns:1fr}.trace-variable-list,.trace-output{max-height:140px}.panel-header .panel-tab{padding:5px 7px;font-size:10px}#templateBtn{display:none}}
 @media(max-width:850px){#startTraceBtn{display:none}}
+
+
+/* Phase 5 — multiple local projects and classroom submission */
+.project-switcher{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none;color:#d2e4f7;background:#142132;border:1px solid #506078;padding:6px 9px}
+#currentProjectName{display:inline-block;max-width:130px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+#projectTreeLabel{display:inline-block;max-width:176px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;vertical-align:bottom}
+.project-manager-dialog{width:min(580px,95vw)}
+.project-storage-status{font-size:11px!important;color:#c5d7ed!important}
+.project-list{display:flex;flex-direction:column;gap:7px;margin:12px 0;max-height:42vh;overflow:auto}
+.project-list-row{display:flex;align-items:center;gap:9px;padding:9px;background:#172333;border:1px solid #364960;border-radius:6px;min-width:0}
+.project-list-row.active{border-color:#63abf9;background:#23344a}
+.project-list-main{min-width:0;flex:1;display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:4px}
+.project-list-main strong{font-size:13px;color:#e5f1ff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.project-list-main span{font-size:10px;color:#91a7c4;margin-top:4px}
+.project-list-controls{display:flex;align-items:center;gap:2px;flex:none}
+.project-list-controls button{font-size:11px;padding:6px 7px;border:1px solid #354960}
+.project-list-controls .project-delete{color:#f2aab1}
+.project-manager-dialog .dialog-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:15px}
+.template-choice{width:100%}
+.template-option{display:flex;align-items:stretch;gap:8px}
+.template-option .template-choice{flex:1}
+.template-option .template-link{flex:none;border:1px solid #466487;background:#21344b;max-width:155px;font-size:11px;align-self:stretch;padding:9px}
+@media(max-width:950px){#downloadSubmissionBtn{display:none}#currentProjectName{max-width:90px}.project-switcher{max-width:150px}}
+@media(max-width:650px){.brand-sub{display:none}.project-switcher{max-width:100px}#currentProjectName{max-width:65px}.topbar{padding:0 7px}.template-option{flex-direction:column}.project-list-row{flex-wrap:wrap}.project-list-controls{margin-left:auto}}
