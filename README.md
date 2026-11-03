@@ -1,3 +1,31 @@
+# CS50 Python Library and Official Submission Handoff
+
+Python Lab now has a **CS50 Submit** handoff panel. It does **not** send files or user credentials to CS50; a submission is not complete until the official `submit50` tool reports success in a real authenticated Codespace.
+
+1. Open or edit a CS50P problem in the Python Lab editor.
+2. Click **CS50 Submit**, use the new entry in **CS50P Starters**, or open **Prepare Official CS50 Submission** in the Command Palette.
+3. Choose the assignment. The panel displays the official instructions link and the `check50` and `submit50` commands constructed from the course's 2022 CS50P problem slug. **Always double-check the exact slug against the current assignment instructions**, which are authoritative.
+4. Download the **Assignment ZIP**. Unlike a general workspace export, this contains only the selected assignment's files in its assignment-named folder. Multiple local copies such as `indoor/` and `indoor-2/` are kept separate; the currently opened copy is preferred. Downloading files is **not** an official submission.
+5. Open **[CS50 Codespaces](https://cs50.dev/)** with your own authorized GitHub account, upload/extract the assignment folder, open its directory, and run the copied commands there. Verify submission at the official terminal/gradebook. Harvard's [submit50 documentation](https://cs50.readthedocs.io/submit50/) explains its authorization and real Git operations.
+
+The **CS50 Library** button attempts to install the official optional `cs50` Python package inside Pyodide using micropip. `pip install cs50` in the simulated terminal requests the same browser package operation; compatible `import cs50` statements also trigger installation on demand. Dependencies might not be compatible with WebAssembly, so the app reports genuine success or failure rather than claiming support without verification. **The CS50 Python library is distinct from the `submit50` command-line program**, and most CS50P assignments do not need to import the `cs50` package. This feature does not implement direct GitHub OAuth or unattended official submissions.
+
+Do not enter personal GitHub access tokens, passwords, or authentication codes into the simulated Python Lab terminal.
+
+---
+
+# CS50P starters: guided, exception-free, assignment-named folders
+
+All 41 **CS50P Starters** now provide original, student-friendly planning comments, optional input/variable setup, actionable TODOs, and assignment-specific self-check ideas. Every project's README includes a detailed checklist and the official Harvard assignment URL.
+
+Select **Indoor Voice** to create `indoor/indoor.py` (plus `indoor/README.md`). Choosing the same assignment again creates `indoor-2/indoor.py` without overwriting the first. Other assignments follow their official problem slugs, for example `test_fuel/test_fuel.py`, with the related `fuel.py` in the same folder.
+
+The generated starter **does not throw a forced NotImplementedError**. Empty functions and methods use `pass` so students can fill in the logic themselves. Unfinished pytest functions use `pytest.skip(...)` until the student adds meaningful assertions, avoiding falsely passing tests.
+
+Canvas starter links retain their identifiers; an assignment opened in a separate student project is named after its problem folder (such as `indoor`) and stores `indoor.py` at that project root. Older student projects and folders are not automatically renamed or modified. The public starter code contains no working solutions from the private instructor reference repository.
+
+---
+
 ## Reference-aligned CS50P scaffolds and spacing
 
 The CS50P starter gallery retains all 41 existing problem links and filenames. The original, unsolved starter scaffolds now better reflect the expected shape of reference implementations:
@@ -33,9 +61,9 @@ The gallery is grouped by problem set, with search and a dropdown filter:
 
 ### Starter creation
 
-Select **CS50P Starters**, choose a problem, and click its card. The workspace creates a **separate, uniquely named folder** with the appropriate Python filename (for example, indoor.py or test_fuel.py), original TODO blocks, and a README linking to the official assignment.
+Select **CS50P Starters**, choose a problem, and click its card. The workspace creates a **separate folder named for the official assignment slug**, with its expected Python filename (for example, `indoor/indoor.py` or `test_fuel/test_fuel.py`), guided TODO blocks, and a README linking to the official assignment.
 
-Problem Set 5 includes both the student's implementation module (for example, fuel.py) and its test_fuel.py file, which opens automatically. Later assignments that require testing include matching unsolved test-file scaffolds. Students must replace TODOs and add meaningful tests themselves; the starters intentionally raise NotImplementedError until completed. This library does **not** include completed solutions or answer keys.
+Problem Set 5 includes both the student's implementation module (for example, fuel.py) and its test_fuel.py file, which opens automatically. Later assignments that require testing include matching unsolved test-file scaffolds. Students must complete the TODOs and create their own test assertions. Function stubs use `pass`, and uncompleted pytest stubs are explicitly skipped. This library does **not** include completed solutions or answer keys.
 
 Open **Official instructions** from a problem card or select **Copy assignment link** to share a reusable student starter link through Canvas. Returning to the same link in the same browser profile reopens that student's saved assignment.
 

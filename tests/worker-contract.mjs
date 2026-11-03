@@ -9,7 +9,8 @@ const pyodide={
  setStdout(){},setStderr(){},
  globals:{set:(key,value)=>globals.set(key,value),get:key=>globals.get(key)},
  loadPackagesFromImports:async()=>{},
- loadPackage:async name=>{assert.equal(name,'pytest');},
+ loadPackage:async name=>{assert(['pytest','micropip'].includes(name));},
+ pyimport:name=>{assert.equal(name,'micropip');return {install:async pkg=>{assert.equal(pkg,'cs50');},destroy(){}};},
  runPython(source){pythonScripts.push(source);return JSON.stringify([{file:'main.py',line:2,column:5,message:'invalid syntax'}]);},
  async runPythonAsync(source){
   pythonScripts.push(source);
@@ -54,4 +55,12 @@ for(const [label,source] of [['Python diagnostic helper',astSource],['Python pyt
  const output=spawnSync('python3',['-c','import ast,sys;ast.parse(sys.stdin.read())'],{input:source,encoding:'utf8'});
  assert.equal(output.status,0,label+' has Python syntax errors: '+output.stderr);
 }
+await self.onmessage({data:{type:'installPackage',name:'cs50'}});
+const installed=sent.find(m=>m.type==='packageStatus'&&m.name==='cs50');
+assert(installed?.success,'cs50 package attempt did not report verified success');
+assert(pythonScripts.some(text=>text==='import cs50'),'cs50 package installation was not import-verified');
+await self.onmessage({data:{type:'installPackage',name:'submit50'}});
+const refused=sent.find(m=>m.type==='packageStatus'&&m.name==='submit50');
+assert(refused&&!refused.success,'The browser must not pretend submit50 is supported');
+
 console.log('Pyodide worker contract and embedded Python syntax checks passed.');
