@@ -1,3 +1,19 @@
+# CS50 Python Library and Official Submission Handoff
+
+Python Lab now has a **CS50 Submit** handoff panel. It does **not** send files or user credentials to CS50; a submission is not complete until the official `submit50` tool reports success in a real authenticated Codespace.
+
+1. Open or edit a CS50P problem in the Python Lab editor.
+2. Click **CS50 Submit**, use the new entry in **CS50P Starters**, or open **Prepare Official CS50 Submission** in the Command Palette.
+3. Choose the assignment. The panel displays the official instructions link and the `check50` and `submit50` commands constructed from the course's 2022 CS50P problem slug. **Always double-check the exact slug against the current assignment instructions**, which are authoritative.
+4. Download the **Assignment ZIP**. Unlike a general workspace export, this contains only the selected assignment's files in its assignment-named folder. Multiple local copies such as `indoor/` and `indoor-2/` are kept separate; the currently opened copy is preferred. Downloading files is **not** an official submission.
+5. Open **[CS50 Codespaces](https://cs50.dev/)** with your own authorized GitHub account, upload/extract the assignment folder, open its directory, and run the copied commands there. Verify submission at the official terminal/gradebook. Harvard's [submit50 documentation](https://cs50.readthedocs.io/submit50/) explains its authorization and real Git operations.
+
+The **CS50 Library** button attempts to install the official optional `cs50` Python package inside Pyodide using micropip. `pip install cs50` in the simulated terminal requests the same browser package operation; compatible `import cs50` statements also trigger installation on demand. Dependencies might not be compatible with WebAssembly, so the app reports genuine success or failure rather than claiming support without verification. **The CS50 Python library is distinct from the `submit50` command-line program**, and most CS50P assignments do not need to import the `cs50` package. This feature does not implement direct GitHub OAuth or unattended official submissions.
+
+Do not enter personal GitHub access tokens, passwords, or authentication codes into the simulated Python Lab terminal.
+
+---
+
 # CS50P starters: guided, exception-free, assignment-named folders
 
 All 41 **CS50P Starters** now provide original, student-friendly planning comments, optional input/variable setup, actionable TODOs, and assignment-specific self-check ideas. Every project's README includes a detailed checklist and the official Harvard assignment URL.
