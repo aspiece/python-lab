@@ -1172,8 +1172,8 @@
   if(wantMain)body+='\nif __name__ == "__main__":\n    main()\n';
   if(!wantMain&&signatures.filter(x=>x!=='PDF.header(self)').length===0){
    if(guide.setup)body+=guide.setup+'\n\n';
-   body+='# TODO: '+(topLevelHint[problem.set+'/'+problem.slug]||problem.goal)+'\n';
-   body+='# TODO: Complete the remaining steps in PLAN YOUR CODE above.\n';
+   body+='# TODO: '+(guide.setup?'Use the starter variable(s) above to complete the remaining steps.':(topLevelHint[problem.set+'/'+problem.slug]||problem.goal))+'\n';
+   body+='# TODO: Check your work using the scenarios above.\n';
   }
   return header(problem)+body;
  }
@@ -1222,30 +1222,50 @@
    files[problem.testFile]=buildTest(problem.testFile,mainFile,problem);
   }
   const notes=resourceNotes[problem.slug]||'';
+  const guide=safeGuide(problem);
+  const hasTests=!!problem.sourceFile||!!problem.testFile;
+  const steps=guide.steps.map((step,i)=>(i+1)+'. '+step);
+  const checks=guide.checks.map(test=>'- '+test);
   files['README.md']=[
    '# '+problem.title,
    '',
    '**CS50P Problem Set '+problem.set+': '+subjects[problem.set]+'**',
    '',
+   'Folder: '+problem.slug+' / File to open: '+problem.filename,
+   '',
    'Official instructions: '+problem.url,
    '',
-   '## Your task',
+   '## Your mission',
    '',
    problem.goal,
    '',
-   'This starter is an original Python Lab scaffold, NOT an official CS50-distributed starter or solution.',
-   'Read the full assignment before coding. The TODO blocks intentionally raise NotImplementedError until you implement them.',
+   '## Step-by-step plan',
    '',
-   '## Getting started',
+   ...steps,
    '',
-   '1. Open '+problem.filename+' in Python Lab.',
-   '2. Follow the official specification, and replace TODOs with your own code.',
-   problem.sourceFile||problem.testFile?'3. Open the test_*.py file and write your own meaningful assertions.':'3. Test valid and invalid inputs against the official instructions.',
-   '4. Run the program or Tests panel and verify output carefully.',
+   '## Check your work',
+   '',
+   ...checks,
+   '',
+   '## Using this starter in Python Lab',
+   '',
+   '1. Open '+problem.filename+' and read the numbered planning comments before changing the code.',
+   '2. Complete each TODO in your own words and code. The functions use pass as an empty placeholder.',
+   hasTests?
+    '3. Write meaningful pytest assertions in the test_*.py file; remove each pytest.skip() once you add that test.':
+    '3. Run the program, then compare the behavior with the examples and rules in the official instructions.',
+   '4. Revise your work when it fails a self-check or test case.',
+   '5. Export a ZIP backup when you want to work on another device or submit files through Canvas.',
+   '',
+   '## Helpful reminder',
+   '',
+   'The scaffold includes setup hints and structure, not a completed implementation.',
+   'Always read the full Harvard CS50P problem before coding; it has the authoritative input, output, and edge-case rules.',
+   'This is an original Python Lab teaching aid, NOT an official CS50-distributed starter or solution.',
    '',
    notes?'## Environment note\n\n'+notes+'\n':'',
-   'check50 / submit50 and grading are only available through the official CS50-supported environment.',
-   'Keep your work your own and follow CS50 academic-honesty policies.',
+   'Official check50 and submit50 are not part of this browser IDE; use the official CS50 environment when required.',
+   'Follow the CS50 academic-honesty policy and write your own implementation.',
    ''
   ].filter(x=>x!==null).join('\n');
   return {
@@ -1256,6 +1276,7 @@
    subject:subjects[problem.set],
    url:problem.url,
    slug:problem.slug,
+   folderName:problem.slug,
    entryFile:problem.filename,
    sourceFile:mainFile,
    files
@@ -1267,7 +1288,7 @@
  }
  const list=()=>catalog.map(item=>({
   id:item.id,title:item.title,description:item.goal,
-  set:item.set,subject:subjects[item.set],filename:item.filename,
+  set:item.set,slug:item.slug,folderName:item.slug,subject:subjects[item.set],filename:item.filename,
   url:item.url,files:Object.keys(build(item).files)
  }));
  window.pythonLabCS50P={subjects,catalog:list,get};
