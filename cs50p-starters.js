@@ -538,7 +538,7 @@
   return 'def '+signature+':\n'+todo(description)+'\n';
  }
  function mainBlock(problem){
-  return functionBlock('main()',problem.goal);
+  return functionBlock('main()',problem.set===5?'Prompt for input and show the computed result.':problem.goal);
  }
  function buildPython(problem){
   const label='# CS50P · Problem Set '+problem.set+' · '+problem.title+'\n';
@@ -563,7 +563,7 @@
   if(problem.slug==='seasons')body+='from datetime import date\n\n\n';
   if(problem.set===7&&problem.slug!=='response')body+='import re\n\n\n';
   body+=mainBlock(problem);
-  for(const func of problem.functions)body+='\n'+functionBlock(func,problem.goal);
+  for(const func of problem.functions)body+='\n'+functionBlock(func,'Implement '+func+' according to the official assignment specifications.');
   body+='\nif __name__ == "__main__":\n    main()\n';
   return label+comment+body;
  }
@@ -616,7 +616,7 @@
    '',
    '## Getting started',
    '',
-   '1. Open '+(problem.sourceFile||problem.filename)+' in Python Lab.',
+   '1. Open '+problem.filename+' in Python Lab.',
    '2. Follow the official specification, and replace TODOs with your own code.',
    problem.sourceFile||problem.testFile?'3. Open the test_*.py file and write your own meaningful assertions.':'3. Test valid and invalid inputs against the official instructions.',
    '4. Run the program or Tests panel and verify output carefully.',
