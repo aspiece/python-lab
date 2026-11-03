@@ -1106,6 +1106,28 @@
  };
  const shape=problem=>reference[problem.set+'/'+problem.slug]||{};
 
+ // Small pieces of runnable setup help students reach the first TODO.
+ // These inputs are not solutions to the assignment.
+ const mainInputs={
+  '0/faces':['text = input("Input: ")'],
+  '0/tip':['meal_cost = input("How much was the meal? ")','tip_percent = input("What percentage would you like to tip? ")'],
+  '1/meal':['time_text = input("What time is it? ")'],
+  '2/twttr':['text = input("Input: ")'],
+  '2/plates':['plate = input("Plate: ")'],
+  '4/game':['# TODO: Ask for and validate the chosen level before guessing.'],
+  '4/professor':['# TODO: Choose a level, then track correct answers.'],
+  '5/test_twttr':['word = input("Input: ")'],
+  '5/test_bank':['greeting = input("Greeting: ")'],
+  '5/test_plates':['plate = input("Plate: ")'],
+  '5/test_fuel':['fraction = input("Fraction: ")'],
+  '7/numb3rs':['address = input("IPv4 Address: ")'],
+  '7/watch':['html = input("HTML: ")'],
+  '7/working':['hours = input("Hours: ")'],
+  '7/um':['text = input("Text: ")'],
+  '7/response':['email = input("Email: ")'],
+  '8/seasons':['birth_date = input("Date of Birth: ")'],
+  '8/shirtificate':['student_name = input("Name: ")']
+ };
  const indentedHint=(text,level=1)=>'    '.repeat(level)+'# TODO: '+text+'\n';
  const safeGuide=problem=>learnerGuide[problem.set+'/'+problem.slug]||{steps:[problem.goal],checks:['Compare your output with the official examples.']};
  function header(problem){
@@ -1130,8 +1152,10 @@
   const guide=safeGuide(problem);
   const focus=funcName==='main'?'Gather inputs, call helpers, and print the required result.':
    'Decide what '+funcName+' should return or change; consult the official requirements.';
+  const initial=funcName==='main'?(mainInputs[problem.set+'/'+problem.slug]||[]):[];
   const body=[
    'def '+signature+':',
+   ...initial.map(line=>'    '+line),
    '    # TODO: '+focus,
    '    # Hint: '+guide.steps[Math.min(1,guide.steps.length-1)],
    '    pass',
