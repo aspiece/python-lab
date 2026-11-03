@@ -46,7 +46,7 @@
  function setView(next){
   state.view=next;state.reveal?.();
   const host=$('consoleLayout');
-  if(host){host.classList.toggle('show-problems',next==='problems');host.classList.toggle('show-tests',next==='tests');}
+  if(host){host.classList.remove('show-debug');host.classList.toggle('show-problems',next==='problems');host.classList.toggle('show-tests',next==='tests');}
   for(const [id,name] of [['terminalPanelBtn','terminal'],['problemsPanelBtn','problems'],['testsPanelBtn','tests']]){
    const b=$(id);if(!b)continue;b.classList.toggle('active',name===next);b.setAttribute('aria-pressed',String(next===name));
   }

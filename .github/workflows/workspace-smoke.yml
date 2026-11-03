@@ -21,3 +21,11 @@ jobs:
         run: node tests/workspace-smoke.mjs
       - name: Validate Pyodide worker contracts and Python parser code
         run: node tests/worker-contract.mjs
+      - name: Validate recorded debugger and classroom projects
+        run: node tests/debugger-smoke.mjs
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exercise recorded trace integration
+        run: python3 tests/python-trace-smoke.py

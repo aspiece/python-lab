@@ -97,3 +97,37 @@
 .test-detail{color:#f2b9b9;font:11px/1.5 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
 .analysis-empty,.analysis-summary{font-size:12px;color:#a1b4cb;padding:10px;margin:0}
 @media(max-width:560px){.panel-header .panel-tab{padding:6px 9px;font-size:10px}.panel-header #clearBtn{display:none}.analysis-view{padding:8px}}
+
+
+/* Phase 4 — recorded trace debugger and classroom starter projects */
+.console-layout.show-debug .console-main,.console-layout.show-debug .input-pane,
+.console-layout.show-debug #problemsView,.console-layout.show-debug #testsView{display:none!important}
+.console-layout.show-debug #debugView{display:block}
+#debugView{padding:10px 14px}
+.trace-controls{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:7px}
+.trace-controls button{padding:6px 10px;background:#273749;border:1px solid #425a73;font-size:11px}
+.trace-controls button:disabled{opacity:.35}
+.trace-frame-meta{color:#e8f3ff;font:600 12px Consolas,monospace;margin:5px 0}
+.trace-hint{font-size:11px;color:#a0b4cf;line-height:1.4;margin:5px 0 10px}
+.trace-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.trace-section-title{display:block;font-size:10px;letter-spacing:.5px;color:#91adcd;margin-bottom:6px}
+.trace-variable-list{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow:auto}
+.trace-variable{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:space-between;border-bottom:1px solid #354354;padding:4px 3px;font-size:11px}
+.trace-variable strong{font-family:Consolas,monospace;font-weight:600;color:#bde3fa}
+.trace-variable code{color:#d8e6fa;font:11px Consolas,monospace;overflow-wrap:anywhere}
+.trace-output{font:11px/1.5 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;color:#dce9f7;max-height:180px;overflow:auto;margin:0;background:#0d1521;padding:8px;border:1px solid #334259;border-radius:4px}
+.pl-breakpoint-glyph{background:#f05562;border-radius:50%;width:12px!important;height:12px!important;margin-left:3px;margin-top:3px;box-shadow:0 0 0 1px #0f1726}
+.pl-current-trace-line{background:#294c684a}
+.pl-trace-line-margin{background:#6eaee4}
+#editor .margin-view-overlays{cursor:pointer}
+.templates-dialog{max-width:min(540px,95vw);width:540px;max-height:80vh;overflow:auto}
+.templates-dialog h3{margin:0 0 9px;font-size:18px}
+.templates-dialog p{font-size:12px;color:#a5bad1;line-height:1.5}
+.templates-dialog label{display:block;font-size:11px;font-weight:650;margin:12px 0 7px}
+.templates-dialog textarea{width:100%;border-radius:6px;border:1px solid #526781;background:#111927;color:#e4f0ff;padding:9px;font:13px Consolas,monospace;resize:vertical}
+.template-gallery{display:flex;flex-direction:column;gap:8px;margin:13px 0}
+.template-choice{display:flex;flex-direction:column;text-align:left;align-items:flex-start;gap:6px;background:#172436;border:1px solid #405777;border-radius:7px;padding:12px}
+.template-choice strong{font-size:13px;color:#dfecfc}
+.template-choice span{color:#9eb8d0;font-size:12px}
+@media(max-width:650px){.trace-columns{grid-template-columns:1fr}.trace-variable-list,.trace-output{max-height:140px}.panel-header .panel-tab{padding:5px 7px;font-size:10px}#templateBtn{display:none}}
+@media(max-width:850px){#startTraceBtn{display:none}}

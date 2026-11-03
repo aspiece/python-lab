@@ -72,7 +72,7 @@ function setCode(value){files[filename]=value;if(editor){if(editor.getValue()!==
 function persist(immediate=false){
  window.pythonLabSmart?.schedule();
  clearTimeout(saveTimer);
- const write=()=>{workspaceSnapshot();try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded],openTabs}));if($('saveStatus'))$('saveStatus').textContent='Saved locally';}catch{setStatus('Storage unavailable','error');}};
+ const write=()=>{workspaceSnapshot();try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded],openTabs,debugBreakpoints:window.pythonLabDebug?.serialize()||initial.debugBreakpoints||{}}));if($('saveStatus'))$('saveStatus').textContent='Saved locally';}catch{setStatus('Storage unavailable','error');}};
  if(immediate)write();else{if($('saveStatus'))$('saveStatus').textContent='Saving…';saveTimer=setTimeout(write,220);}
 }
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
@@ -94,7 +94,7 @@ function renderTabs(){
   const close=document.createElement('button');close.className='tab-close';close.textContent='×';close.title='Close '+path;close.setAttribute('aria-label','Close '+path);close.onclick=()=>closeTab(path);
   tab.append(action,close);host.append(tab);
  }
- updateStatusBar();window.pythonLabSmart?.onOpened();
+ updateStatusBar();window.pythonLabSmart?.onOpened();window.pythonLabDebug?.onOpened();
 }
 function setFilename(value){filename=normalize(value||'main.py','');if(!/\.[^/]+$/.test(filename))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);if(!openTabs.includes(filename))openTabs.push(filename);renderTabs();updateStatusBar();persist();}
 function switchToFile(next){
@@ -135,6 +135,8 @@ function paletteCommands(){
   ['New Folder',()=> $('addFolderBtn').click()],
   ['Run Python File',()=>run()],
   ['Run Tests',()=>executeVirtualTest()],
+  ['Record Debug Trace',()=>window.pythonLabDebug?.begin()],
+  ['Create Starter Project',()=>window.pythonLabTemplates?.show()],
   ['Show Problems',()=>window.pythonLabSmart?.setView('problems')],
   ['Show Test Results',()=>window.pythonLabSmart?.setView('tests')],
   ['Save Locally',()=>persist(true)],
@@ -224,7 +226,7 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=14');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',scriptTranscript.slice(scriptTranscript.lastIndexOf('\n')+1));if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=15');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',scriptTranscript.slice(scriptTranscript.lastIndexOf('\n')+1));if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='traceResults'){running=false;updateButtons();setStatus('Python ready','ready');window.pythonLabDebug?.onResult(data);showShell();}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
   workspaceSnapshot();
   for(const [path,content] of Object.entries(data.files||{})){
    const prior=files[path],model=models.get(path);
@@ -256,7 +258,42 @@ function executePython(name,args=[],command=''){
  sendExecution();persist();
 }
 function run(){if(!filename.endsWith('.py')){append('Select a .py file to run.\n','error-line');return;}executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
-function stop(){if(!running)return;terminalMode='shell';activeRun=null;inputHistory=[];replayBaseline='';scriptTranscript='';$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
+
+function requestDebugTrace(options){
+ if(!ready||running){
+  window.pythonLabDebug?.onResult({type:'traceResults',frames:[],error:'Python is busy or not loaded yet. Try again after it becomes ready.',output:''});
+  return;
+ }
+ workspaceSnapshot();
+ if(!options.filename?.endsWith('.py')||!Object.hasOwn(files,options.filename)){
+  window.pythonLabDebug?.onResult({type:'traceResults',frames:[],error:'Select an existing Python file.',output:''});
+  return;
+ }
+ running=true;terminalMode='busy';updateButtons();setStatus('Recording trace…');
+ worker.postMessage({type:'trace',filename:options.filename,files:{...files},dirs:[...dirs],inputs:options.inputs||[],args:options.args||[]});
+}
+function installTemplate(project){
+ if(running){alert('Finish or stop the running program before importing a starter project.');return false;}
+ if(!project||!project.id||!project.files)return false;
+ workspaceSnapshot();
+ const rootName=project.id.replace(/[^a-zA-Z0-9-]/g,'-');
+ let root=rootName,index=2;
+ while(dirs.has(root)||Object.keys(files).some(path=>path===root||path.startsWith(root+'/')))root=rootName+'-'+index++;
+ ensureDirs(root);
+ for(const [name,source] of Object.entries(project.files)){
+  const path=root+'/'+name;
+  if(!/^[\w. -]+$/.test(name)||typeof source!=='string')continue;
+  files[path]=source;
+ }
+ expanded.add(root);
+ const main=root+'/main.py';
+ if(Object.hasOwn(files,main))switchToFile(main);
+ else renderFiles();
+ persist(true);
+ return true;
+}
+
+function stop(){if(!running)return;window.pythonLabDebug?.abort();terminalMode='shell';activeRun=null;inputHistory=[];replayBaseline='';scriptTranscript='';$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
 function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'text/x-python;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
 function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';if(enhancedTerminal){enhancedTerminal.setMode('shell',displayPath()+' $ ');}else $('terminalInput').focus();}
@@ -447,6 +484,9 @@ splitter.addEventListener('pointerdown',event=>{
  splitter.addEventListener('pointermove',move);splitter.addEventListener('pointerup',end);splitter.addEventListener('pointercancel',end);
 });
 window.addEventListener('keydown',e=>{
+ if(e.key==='F9'){e.preventDefault();window.pythonLabDebug?.toggleAtCursor();return;}
+ if(e.key==='F10'){e.preventDefault();window.pythonLabDebug?.stepOver();return;}
+ if(e.key==='F11'&&!e.shiftKey){e.preventDefault();window.pythonLabDebug?.next();return;}
  if(!(e.ctrlKey||e.metaKey)||e.altKey)return;
  const key=e.key.toLowerCase();
  if(key==='enter'){e.preventDefault();run();}
@@ -458,7 +498,19 @@ window.addEventListener('keydown',e=>{
  else if(key==='w'){e.preventDefault();closeTab(filename);}
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
-setFilename(filename);renderFiles();updatePrompt();createWorker();
+setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);createWorker();
+function attachDebugEditor(){
+ window.pythonLabDebug?.attach({
+  editor,monaco:typeof monaco!=='undefined'?monaco:null,models,
+  breakpoints:initial.debugBreakpoints||{},
+  activeFile:()=>filename,openFile:switchToFile,
+  getFiles:()=>{workspaceSnapshot();return {...files}},
+  getArguments:()=>$('args').value.trim()?$('args').value.trim().split(/\s+/):[],
+  requestTrace:requestDebugTrace,
+  persist:()=>persist(true),
+  reveal:()=>{if(panelCollapsed)togglePanel();}
+ });
+}
 function attachSmartEditor(){
  window.pythonLabSmart?.attach({
   editor,monaco:typeof monaco!=='undefined'?monaco:null,models,
@@ -468,7 +520,7 @@ function attachSmartEditor(){
   reveal:()=>{if(panelCollapsed)togglePanel();}
  });
 }
-function enableFallback(){fallback.hidden=false;$('editor').style.display='none';attachSmartEditor();}
+function enableFallback(){fallback.hidden=false;$('editor').style.display='none';attachSmartEditor();attachDebugEditor();}
 if(typeof window.require==='function'){
  try{
   const base='https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/';
@@ -485,7 +537,7 @@ if(typeof window.require==='function'){
     });
     editor.onDidChangeModelContent(()=>persist());
     editor.onDidChangeCursorPosition(updateStatusBar);
-    fallback.hidden=true;renderTabs();updateStatusBar();attachSmartEditor();
+    fallback.hidden=true;renderTabs();updateStatusBar();attachSmartEditor();attachDebugEditor();
    }catch(err){console.warn('Monaco failed',err);enableFallback();}
   },enableFallback);
  }catch{enableFallback();}

@@ -38,6 +38,23 @@ self.onmessage=async ({data})=>{
       }
       return;
     }
+    if(data.type==='trace'){
+      if(runningProgram){
+        message('traceResults',{frames:[],error:'Python is already running. Stop it before recording another trace.',output:''});
+        return;
+      }
+      runningProgram=true;
+      try{
+        await init();
+        if(typeof self.pythonLabRunTrace!=='function')importScripts('python-tracer.js?v=1');
+        await self.pythonLabRunTrace(pyodide,data,message);
+      }catch(err){
+        message('traceResults',{frames:[],error:'Trace failed: '+String(err),output:''});
+      }finally{
+        runningProgram=false;
+      }
+      return;
+    }
     if(data.type!=='run')return;
     if(runningProgram)return;
     runningProgram=true;
