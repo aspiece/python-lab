@@ -100,7 +100,7 @@ for(const [id,testsExpected] of [
 }
 for(const id of ['cs50p-0-indoor','cs50p-1-deep','cs50p-3-grocery','cs50p-6-lines']){
  const p=api.get(id);
- assert(!p.files[p.filename].includes('def main():'),'Reference top-level script became a forced main() template: '+id);
+ assert(!p.files[p.entryFile].includes('def main():'),'Reference top-level script became a forced main() template: '+id);
 }
 const css=read('styles.css');
 assert(css.includes('.cs50p-dialog #templateGallery{'),'Missing CS50P layout refresh');
