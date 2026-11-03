@@ -1,8 +1,36 @@
+# Python Lab — VS Code-inspired browser workspace
+
+Public site: https://aspiece.github.io/python-lab/
+
+## Workspace shortcuts (Phase 1)
+
+| Shortcut | Action |
+| --- | --- |
+| Ctrl/Cmd+P | Quick Open: switch to a project file |
+| Ctrl/Cmd+Shift+P | Command Palette |
+| Ctrl/Cmd+B | Show or hide Explorer |
+| Ctrl/Cmd+Backtick | Focus the browser terminal |
+| Ctrl/Cmd+Tab | Next open editor tab |
+| Ctrl/Cmd+W | Close current editor tab (at least one stays open) |
+| Ctrl/Cmd+S | Save workspace in this browser |
+| Ctrl/Cmd+Shift+S | Download the current file |
+| Ctrl/Cmd+Enter | Run the selected Python file |
+
+The editor now keeps a separate Monaco model per open file, preserving normal undo history when switching between files, as well as cursor position and view state. Open files appear in closable tabs. Explorer supports nested folders, file and folder creation, and rename/move/delete from the right-click menu. On narrow screens, use the Explorer icon in the left rail to open the file tree.
+
+The bottom terminal panel can be resized by dragging the horizontal divider or collapsed with its arrow control. Use **Project ZIP** to export the workspace and **Import ZIP** (or the Command Palette) to restore a backup. Text files such as .txt, .csv, .json, and .md may be kept alongside Python files.
+
+**Storage note:** Autosave still uses this browser's localStorage. It is not a cloud account or a durable backup. Export your Project ZIP regularly, especially before clearing browser data or changing devices.
+
+**Runtime note:** The public GitHub Pages site still uses Pyodide and a simulated shell. Python's input() is implemented by replaying the program after each answer; this is not true paused execution and can repeat file writes or other side effects. The local-only terminal backend offers a real shell but must never be exposed as a public student server.
+
+---
+
 ## Project management (browser edition)
 
 In Explorer, **right-click a file or folder** to **Rename**, **Move** (enter a full project-relative destination path), or **Delete** (requires confirmation). Renaming or moving a folder updates its nested files and directories, including the open editor's path. The destination parent folder must already exist. Deleting a folder removes everything inside it and cannot be undone.
 
-Use **Project ZIP** in the toolbar to export all project files and empty directories as a ZIP backup. **Download File** still exports only the currently open Python source file. ZIP generation requires the JSZip library to load from jsDelivr.
+Use **Project ZIP** to export all project files and empty directories as a ZIP backup, and **Import ZIP** to restore a previous backup. **Download File** still exports only the currently open Python source file. ZIP generation requires the JSZip library to load from jsDelivr.
 
 This workspace lives in the current browser's local storage, so downloading project backups is recommended. The public site still uses a simulated terminal and replay-based input.
 
@@ -65,7 +93,7 @@ Open http://localhost:8000. Do not open `index.html` directly from the filesyste
 GitHub Pages: Settings → Pages → Deploy from branch → main → /(root).
 
 ## Roadmap
-Live interactive terminal; complete workspace file manager (including CSV/image/binary files); per-project archives; test/run configurations; reliable CS50P package catalog; classroom assignment templates.
+Live interactive terminal; binary file support; test/run configurations; reliable CS50P package catalog; classroom assignment templates.
 
 
 ## Local real terminal (CS50P)
