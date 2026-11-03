@@ -179,7 +179,7 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=11');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')append(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;$('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){for(const [path,content] of Object.entries(data.files||{})){const prior=files[path];files[path]=content;ensureDirs(parent(path));const model=models.get(path);if(model&&model.getValue()===prior&&content!==prior)model.setValue(content);}for(const dir of (data.dirs||[]))ensureDirs(dir);renderFiles();renderTabs();persist();}if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=12');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')append(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;$('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){for(const [path,content] of Object.entries(data.files||{})){const prior=files[path];files[path]=content;ensureDirs(parent(path));const model=models.get(path);if(model&&model.getValue()===prior&&content!==prior)model.setValue(content);}for(const dir of (data.dirs||[]))ensureDirs(dir);renderFiles();renderTabs();persist();}if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
 function sendExecution(){if(!activeRun)return;$('terminalPrompt').hidden=true;$('output').textContent='';append('$ '+(activeRun.command||('python '+activeRun.filename))+'\n\n');worker.postMessage({type:'run',...activeRun,stdin:inputHistory.join('\n')});}
 function executePython(name,args=[],command=''){files[filename]=getCode();name=(name in files)?name:normalize(name);if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();inputHistory=[];updateButtons();setStatus('Running…');activeRun={code:files[name],filename:name,files:{...files},dirs:[...dirs],cwd:parent(name),args,command};sendExecution();persist();}
 function run(){if(!filename.endsWith('.py')){append('Select a .py file to run.\n','error-line');return;}executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
@@ -299,5 +299,25 @@ window.addEventListener('keydown',e=>{
 },true);
 setFilename(filename);renderFiles();updatePrompt();createWorker();
 function enableFallback(){fallback.hidden=false;$('editor').style.display='none';}
-if(typeof window.require==='function'){try{const base='https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/';window.MonacoEnvironment={getWorkerUrl:()=> 'data:text/javascript;charset=utf-8,'+encodeURIComponent("self.MonacoEnvironment={baseUrl:'"+base+"'};importScripts('"+base+"vs/base/worker/workerMain.js');")};window.require.config({paths:{vs:base+'vs'}});window.require(['vs/editor/editor.main'],()=>{try{editor=monaco.editor.create($('editor'),{value:code,language:'python',theme:'vs-dark',fontSize:14,lineHeight:23,minimap:{enabled:false},automaticLayout:true,scrollBeyondLastLine:false,tabSize:4,insertSpaces:true,fontFamily:'Consolas, monospace',padding:{top:18},wordWrap:'on'});editor.onDidChangeModelContent(persist);fallback.hidden=true;}catch{enableFallback();}},enableFallback);}catch{enableFallback();}}else enableFallback();
+if(typeof window.require==='function'){
+ try{
+  const base='https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/';
+  window.MonacoEnvironment={getWorkerUrl:()=> 'data:text/javascript;charset=utf-8,'+encodeURIComponent("self.MonacoEnvironment={baseUrl:'"+base+"'};importScripts('"+base+"vs/base/worker/workerMain.js');")};
+  window.require.config({paths:{vs:base+'vs'}});
+  window.require(['vs/editor/editor.main'],()=>{
+   try{
+    editor=monaco.editor.create($('editor'),{
+     model:modelFor(filename),theme:'vs-dark',fontSize:14,lineHeight:23,
+     minimap:{enabled:false},automaticLayout:true,scrollBeyondLastLine:false,tabSize:4,
+     insertSpaces:true,fontFamily:'Consolas, monospace',padding:{top:18},wordWrap:'on',
+     bracketPairColorization:{enabled:true},guides:{indentation:true,bracketPairs:true},
+     renderWhitespace:'selection',stickyScroll:{enabled:false}
+    });
+    editor.onDidChangeModelContent(()=>persist());
+    editor.onDidChangeCursorPosition(updateStatusBar);
+    fallback.hidden=true;renderTabs();updateStatusBar();
+   }catch(err){console.warn('Monaco failed',err);enableFallback();}
+  },enableFallback);
+ }catch{enableFallback();}
+}else enableFallback();
 })();
