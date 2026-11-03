@@ -10,6 +10,48 @@ let openTabs=[...new Set((Array.isArray(initial.openTabs)?initial.openTabs:[file
 if(!openTabs.includes(filename))openTabs.push(filename);
 const models=new Map(),viewStates=new Map();
 let panelCollapsed=false;
+let enhancedTerminal=null,replayBaseline='',scriptTranscript='',replayWarned=false,lastExecutionFiles={};
+function clearTerminal(){
+ $('output').textContent='';
+ enhancedTerminal?.clear();
+}
+function receiveWorkerOutput(value,cls=''){
+ const prior=scriptTranscript.length;
+ scriptTranscript+=value;
+ if(!replayBaseline){append(value,cls);return;}
+ const prefixLength=Math.min(scriptTranscript.length,replayBaseline.length);
+ if(scriptTranscript.slice(0,prefixLength)!==replayBaseline.slice(0,prefixLength)){
+  if(!replayWarned){append('\n[Notice: output differed on replay. Browser input() re-executes the script.]\n','error-line');replayWarned=true;}
+  append(value,cls);return;
+ }
+ const skip=Math.max(0,replayBaseline.length-prior);
+ if(skip<value.length)append(value.slice(skip),cls);
+}
+function receiveTerminalLine(line){
+ if(terminalMode==='input'&&activeRun){
+  inputHistory.push(line);replayBaseline=scriptTranscript;replayWarned=false;
+  setStatus('Running…');enhancedTerminal?.setMode('busy');sendExecution();
+ }else if(terminalMode==='shell'){
+  if(line.trim())commandHistory.push(line);historyIndex=commandHistory.length;
+  shellCommand(line,!!enhancedTerminal);
+ }
+}
+window.pythonLabTerminalHost={
+ attach(adapter){
+  enhancedTerminal=adapter;
+  const previous=$('output').textContent;if(previous)adapter.write(previous);
+  adapter.setMode(terminalMode==='shell'?'shell':terminalMode==='input'?'input':'busy',displayPath()+' $ ');
+ },
+ submit:receiveTerminalLine,
+ interrupt:()=>stop(),
+ state:()=>({mode:terminalMode,ready,running,cwd}),
+ complete(line){
+  const parts=line.match(/^(\S*\s+)?([^\s]*)$/);if(!parts)return [];
+  const prefix=parts[2]||'',before=parts[1]||'';
+  const options=before?[...Object.keys(files),...dirs].map(p=>p.startsWith(cwd+'/')?p.slice(cwd.length+1):p):['python','python3','pytest','ls','pwd','cd','mkdir','touch','cat','echo','clear','help','rm','mv','cp','rmdir','pip','whoami'];
+  return [...new Set(options.filter(v=>v.startsWith(prefix)))].map(v=>before+v).sort();
+ }
+};
 function normalize(path,base=cwd){const parts=[];for(const p of (path.startsWith('/')?path:('/'+base+'/'+path)).split('/')){if(!p||p==='.')continue;if(p==='..')parts.pop();else if(/^[\w. -]+$/.test(p))parts.push(p);else throw Error('Invalid path component: '+p);}return parts.join('/');}
 function parent(path){return path.includes('/')?path.slice(0,path.lastIndexOf('/')):'';}
 function ensureDirs(path){let cur='';for(const p of path.split('/').filter(Boolean)){cur=cur?cur+'/'+p:p;dirs.add(cur);}}
@@ -33,7 +75,7 @@ function persist(immediate=false){
  if(immediate)write();else{if($('saveStatus'))$('saveStatus').textContent='Saving…';saveTimer=setTimeout(write,220);}
 }
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
-function append(value,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=value;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;}
+function append(value,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=value;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;enhancedTerminal?.write(value,cls);}
 function updateButtons(){$('runBtn').disabled=!ready||running;$('stopBtn').disabled=!running;}
 function updateStatusBar(){
  const node=$('cursorStatus');if(!node)return;
@@ -99,7 +141,7 @@ function paletteCommands(){
   ['Toggle Explorer',toggleSidebar],
   ['Toggle Terminal Panel',togglePanel],
   ['Focus Terminal',()=>{$('terminalInput')?.focus();}],
-  ['Clear Terminal',()=>{$('output').textContent='';}]
+  ['Clear Terminal',clearTerminal]
  ];
 }
 function renderPalette(){
@@ -179,20 +221,48 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=12');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')append(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;$('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){for(const [path,content] of Object.entries(data.files||{})){const prior=files[path];files[path]=content;ensureDirs(parent(path));const model=models.get(path);if(model&&model.getValue()===prior&&content!==prior)model.setValue(content);}for(const dir of (data.dirs||[]))ensureDirs(dir);renderFiles();renderTabs();persist();}if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
-function sendExecution(){if(!activeRun)return;$('terminalPrompt').hidden=true;$('output').textContent='';append('$ '+(activeRun.command||('python '+activeRun.filename))+'\n\n');worker.postMessage({type:'run',...activeRun,stdin:inputHistory.join('\n')});}
-function executePython(name,args=[],command=''){files[filename]=getCode();name=(name in files)?name:normalize(name);if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();inputHistory=[];updateButtons();setStatus('Running…');activeRun={code:files[name],filename:name,files:{...files},dirs:[...dirs],cwd:parent(name),args,command};sendExecution();persist();}
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=13');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input');if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
+  workspaceSnapshot();
+  for(const [path,content] of Object.entries(data.files||{})){
+   const prior=files[path],model=models.get(path);
+   // Do not overwrite changes a student made after pressing Run.
+   if(Object.hasOwn(lastExecutionFiles,path)&&prior!==lastExecutionFiles[path])continue;
+   if(model&&model.getValue()!==prior)continue;
+   files[path]=content;ensureDirs(parent(path));
+   if(model&&model.getValue()!==content)model.setValue(content);
+  }
+  for(const dir of (data.dirs||[]))ensureDirs(dir);
+  renderFiles();renderTabs();persist();
+ }if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
+function sendExecution(){
+ if(!activeRun)return;
+ $('terminalPrompt').hidden=true;
+ scriptTranscript='';enhancedTerminal?.setMode('busy');
+ worker.postMessage({type:'run',...activeRun,stdin:inputHistory.join('\n')});
+}
+function executePython(name,args=[],command=''){
+ workspaceSnapshot();name=(name in files)?name:normalize(name);
+ if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}
+ if(!ready||running)return;
+ running=true;terminalMode='busy';runStart=performance.now();inputHistory=[];
+ replayBaseline='';scriptTranscript='';replayWarned=false;
+ updateButtons();setStatus('Running…');
+ activeRun={code:files[name],filename:name,files:{...files},dirs:[...dirs],cwd:parent(name),args,command};
+ lastExecutionFiles={...activeRun.files};
+ if(!command)append(displayPath()+' $ python '+name+(args.length?' '+args.join(' '):'')+'\n');
+ sendExecution();persist();
+}
 function run(){if(!filename.endsWith('.py')){append('Select a .py file to run.\n','error-line');return;}executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
-function stop(){if(!running)return;terminalMode='shell';activeRun=null;inputHistory=[];$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
+function stop(){if(!running)return;terminalMode='shell';activeRun=null;inputHistory=[];replayBaseline='';scriptTranscript='';$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
 function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'text/x-python;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
-function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';$('terminalInput').focus();}
-function shellCommand(line){
+function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';if(enhancedTerminal){enhancedTerminal.setMode('shell',displayPath()+' $ ');}else $('terminalInput').focus();}
+function shellCommand(line,alreadyEchoed=false){
   files[filename]=getCode();const args=line.trim().match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
-  append(displayPath()+' $ '+line+'\n');
+  if(!alreadyEchoed)append(displayPath()+' $ '+line+'\n');
   if(!args.length){showShell();return;}
   const cmd=args[0],rest=args.slice(1);
-  if(cmd==='clear'||cmd==='cls'){$('output').textContent='';}
+  if(cmd==='clear'||cmd==='cls'){clearTerminal();}
   else if(cmd==='help')append('Commands: python FILE.py [args], python -m pytest, pytest, ls, dir, pwd, cd DIR, mkdir [-p] DIR, cat FILE, touch FILE, pip list, pip install PACKAGE, clear, help\nNote: A browser simulation, not a system shell.\n');
   else if(cmd==='ls'||cmd==='dir'){const target=normalize(rest[0]||'.');if(target&&!dirs.has(target))append('No such directory: '+target+'\n','error-line');else append([...dirs].filter(d=>parent(d)===target).map(d=>d.split('/').pop()+'/').concat(Object.keys(files).filter(f=>parent(f)===target).map(f=>f.split('/').pop())).sort().join('    ')+'\n');}
   else if(cmd==='pwd')append('/home/pyodide/'+cwd+'\n');
@@ -207,7 +277,15 @@ else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible pac
   else append(cmd+': command not supported in the browser terminal\n','error-line');
   showShell();
 }
-function runWorkerCode(code,command){if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();updateButtons();activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command};inputHistory=[];sendExecution();}
+function runWorkerCode(code,command){
+ if(!ready||running)return;workspaceSnapshot();
+ running=true;terminalMode='busy';runStart=performance.now();updateButtons();
+ activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command};
+ inputHistory=[];replayBaseline='';scriptTranscript='';replayWarned=false;
+ lastExecutionFiles={...activeRun.files};
+ if(command&&!enhancedTerminal)append(displayPath()+' $ '+command+'\n');
+ sendExecution();
+}
 function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["/home/pyodide","-q","--tb=short"])','python -m pytest -q');}
 $('downloadProjectBtn').addEventListener('click',downloadProject);
 $('importProjectBtn').addEventListener('click',()=> $('projectInput').click());
@@ -247,11 +325,11 @@ $('openBtn').addEventListener('click',()=> $('fileInput').click());
 $('saveBtn').addEventListener('click',download);
 $('runBtn').addEventListener('click',run);
 $('stopBtn').addEventListener('click',stop);
-$('clearBtn').addEventListener('click',()=> $('output').textContent='');
+$('clearBtn').addEventListener('click',clearTerminal);
 $('terminalInput').addEventListener('keydown',e=>{
  if(e.key==='ArrowUp'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.max(0,historyIndex-1);e.currentTarget.value=commandHistory[historyIndex]||'';}
  else if(e.key==='ArrowDown'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.min(commandHistory.length,historyIndex+1);e.currentTarget.value=commandHistory[historyIndex]||'';}
- else if(e.key==='Enter'){e.preventDefault();const answer=e.currentTarget.value;e.currentTarget.value='';if(terminalMode==='input'&&activeRun){inputHistory.push(answer);setStatus('Running…');sendExecution();}else if(terminalMode==='shell'){if(answer.trim())commandHistory.push(answer);historyIndex=commandHistory.length;shellCommand(answer);}}
+ else if(e.key==='Enter'){e.preventDefault();const answer=e.currentTarget.value;e.currentTarget.value='';if(terminalMode==='input'&&activeRun)append(answer+'\n');receiveTerminalLine(answer);}
 });
 $('stdin').addEventListener('input',persist);$('args').value=initial.args||'';$('args').addEventListener('input',persist);
 $('addFolderBtn').addEventListener('click',()=>{
