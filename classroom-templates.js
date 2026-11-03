@@ -31,23 +31,53 @@
   const dialog=$('templatesDialog');
   if(dialog?.showModal)dialog.showModal();
  }
+ function get(id){
+  const project=projects.find(p=>p.id===id);
+  return project?JSON.parse(JSON.stringify(project)):null;
+ }
+ function assignmentUrl(id){
+  const url=new URL(window.location.href);
+  url.search='';url.hash='';
+  url.searchParams.set('starter',id);
+  url.searchParams.set('assignment',Math.random().toString(36).slice(2,12));
+  return url.toString();
+ }
+ async function copyLink(project,button){
+  const link=assignmentUrl(project.id);
+  let copied=false;
+  try{
+   if(typeof navigator!=='undefined'&&navigator.clipboard?.writeText){
+    await navigator.clipboard.writeText(link);copied=true;
+   }
+  }catch{}
+  if(copied){button.textContent='Copied! Share in Canvas';}
+  else{
+   prompt('Copy this assignment starter link and paste it into Canvas:',link);
+   button.textContent='Link ready';
+  }
+ }
  function render(){
   const host=$('templateGallery');if(!host)return;host.textContent='';
   for(const project of projects){
+   const item=document.createElement('div');item.className='template-option';
    const btn=document.createElement('button');btn.className='template-choice';
    const label=document.createElement('strong');label.textContent=project.title;
    const description=document.createElement('span');description.textContent=project.description;
    btn.append(label,description);
    btn.onclick=()=>{
-    if(install?.(project)){
-     $('templatesDialog')?.close?.();
-    }
+    if(install?.(project))$('templatesDialog')?.close?.();
    };
-   host.append(btn);
+   const link=document.createElement('button');link.className='template-link';
+   link.textContent='Copy assignment link';link.title='Copy a starter link for students';
+   link.onclick=()=>copyLink(project,link);
+   item.append(btn,link);host.append(item);
   }
  }
  $('templateBtn')?.addEventListener('click',show);
  $('templateClose')?.addEventListener('click',()=> $('templatesDialog')?.close?.());
  function attach(callback){install=callback;render();}
- window.pythonLabTemplates={attach,show,catalog:()=>projects.map(x=>({id:x.id,title:x.title,files:Object.keys(x.files)}))};
+ window.pythonLabTemplates={
+  attach,show,get,assignmentUrl,
+  catalog:()=>projects.map(x=>({id:x.id,title:x.title,files:Object.keys(x.files)}))
+ };
 })();
