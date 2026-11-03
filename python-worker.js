@@ -55,6 +55,23 @@ self.onmessage=async ({data})=>{
       }
       return;
     }
+    if(data.type==='installPackage'){
+      if(data.name!=='cs50'){message('packageStatus',{name:data.name,success:false,error:'Only the cs50 Python library is supported by this installer.'});return;}
+      if(runningProgram){message('packageStatus',{name:'cs50',success:false,error:'Stop the running Python program first.'});return;}
+      runningProgram=true;
+      try{
+        await init();
+        await pyodide.loadPackage('micropip');
+        const mp=pyodide.pyimport('micropip');
+        try{await mp.install('cs50');}
+        finally{mp.destroy?.();}
+        pyodide.runPython('import cs50');
+        message('packageStatus',{name:'cs50',success:true});
+      }catch(err){
+        message('packageStatus',{name:'cs50',success:false,error:String(err)});
+      }finally{runningProgram=false;}
+      return;
+    }
     if(data.type!=='run')return;
     if(runningProgram)return;
     runningProgram=true;
@@ -100,14 +117,14 @@ self.onmessage=async ({data})=>{
     pyodide.globals.set('__lab_args',data.args||[]);
     pyodide.globals.set('__lab_cwd',cwd);
     await pyodide.loadPackagesFromImports(data.code);
-    const names=[...data.code.matchAll(/^\s*(?:from|import)\s+(emoji|pyfiglet|inflect|requests|validators|tabulate|pytest|PIL|cowsay)(?:\b|\.)/gm)].map(m=>m[1]);
+    const names=[...data.code.matchAll(/^\s*(?:from|import)\s+(emoji|pyfiglet|inflect|requests|validators|tabulate|pytest|PIL|cowsay|cs50)(?:\b|\.)/gm)].map(m=>m[1]);
     if(names.length){
       await pyodide.loadPackage('micropip');
       const mp=pyodide.pyimport('micropip');
       for(const name of [...new Set(names)]){
         const pkg=name==='PIL'?'pillow':name;
         message('output',{text:'Checking package: '+pkg+'\n'});
-        try{await mp.install(pkg);}catch(err){message('output',{text:'Package install failed ('+pkg+'): '+String(err)+'\n',stream:'stderr'});}
+        try{await mp.install(pkg);if(pkg==='cs50')pyodide.runPython('import cs50');}catch(err){message('output',{text:'Package install failed ('+pkg+'): '+String(err)+'\n',stream:'stderr'});}
       }
       mp.destroy?.();
     }
