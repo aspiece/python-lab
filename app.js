@@ -209,12 +209,94 @@ else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible pac
 }
 function runWorkerCode(code,command){if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();updateButtons();activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command};inputHistory=[];sendExecution();}
 function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["-q","--tb=short"])','python -m pytest -q');}
-$('downloadProjectBtn').addEventListener('click',downloadProject);$('fileContextMenu').addEventListener('click',e=>{const button=e.target.closest('[data-action]');if(!button)return;const menu=$('fileContextMenu');menu.hidden=true;modifyEntry(menu.dataset.type,menu.dataset.path,button.dataset.action);});document.addEventListener('click',e=>{if(!e.target.closest('#fileContextMenu'))$('fileContextMenu').hidden=true;});document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fileContextMenu').hidden=true;});
+$('downloadProjectBtn').addEventListener('click',downloadProject);
+$('importProjectBtn').addEventListener('click',()=> $('projectInput').click());
+$('projectInput').addEventListener('change',async e=>{
+ const archive=e.target.files?.[0];e.target.value='';if(!archive)return;
+ if(typeof JSZip==='undefined'){alert('ZIP library is unavailable.');return;}
+ if(!confirm('Replace the current project with the contents of this ZIP? Export a backup first if needed.'))return;
+ try{
+  const zip=await JSZip.loadAsync(archive),newFiles={},newDirs=new Set();let count=0;
+  for(const [raw,entry] of Object.entries(zip.files)){
+   const clean=raw.replace(/\/$/,'');
+   if(!clean||clean.startsWith('/')||clean.split('/').some(p=>p==='..'||p==='.'||!p||!/^[\w. -]+$/.test(p)))continue;
+   if(entry.dir){newDirs.add(clean);continue;}
+   if(!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(clean))continue;
+   if(++count>150)throw Error('Project exceeds 150 text files.');
+   const content=await entry.async('string');if(content.length>1024*1024)throw Error('File too large: '+clean);
+   newFiles[clean]=content;let p=parent(clean);while(p){newDirs.add(p);p=parent(p);}
+  }
+  if(!Object.keys(newFiles).length)throw Error('No supported text files were found.');
+  if(editor)editor.setModel(null);
+  for(const m of models.values())m.dispose();models.clear();viewStates.clear();
+  for(const p of Object.keys(files))delete files[p];Object.assign(files,newFiles);
+  dirs.clear();for(const p of newDirs)dirs.add(p);
+  cwd='';filename=Object.hasOwn(files,'main.py')?'main.py':Object.keys(files).sort()[0];
+  openTabs=[filename];expanded.clear();for(const p of dirs)expanded.add(p);
+  if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename];
+  renderTabs();renderFiles();updatePrompt();persist(true);
+  append('Imported '+count+' files from ZIP.\n','success-line');
+ }catch(err){alert('Project import failed: '+err.message);}
+});
+$('fileContextMenu').addEventListener('click',e=>{const button=e.target.closest('[data-action]');if(!button)return;const menu=$('fileContextMenu');menu.hidden=true;modifyEntry(menu.dataset.type,menu.dataset.path,button.dataset.action);});
+document.addEventListener('click',e=>{if(!e.target.closest('#fileContextMenu'))$('fileContextMenu').hidden=true;});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fileContextMenu').hidden=true;});
 $('newBtn').addEventListener('click',()=>{const d=$('confirmDialog');if(d.showModal)d.showModal();else if(confirm('Create a new file?'))resetFile();});
 $('confirmDialog').addEventListener('close',()=>{if($('confirmDialog').returnValue==='confirm')resetFile();});
-$('openBtn').addEventListener('click',()=>$('fileInput').click());$('saveBtn').addEventListener('click',download);$('runBtn').addEventListener('click',run);$('stopBtn').addEventListener('click',stop);$('clearBtn').addEventListener('click',()=>$('output').textContent='');$('terminalInput').addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.max(0,historyIndex-1);e.currentTarget.value=commandHistory[historyIndex]||'';}else if(e.key==='ArrowDown'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.min(commandHistory.length,historyIndex+1);e.currentTarget.value=commandHistory[historyIndex]||'';}else if(e.key==='Enter'){e.preventDefault();const answer=e.currentTarget.value;e.currentTarget.value='';if(terminalMode==='input'&&activeRun){inputHistory.push(answer);setStatus('Running…');sendExecution();}else if(terminalMode==='shell'){if(answer.trim())commandHistory.push(answer);historyIndex=commandHistory.length;shellCommand(answer);}}});$('stdin').addEventListener('input',persist);$('args').value=initial.args||'';$('args').addEventListener('input',persist);$('addFolderBtn').addEventListener('click',()=>{const input=prompt('Folder path',cwd?cwd+'/week0':'week0');if(!input)return;try{const path=normalize(input,'');if(!path||dirs.has(path))return;ensureDirs(path);expanded.add(path);renderFiles();persist();}catch(err){append(err.message+'\n','error-line');}});$('addFileBtn').addEventListener('click',()=>{let name=prompt('Name the new Python file',cwd?cwd+'/test_main.py':'test_main.py');if(!name)return;files[filename]=getCode();setFilename(name);setCode(files[filename]||'# '+filename+'\n');renderFiles();});$('testBtn').addEventListener('click',executeVirtualTest);fallback.addEventListener('input',persist);
-$('fileInput').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{if(f.size>1048576)throw Error('File must be under 1 MB');files[filename]=getCode();setFilename(cwd?cwd+'/'+f.name:f.name);setCode(await f.text());renderFiles();}catch(err){append('Open failed: '+err.message+'\n','error-line');}e.target.value='';});
-window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run();}if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();download();}});
+$('openBtn').addEventListener('click',()=> $('fileInput').click());
+$('saveBtn').addEventListener('click',download);
+$('runBtn').addEventListener('click',run);
+$('stopBtn').addEventListener('click',stop);
+$('clearBtn').addEventListener('click',()=> $('output').textContent='');
+$('terminalInput').addEventListener('keydown',e=>{
+ if(e.key==='ArrowUp'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.max(0,historyIndex-1);e.currentTarget.value=commandHistory[historyIndex]||'';}
+ else if(e.key==='ArrowDown'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.min(commandHistory.length,historyIndex+1);e.currentTarget.value=commandHistory[historyIndex]||'';}
+ else if(e.key==='Enter'){e.preventDefault();const answer=e.currentTarget.value;e.currentTarget.value='';if(terminalMode==='input'&&activeRun){inputHistory.push(answer);setStatus('Running…');sendExecution();}else if(terminalMode==='shell'){if(answer.trim())commandHistory.push(answer);historyIndex=commandHistory.length;shellCommand(answer);}}
+});
+$('stdin').addEventListener('input',persist);$('args').value=initial.args||'';$('args').addEventListener('input',persist);
+$('addFolderBtn').addEventListener('click',()=>{
+ const input=prompt('Folder path',cwd?cwd+'/week0':'week0');if(!input)return;
+ try{const path=normalize(input,'');if(!path||dirs.has(path))return;ensureDirs(path);expanded.add(path);renderFiles();persist();}catch(err){append(err.message+'\n','error-line');}
+});
+$('addFileBtn').addEventListener('click',()=>{
+ const name=prompt('New file path',cwd?cwd+'/test_main.py':'test_main.py');if(!name)return;
+ try{const path=normalize(name,'')+(name.includes('.')?'':'.py');if(!path)return;if(Object.hasOwn(files,path)){switchToFile(path);return;}
+  if(parent(path)&&!dirs.has(parent(path)))throw Error('Create the parent folder first.');
+  workspaceSnapshot();files[path]=path.endsWith('.py')?'# '+path+'\n':'';switchToFile(path);
+ }catch(err){alert(err.message);}
+});
+$('testBtn').addEventListener('click',executeVirtualTest);
+fallback.addEventListener('input',persist);fallback.addEventListener('click',updateStatusBar);fallback.addEventListener('keyup',updateStatusBar);
+$('fileInput').addEventListener('change',async e=>{
+ const f=e.target.files?.[0];e.target.value='';if(!f)return;
+ try{if(f.size>1048576)throw Error('File must be under 1 MB');workspaceSnapshot();const path=normalize(cwd?cwd+'/'+f.name:f.name,'');if(parent(path)&&!dirs.has(parent(path)))ensureDirs(parent(path));files[path]=await f.text();switchToFile(path);}
+ catch(err){append('Open failed: '+err.message+'\n','error-line');}
+});
+$('explorerToggle').addEventListener('click',toggleSidebar);
+$('paletteBtn').addEventListener('click',()=>openPalette('command'));
+$('togglePanelBtn').addEventListener('click',togglePanel);
+$('commandQuery').addEventListener('input',renderPalette);
+$('commandQuery').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('commandResults').querySelector('button')?.click();}});
+const splitter=$('panelSplitter'),consoleLayout=$('consoleLayout');
+splitter.addEventListener('pointerdown',event=>{
+ if(panelCollapsed)return;event.preventDefault();splitter.setPointerCapture(event.pointerId);
+ const initialY=event.clientY,initialHeight=consoleLayout.getBoundingClientRect().height;
+ const move=e=>{const max=Math.max(130,$('mainPanel').clientHeight-200);consoleLayout.style.height=Math.max(110,Math.min(max,initialHeight+initialY-e.clientY))+'px';editor?.layout();};
+ const end=()=>{splitter.removeEventListener('pointermove',move);splitter.removeEventListener('pointerup',end);splitter.removeEventListener('pointercancel',end);};
+ splitter.addEventListener('pointermove',move);splitter.addEventListener('pointerup',end);splitter.addEventListener('pointercancel',end);
+});
+window.addEventListener('keydown',e=>{
+ if(!(e.ctrlKey||e.metaKey)||e.altKey)return;
+ const key=e.key.toLowerCase();
+ if(key==='enter'){e.preventDefault();run();}
+ else if(key==='s'&&e.shiftKey){e.preventDefault();download();}
+ else if(key==='s'){e.preventDefault();persist(true);}
+ else if(key==='b'){e.preventDefault();toggleSidebar();}
+ else if(key==='p'){e.preventDefault();openPalette(e.shiftKey?'command':'file');}
+ else if(e.code==='Backquote'){e.preventDefault();if(panelCollapsed)togglePanel();$('terminalInput')?.focus();}
+ else if(key==='w'){e.preventDefault();closeTab(filename);}
+ else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
+},true);
 setFilename(filename);renderFiles();updatePrompt();createWorker();
 function enableFallback(){fallback.hidden=false;$('editor').style.display='none';}
 if(typeof window.require==='function'){try{const base='https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/';window.MonacoEnvironment={getWorkerUrl:()=> 'data:text/javascript;charset=utf-8,'+encodeURIComponent("self.MonacoEnvironment={baseUrl:'"+base+"'};importScripts('"+base+"vs/base/worker/workerMain.js');")};window.require.config({paths:{vs:base+'vs'}});window.require(['vs/editor/editor.main'],()=>{try{editor=monaco.editor.create($('editor'),{value:code,language:'python',theme:'vs-dark',fontSize:14,lineHeight:23,minimap:{enabled:false},automaticLayout:true,scrollBeyondLastLine:false,tabSize:4,insertSpaces:true,fontFamily:'Consolas, monospace',padding:{top:18},wordWrap:'on'});editor.onDidChangeModelContent(persist);fallback.hidden=true;}catch{enableFallback();}},enableFallback);}catch{enableFallback();}}else enableFallback();
