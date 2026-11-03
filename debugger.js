@@ -85,7 +85,7 @@
   if($('traceContinue'))$('traceContinue').disabled=!has||state.position>=state.frames.length-1||state.running;
   if($('startTraceBtn'))$('startTraceBtn').disabled=state.running;
   if($('traceRunBtn'))$('traceRunBtn').disabled=state.running;
-  if(info)info.textContent=state.running?'Recording execution…':has?'Step '+(state.position+1)+' of '+state.frames.length:'No trace recorded';
+  if(info)info.textContent=state.running?'Recording execution…':has?'Step '+(state.position+1)+' of '+state.frames.length+(state.frames[state.position]?.function==='<completed>'?' · Program complete':''):'No trace recorded';
   if(status)status.textContent=state.running?'Collecting up to 450 Python line events…':state.error||'Breakpoints move between matching recorded lines; they do not pause a live process.';
   if(hint)hint.textContent=state.truncated?'The trace reached its step limit. Long loops may require a smaller example.':'Variables shown are values before the highlighted line executes.';
   clearHighlight();
