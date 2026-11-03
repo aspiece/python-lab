@@ -48,7 +48,7 @@ window.pythonLabTerminalHost={
  complete(line){
   const parts=line.match(/^(\S*\s+)?([^\s]*)$/);if(!parts)return [];
   const prefix=parts[2]||'',before=parts[1]||'';
-  const options=before?[...Object.keys(files),...dirs].map(p=>p.startsWith(cwd+'/')?p.slice(cwd.length+1):p):['python','python3','pytest','ls','pwd','cd','mkdir','touch','cat','echo','clear','help','rm','mv','cp','rmdir','pip','whoami'];
+  const options=before?[...Object.keys(files),...dirs].map(p=>p.startsWith(cwd+'/')?p.slice(cwd.length+1):p):['python','python3','pytest','ls','pwd','cd','mkdir','touch','cat','echo','clear','help','rm','mv','cp','rmdir','pip','whoami','tree'];
   return [...new Set(options.filter(v=>v.startsWith(prefix)))].map(v=>before+v).sort();
  }
 };
@@ -220,7 +220,7 @@ function renderFiles(){
  }
  children('',0);
 }
-function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
+function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';if(enhancedTerminal&&terminalMode==='shell')enhancedTerminal.setPrompt(displayPath()+' $ ');}
 function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=13');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',scriptTranscript.slice(scriptTranscript.lastIndexOf('\n')+1));if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
   workspaceSnapshot();
   for(const [path,content] of Object.entries(data.files||{})){
@@ -312,8 +312,8 @@ function shellCommand(line,alreadyEchoed=false){
   }
   else if(cmd==='touch'){if(!rest[0])append('Usage: touch FILE\n');else{const p=normalize(rest[0]);if(!dirs.has(parent(p))&&parent(p))append('No such directory\n','error-line');else {files[p]??='';renderFiles();persist();}}}
   else if(cmd==='mkdir'){if(!rest[0])append('Usage: mkdir [-p] DIRECTORY\n');else{const recursive=rest[0]==='-p';const target=normalize(rest[recursive?1:0]||'');if(!target)append('Invalid directory\n','error-line');else if(dirs.has(target))append('Directory already exists\n');else if(!recursive&&parent(target)&&!dirs.has(parent(target)))append('Parent directory does not exist (try mkdir -p)\n','error-line');else{ensureDirs(target);expanded.add(target);renderFiles();persist();}}}
-  else if(cmd==='cd'){const target=rest.length?normalize(rest[0]):'';if(!target||dirs.has(target)){cwd=target;updatePrompt();persist();}else append('cd: no such directory: '+rest[0]+'\n','error-line');}
-else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible packages. Try: pip install <package>\n');
+  else if(cmd==='cd'){const target=rest.length?normalize(rest[0]):'';if(!target||dirs.has(target)){cwd=target;persist();}else append('cd: no such directory: '+rest[0]+'\n','error-line');}
+else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in the simulated browser shell. Some compatible packages load automatically when imported.\n');
   else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){executeVirtualTest(true);return;}
   else if((cmd==='python'||cmd==='python3')&&rest[0]?.endsWith('.py')){executePython(rest[0],rest.slice(1),line);return;}
   else if(cmd==='pip'&&rest[0]==='install'&&rest[1]){append('Automatic package installation is available when a supported package is imported in Python. Direct pip install is not yet supported here.\n','error-line');}
