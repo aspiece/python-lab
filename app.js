@@ -118,13 +118,17 @@ function modifyEntry(type,oldPath,action){
     if(type==='folder'){for(const p of Object.keys(files))if(p.startsWith(oldPath+'/'))delete files[p];for(const p of [...dirs])if(p===oldPath||p.startsWith(oldPath+'/'))dirs.delete(p);}
     else delete files[oldPath];
     if(type==='folder'&&(cwd===oldPath||cwd.startsWith(oldPath+'/')))cwd='';
-    if(!(filename in files)){const remaining=Object.keys(files).sort();if(remaining.length)chooseFile(remaining[0]);else{filename='main.py';files[filename]='# New Python program\n';setFilename(filename);setCode(files[filename]);}}
-    renderFiles();persist();return;
+    for(const [path,model] of [...models])if(!Object.hasOwn(files,path)){if(editor&&editor.getModel()===model)editor.setModel(null);model.dispose();models.delete(path);viewStates.delete(path);}
+    openTabs=openTabs.filter(path=>Object.hasOwn(files,path));
+    if(!Object.hasOwn(files,filename)){const next=Object.keys(files).sort()[0]||'main.py';if(!Object.hasOwn(files,next))files[next]='# New Python program\n';filename=next;}
+    if(!openTabs.includes(filename))openTabs.push(filename);
+    if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename]??'';
+    renderTabs();renderFiles();persist();return;
   }
   const name=prompt(action==='move'?'Move to path (including name):':'Rename (new name or path):',oldPath);
   if(name===null)return;
   let dest;
-  try{dest=normalize(name,'');if(!dest||dest===oldPath)return;if(type==='file'&&!dest.endsWith('.py'))throw Error('Python files must end in .py');if(type==='folder'&&dest.startsWith(oldPath+'/'))throw Error('Cannot move a folder inside itself');if(type==='folder'&&Object.keys(files).some(p=>p.startsWith(oldPath+'/')&&Object.hasOwn(files,dest+p.slice(oldPath.length))))throw Error('Destination has conflicting files');if((type==='folder'&&dirs.has(dest))||Object.hasOwn(files,dest)||[...dirs].some(d=>d===dest&&type==='file'))throw Error('Destination already exists');if(parent(dest)&&!dirs.has(parent(dest)))throw Error('Destination folder does not exist');}
+  try{dest=normalize(name,'');if(!dest||dest===oldPath)return;if(type==='file'&&!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(dest))throw Error('Use a supported text file extension (.py, .txt, .csv, .json, .md, etc.)');if(type==='folder'&&dest.startsWith(oldPath+'/'))throw Error('Cannot move a folder inside itself');if(type==='folder'&&Object.keys(files).some(p=>p.startsWith(oldPath+'/')&&Object.hasOwn(files,dest+p.slice(oldPath.length))))throw Error('Destination has conflicting files');if((type==='folder'&&dirs.has(dest))||Object.hasOwn(files,dest)||[...dirs].some(d=>d===dest&&type==='file'))throw Error('Destination already exists');if(parent(dest)&&!dirs.has(parent(dest)))throw Error('Destination folder does not exist');}
   catch(err){alert(err.message);return;}
   if(type==='file'){files[dest]=files[oldPath];delete files[oldPath];if(filename===oldPath)filename=dest;}
   else {
@@ -134,7 +138,11 @@ function modifyEntry(type,oldPath,action){
     const movedDirs=[...dirs].map(movePath);dirs.clear();for(const p of movedDirs)dirs.add(p);
     filename=movePath(filename);cwd=movePath(cwd);
   }
-  $('tabFilename').textContent=filename;const side=$('sideFilename');if(side)side.textContent=filename;renderFiles();persist();
+  const mapPath=p=>p===oldPath?dest:type==='folder'&&p.startsWith(oldPath+'/')?dest+p.slice(oldPath.length):p;
+  for(const [p,model] of [...models])if(mapPath(p)!==p){if(editor&&editor.getModel()===model)editor.setModel(null);model.dispose();models.delete(p);viewStates.delete(p);}
+  openTabs=[...new Set(openTabs.map(mapPath))];
+  if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename]??'';
+  renderTabs();renderFiles();persist();
 }
 function entryMenu(event,type,path){event.preventDefault();const menu=$('fileContextMenu');menu.hidden=false;menu.style.left=Math.min(event.clientX,innerWidth-175)+'px';menu.style.top=Math.min(event.clientY,innerHeight-145)+'px';menu.dataset.type=type;menu.dataset.path=path;}
 async function downloadProject(){
@@ -162,22 +170,22 @@ function renderFiles(){
   }
   for(const path of allFiles.filter(p=>parent(p)===folder).sort()){
    const btn=document.createElement('button');btn.className='file-item'+(path===filename?' active':'');
-   btn.style.paddingLeft=(26+depth*16)+'px';btn.textContent='🐍 '+path.split('/').pop();btn.title=path;
+   btn.style.paddingLeft=(26+depth*16)+'px';btn.textContent=iconFor(path)+' '+path.split('/').pop();btn.title=path;
    btn.addEventListener('contextmenu',e=>entryMenu(e,'file',path));
-   btn.onclick=()=>{if(path===filename)return;files[filename]=getCode();setFilename(path);setCode(files[path]??'');renderFiles();};
+   btn.onclick=()=>switchToFile(path);
    host.append(btn);
   }
  }
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=11');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')append(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;$('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){Object.assign(files,data.files||{});renderFiles();persist();}if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=11');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')append(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;$('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){for(const [path,content] of Object.entries(data.files||{})){const prior=files[path];files[path]=content;ensureDirs(parent(path));const model=models.get(path);if(model&&model.getValue()===prior&&content!==prior)model.setValue(content);}for(const dir of (data.dirs||[]))ensureDirs(dir);renderFiles();renderTabs();persist();}if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
 function sendExecution(){if(!activeRun)return;$('terminalPrompt').hidden=true;$('output').textContent='';append('$ '+(activeRun.command||('python '+activeRun.filename))+'\n\n');worker.postMessage({type:'run',...activeRun,stdin:inputHistory.join('\n')});}
 function executePython(name,args=[],command=''){files[filename]=getCode();name=(name in files)?name:normalize(name);if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();inputHistory=[];updateButtons();setStatus('Running…');activeRun={code:files[name],filename:name,files:{...files},dirs:[...dirs],cwd:parent(name),args,command};sendExecution();persist();}
-function run(){executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
+function run(){if(!filename.endsWith('.py')){append('Select a .py file to run.\n','error-line');return;}executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
 function stop(){if(!running)return;terminalMode='shell';activeRun=null;inputHistory=[];$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
 function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'text/x-python;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function resetFile(){files[filename]=getCode();let name=prompt('New Python filename',cwd?cwd+'/main.py':'main.py');if(!name)return;setFilename(name);setCode(files[filename]||'# New Python program\n\n');renderFiles();$('stdin').value='';persist();}
+function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const path=normalize(name,'')+(name.includes('.')?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
 function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';$('terminalInput').focus();}
 function shellCommand(line){
   files[filename]=getCode();const args=line.trim().match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
@@ -200,7 +208,7 @@ else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible pac
   showShell();
 }
 function runWorkerCode(code,command){if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();updateButtons();activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command};inputHistory=[];sendExecution();}
-function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/^test_.*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["-q","--tb=short"])','python -m pytest -q');}
+function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["-q","--tb=short"])','python -m pytest -q');}
 $('downloadProjectBtn').addEventListener('click',downloadProject);$('fileContextMenu').addEventListener('click',e=>{const button=e.target.closest('[data-action]');if(!button)return;const menu=$('fileContextMenu');menu.hidden=true;modifyEntry(menu.dataset.type,menu.dataset.path,button.dataset.action);});document.addEventListener('click',e=>{if(!e.target.closest('#fileContextMenu'))$('fileContextMenu').hidden=true;});document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fileContextMenu').hidden=true;});
 $('newBtn').addEventListener('click',()=>{const d=$('confirmDialog');if(d.showModal)d.showModal();else if(confirm('Create a new file?'))resetFile();});
 $('confirmDialog').addEventListener('close',()=>{if($('confirmDialog').returnValue==='confirm')resetFile();});
