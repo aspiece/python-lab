@@ -613,7 +613,8 @@ $('importProjectBtn').addEventListener('click',()=> $('projectInput').click());
 $('projectInput').addEventListener('change',async e=>{
  const archive=e.target.files?.[0];e.target.value='';if(!archive)return;
  if(typeof JSZip==='undefined'){alert('ZIP library is unavailable.');return;}
- if(!confirm('Replace the current project with the contents of this ZIP? Export a backup first if needed.'))return;
+ if(!projectReady){alert('Project storage is still loading. Try again shortly.');return;}
+ if(running){alert('Stop the running Python program before importing a project.');return;}
  try{
   const zip=await JSZip.loadAsync(archive),newFiles={},newDirs=new Set();let count=0;
   for(const [raw,entry] of Object.entries(zip.files)){
@@ -623,18 +624,17 @@ $('projectInput').addEventListener('change',async e=>{
    if(!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(clean))continue;
    if(++count>150)throw Error('Project exceeds 150 text files.');
    const content=await entry.async('string');if(content.length>1024*1024)throw Error('File too large: '+clean);
-   newFiles[clean]=content;let p=parent(clean);while(p){newDirs.add(p);p=parent(p);}
+   newFiles[clean]=content;let parentDir=parent(clean);
+   while(parentDir){newDirs.add(parentDir);parentDir=parent(parentDir);}
   }
   if(!Object.keys(newFiles).length)throw Error('No supported text files were found.');
-  if(editor)editor.setModel(null);
-  for(const m of models.values())m.dispose();models.clear();viewStates.clear();
-  for(const p of Object.keys(files))delete files[p];Object.assign(files,newFiles);
-  dirs.clear();for(const p of newDirs)dirs.add(p);
-  cwd='';filename=Object.hasOwn(files,'main.py')?'main.py':Object.keys(files).sort()[0];
-  openTabs=[filename];expanded.clear();for(const p of dirs)expanded.add(p);
-  if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename];
-  renderTabs();renderFiles();updatePrompt();if(enhancedTerminal&&terminalMode==='shell')enhancedTerminal.setPrompt(displayPath()+' $ ');persist(true);
-  append('Imported '+count+' files from ZIP.\n','success-line');
+  const name=archive.name.replace(/\.zip$/i,'').slice(0,70)||'Imported Project';
+  if(!confirm('Import "'+name+'" as a separate project? Your current files will be preserved.'))return;
+  const selected=Object.hasOwn(newFiles,'main.py')?'main.py':Object.keys(newFiles).sort()[0];
+  const workspace={filename:selected,code:newFiles[selected],files:newFiles,dirs:[...newDirs],
+   expanded:[...newDirs],openTabs:[selected],cwd:'',stdin:'',args:'',debugBreakpoints:{}};
+  await createProjectFromSnapshot(name,workspace);
+  append('Imported '+count+' files into a separate project.\n','success-line');
  }catch(err){alert('Project import failed: '+err.message);}
 });
 $('fileContextMenu').addEventListener('click',e=>{const button=e.target.closest('[data-action]');if(!button)return;const menu=$('fileContextMenu');menu.hidden=true;modifyEntry(menu.dataset.type,menu.dataset.path,button.dataset.action);});
@@ -699,7 +699,9 @@ window.addEventListener('keydown',e=>{
  else if(key==='w'){e.preventDefault();closeTab(filename);}
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
-setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);createWorker();
+setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);
+if(window.pythonLabProjects){bootstrapProjects().then(()=>{if(!worker)createWorker();});}
+else createWorker();
 function attachDebugEditor(){
  window.pythonLabDebug?.attach({
   editor,monaco:typeof monaco!=='undefined'?monaco:null,models,
