@@ -7,36 +7,41 @@
  // Keep previously shared classroom URLs working, but do not show these
  // older examples in the new CS50P-only gallery.
  const legacy={
-  'hello-world':{
-   title:'Hello, Python!',description:'Original beginner greetings exercise.',
-   files:{
-    'main.py':'# New greeting practice\nname = input("What is your name? ")\nprint(f"Hello, {name}!")\n',
-    'README.md':'# Hello, Python!\nChange the greeting and add a second question.\n'
-   }
+  "hello-world": {
+    "title": "Hello, Python!",
+    "description": "Variables, input, formatted strings, and output.",
+    "files": {
+      "main.py": "# Change the greeting and try your own name.\nname = input(\"What is your name? \")\nprint(f\"Hello, {name}!\")\n",
+      "README.md": "# Hello, Python!\nRun main.py. Change the greeting, add a second question, and print both answers.\n"
+    }
   },
-  'loops-lists':{
-   title:'Loops and Lists',description:'Original list and loop practice.',
-   files:{
-    'main.py':'scores = [8, 10, 7, 9]\ntotal = 0\nfor score in scores:\n    total += score\n    print(f"Total: {total}")\n',
-    'README.md':'# Loops and Lists\nExperiment with totals, iteration, and averages.\n'
-   }
+  "loops-lists": {
+    "title": "Loops and Lists",
+    "description": "Practice lists, for loops, and accumulating totals.",
+    "files": {
+      "main.py": "# Predict the output, then run the code.\nscores = [8, 10, 7, 9]\ntotal = 0\nfor score in scores:\n    total += score\n    print(f\"Added {score}; running total = {total}\")\nprint(f\"Average = {total / len(scores):.1f}\")\n",
+      "README.md": "# Loops and Lists\nSet a breakpoint inside the for loop, then record a trace. Observe how total changes.\nChallenge: find the highest score without using max().\n"
+    }
   },
-  'functions-tests':{
-   title:'Functions and Tests',description:'Original pytest practice.',
-   files:{
-    'main.py':'def square(number):\n    return number * number\n\nif __name__ == "__main__":\n    print(square(5))\n',
-    'test_main.py':'from main import square\n\ndef test_square():\n    assert square(4) == 16\n',
-    'README.md':'# Functions and Tests\nTest and extend the square function.\n'
-   }
+  "functions-tests": {
+    "title": "Functions and Tests",
+    "description": "Write functions and run pytest with sample tests.",
+    "files": {
+      "main.py": "def square(number):\n    return number * number\n\n\ndef is_even(number):\n    return number % 2 == 0\n\n\nif __name__ == \"__main__\":\n    print(square(5))\n    print(is_even(6))\n",
+      "test_main.py": "from main import square, is_even\n\n\ndef test_square():\n    assert square(4) == 16\n    assert square(-3) == 9\n\n\ndef test_is_even():\n    assert is_even(8)\n    assert not is_even(7)\n",
+      "README.md": "# Functions and Tests\nRun main.py, then choose Tests to run test_main.py. Change a function deliberately and look at the failed test.\n"
+    }
   },
-  'cs50p-style':{
-   title:'CS50P-Style Practice',description:'Original answer-checking exercise.',
-   files:{
-    'main.py':'def main():\n    answer = input("What is the answer? ").strip()\n    print(answer)\n\nif __name__ == "__main__":\n    main()\n',
-    'README.md':'# CS50P-Style Practice\nAn original practice exercise, not an official CS50 assignment.\n'
-   }
+  "cs50p-style": {
+    "title": "CS50P-Style Practice",
+    "description": "A small beginner problem with a clean main() pattern.",
+    "files": {
+      "main.py": "def main():\n    answer = input(\"What is the answer? \").strip().lower()\n    print(check_answer(answer))\n\n\ndef check_answer(answer):\n    if answer in (\"42\", \"forty-two\", \"forty two\"):\n        return \"Yes\"\n    return \"No\"\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "test_main.py": "from main import check_answer\n\n\ndef test_valid_answers():\n    assert check_answer(\"42\") == \"Yes\"\n    assert check_answer(\"forty-two\") == \"Yes\"\n\n\ndef test_invalid_answers():\n    assert check_answer(\"41\") == \"No\"\n",
+      "README.md": "# CS50P-Style Practice\nPractice string normalization, writing main(), and testing functions.\nThis is an original practice activity, not an official Harvard assignment or grading environment.\nUse the official CS50 environment for check50 and submit50.\n"
+    }
   }
- };
+};
  function show(){
   const dialog=$('templatesDialog');
   render();
