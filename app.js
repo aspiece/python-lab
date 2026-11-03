@@ -70,6 +70,7 @@ function modelFor(path){
 }
 function setCode(value){files[filename]=value;if(editor){if(editor.getValue()!==value)editor.setValue(value);}else fallback.value=value;persist();}
 function persist(immediate=false){
+ window.pythonLabSmart?.schedule();
  clearTimeout(saveTimer);
  const write=()=>{workspaceSnapshot();try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded],openTabs}));if($('saveStatus'))$('saveStatus').textContent='Saved locally';}catch{setStatus('Storage unavailable','error');}};
  if(immediate)write();else{if($('saveStatus'))$('saveStatus').textContent='Saving…';saveTimer=setTimeout(write,220);}
@@ -93,7 +94,7 @@ function renderTabs(){
   const close=document.createElement('button');close.className='tab-close';close.textContent='×';close.title='Close '+path;close.setAttribute('aria-label','Close '+path);close.onclick=()=>closeTab(path);
   tab.append(action,close);host.append(tab);
  }
- updateStatusBar();
+ updateStatusBar();window.pythonLabSmart?.onOpened();
 }
 function setFilename(value){filename=normalize(value||'main.py','');if(!/\.[^/]+$/.test(filename))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);if(!openTabs.includes(filename))openTabs.push(filename);renderTabs();updateStatusBar();persist();}
 function switchToFile(next){
@@ -134,6 +135,8 @@ function paletteCommands(){
   ['New Folder',()=> $('addFolderBtn').click()],
   ['Run Python File',()=>run()],
   ['Run Tests',()=>executeVirtualTest()],
+  ['Show Problems',()=>window.pythonLabSmart?.setView('problems')],
+  ['Show Test Results',()=>window.pythonLabSmart?.setView('tests')],
   ['Save Locally',()=>persist(true)],
   ['Download Current File',()=>download()],
   ['Export Project ZIP',()=>downloadProject()],
@@ -221,7 +224,7 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=13');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',scriptTranscript.slice(scriptTranscript.lastIndexOf('\n')+1));if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=14');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',scriptTranscript.slice(scriptTranscript.lastIndexOf('\n')+1));if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
   workspaceSnapshot();
   for(const [path,content] of Object.entries(data.files||{})){
    const prior=files[path],model=models.get(path);
@@ -347,16 +350,26 @@ else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in
   showShell();
  }catch(err){append('Command error: '+err.message+'\n','error-line');showShell();}
 }
-function runWorkerCode(code,command,alreadyEchoed=false){
+function runWorkerCode(code,command,alreadyEchoed=false,purpose='script'){
  if(!ready||running)return;workspaceSnapshot();
  running=true;terminalMode='busy';runStart=performance.now();updateButtons();
- activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command};
+ activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command,purpose};
  inputHistory=[];replayBaseline='';scriptTranscript='';replayWarned=false;
  lastExecutionFiles={...activeRun.files};
  if(command&&!alreadyEchoed){if(enhancedTerminal)enhancedTerminal.echoCommand(command);else append(displayPath()+' $ '+command+'\n');}
  sendExecution();
 }
-function executeVirtualTest(alreadyEchoed=false){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["/home/pyodide","-q","--tb=short"])','python -m pytest -q',alreadyEchoed);}
+function executeVirtualTest(alreadyEchoed=false){
+ if(!ready||running)return;
+ files[filename]=getCode();
+ window.pythonLabSmart?.beginTests();
+ if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){
+  append('No test_*.py files found\n','error-line');
+  window.pythonLabSmart?.onWorkerMessage({type:'testResults',tests:[],exitCode:5});
+  showShell();return;
+ }
+ runWorkerCode('','python -m pytest -q',alreadyEchoed,'tests');
+}
 $('downloadProjectBtn').addEventListener('click',downloadProject);
 $('importProjectBtn').addEventListener('click',()=> $('projectInput').click());
 $('projectInput').addEventListener('change',async e=>{
@@ -413,7 +426,7 @@ $('addFileBtn').addEventListener('click',()=>{
   workspaceSnapshot();files[path]=path.endsWith('.py')?'# '+path+'\n':'';switchToFile(path);
  }catch(err){alert(err.message);}
 });
-$('testBtn').addEventListener('click',executeVirtualTest);
+$('testBtn').addEventListener('click',()=>executeVirtualTest());
 fallback.addEventListener('input',persist);fallback.addEventListener('click',updateStatusBar);fallback.addEventListener('keyup',updateStatusBar);
 $('fileInput').addEventListener('change',async e=>{
  const f=e.target.files?.[0];e.target.value='';if(!f)return;
@@ -446,7 +459,16 @@ window.addEventListener('keydown',e=>{
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
 setFilename(filename);renderFiles();updatePrompt();createWorker();
-function enableFallback(){fallback.hidden=false;$('editor').style.display='none';}
+function attachSmartEditor(){
+ window.pythonLabSmart?.attach({
+  editor,monaco:typeof monaco!=='undefined'?monaco:null,models,
+  getFiles:()=>{workspaceSnapshot();return {...files}},
+  getWorker:()=>worker,isReady:()=>ready,isBusy:()=>running,
+  activeFile:()=>filename,openFile:switchToFile,
+  reveal:()=>{if(panelCollapsed)togglePanel();}
+ });
+}
+function enableFallback(){fallback.hidden=false;$('editor').style.display='none';attachSmartEditor();}
 if(typeof window.require==='function'){
  try{
   const base='https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/';
@@ -463,7 +485,7 @@ if(typeof window.require==='function'){
     });
     editor.onDidChangeModelContent(()=>persist());
     editor.onDidChangeCursorPosition(updateStatusBar);
-    fallback.hidden=true;renderTabs();updateStatusBar();
+    fallback.hidden=true;renderTabs();updateStatusBar();attachSmartEditor();
    }catch(err){console.warn('Monaco failed',err);enableFallback();}
   },enableFallback);
  }catch{enableFallback();}
