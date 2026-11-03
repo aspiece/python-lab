@@ -1,3 +1,18 @@
+## Reference-aligned CS50P scaffolds and spacing
+
+The CS50P starter gallery retains all 41 existing problem links and filenames. The original, unsolved starter scaffolds now better reflect the expected shape of reference implementations:
+
+- Top-level exercises begin as top-level scripts rather than being forced into a main() wrapper.
+- Where useful, students receive the expected function/class signatures and import statements, without implementations or completed test assertions.
+- Example test files include empty, descriptively named pytest functions. They must be completed by students.
+- Later exercises needing CSV libraries, regular expressions, Pillow, inflect, validators, or fpdf2 include the corresponding import statements and a README note about browser limitations.
+
+The **CS50P Starters** menu now uses a two-column card grid on larger screens and a single column on phones, with consistent padding, card actions, and scrollable problem-set sections.
+
+**Student privacy and course integrity:** Python Lab does not fetch the instructor's private reference repository in student browsers and does not distribute its working solutions. The scaffolds are authored for Python Lab as unsolved learning aids.
+
+---
+
 # CS50P Starter Code Gallery — 41 Problems (November 2026)
 
 Python Lab's **CS50P Starters** gallery contains **41 original, unsolved scaffolds** corresponding to every assignment listed in [Harvard's CS50 Introduction to Programming with Python Problem Sets 0–8](https://cs50.harvard.edu/python/psets/).
