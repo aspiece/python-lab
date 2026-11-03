@@ -10,6 +10,7 @@ let openTabs=[...new Set((Array.isArray(initial.openTabs)?initial.openTabs:[file
 if(!openTabs.includes(filename))openTabs.push(filename);
 const models=new Map(),viewStates=new Map();
 let panelCollapsed=false;
+let activeProjectId=null,activeProjectName='My Python Lab',projectReady=false,projectBusy=false;
 let enhancedTerminal=null,replayBaseline='',scriptTranscript='',replayWarned=false,lastExecutionFiles={};
 function clearTerminal(){
  $('output').textContent='';
@@ -69,11 +70,34 @@ function modelFor(path){
  const model=monaco.editor.createModel(files[path]??'',languageFor(path),uri);models.set(path,model);return model;
 }
 function setCode(value){files[filename]=value;if(editor){if(editor.getValue()!==value)editor.setValue(value);}else fallback.value=value;persist();}
+function projectSnapshot(){
+ workspaceSnapshot();
+ return {
+  filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,
+  files:{...files},dirs:[...dirs],cwd,expanded:[...expanded],openTabs:[...openTabs],
+  debugBreakpoints:window.pythonLabDebug?.serialize()||initial.debugBreakpoints||{}
+ };
+}
 function persist(immediate=false){
  window.pythonLabSmart?.schedule();
  clearTimeout(saveTimer);
- const write=()=>{workspaceSnapshot();try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded],openTabs,debugBreakpoints:window.pythonLabDebug?.serialize()||initial.debugBreakpoints||{}}));if($('saveStatus'))$('saveStatus').textContent='Saved locally';}catch{setStatus('Storage unavailable','error');}};
- if(immediate)write();else{if($('saveStatus'))$('saveStatus').textContent='Saving…';saveTimer=setTimeout(write,220);}
+ const write=()=>{
+  const snapshot=projectSnapshot();
+  try{localStorage.setItem(storageKey,JSON.stringify(snapshot));}
+  catch{$('saveStatus').textContent='Browser storage limited — export a ZIP';}
+  if(!projectReady||!activeProjectId||projectBusy)return Promise.resolve();
+  const task=window.pythonLabProjects.save(activeProjectId,snapshot);
+  return task.then(()=>{
+   const mode=window.pythonLabProjects.state().mode;
+   $('saveStatus').textContent=mode==='memory'?'Temporary session only — export ZIP':'Saved on this device';
+  }).catch(err=>{
+   $('saveStatus').textContent='Save failed — export ZIP';
+   console.error('Python Lab local project save failed',err);
+  });
+ };
+ if(immediate)return write();
+ $('saveStatus').textContent='Saving…';
+ saveTimer=setTimeout(write,280);
 }
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
 function append(value,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=value;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;enhancedTerminal?.write(value,cls);}
@@ -142,6 +166,9 @@ function paletteCommands(){
   ['Save Locally',()=>persist(true)],
   ['Download Current File',()=>download()],
   ['Export Project ZIP',()=>downloadProject()],
+  ['Download Canvas Submission ZIP',()=>downloadProject('submission')],
+  ['Manage Saved Projects',()=>openProjectManager()],
+  ['Create New Project',()=>createNewProject()],
   ['Import Project ZIP',()=> $('projectInput').click()],
   ['Toggle Explorer',toggleSidebar],
   ['Toggle Terminal Panel',togglePanel],
@@ -192,11 +219,181 @@ function modifyEntry(type,oldPath,action){
   renderTabs();renderFiles();persist();
 }
 function entryMenu(event,type,path){event.preventDefault();const menu=$('fileContextMenu');menu.hidden=false;menu.style.left=Math.min(event.clientX,innerWidth-175)+'px';menu.style.top=Math.min(event.clientY,innerHeight-145)+'px';menu.dataset.type=type;menu.dataset.path=path;}
-async function downloadProject(){
+function blankProject(){
+ return {filename:'main.py',code:'# New Python Lab project\n\nprint("Hello, Python!")\n',
+  files:{'main.py':'# New Python Lab project\n\nprint("Hello, Python!")\n'},
+  dirs:[],expanded:[],openTabs:['main.py'],cwd:'',stdin:'',args:'',debugBreakpoints:{}};
+}
+function loadWorkspace(snapshot){
+ clearTimeout(saveTimer);
+ const incoming=snapshot&&typeof snapshot==='object'?snapshot:blankProject();
+ initial=incoming;
+ if(editor)editor.setModel(null);
+ window.pythonLabDebug?.loadProjectBreakpoints({});
+ for(const m of models.values())m.dispose();
+ models.clear();viewStates.clear();
+ for(const path of Object.keys(files))delete files[path];
+ if(incoming.files&&typeof incoming.files==='object'){
+  for(const [path,content] of Object.entries(incoming.files)){
+   if(typeof content==='string')files[path]=content;
+  }
+ }
+ if(!Object.keys(files).length)files['main.py']='# New Python program\n';
+ dirs.clear();
+ for(const dir of (Array.isArray(incoming.dirs)?incoming.dirs:[]))if(typeof dir==='string')dirs.add(dir);
+ filename=typeof incoming.filename==='string'&&Object.hasOwn(files,incoming.filename)?
+  incoming.filename:Object.keys(files).sort()[0];
+ code=files[filename];
+ cwd=typeof incoming.cwd==='string'&&dirs.has(incoming.cwd)?incoming.cwd:'';
+ expanded.clear();
+ for(const dir of (Array.isArray(incoming.expanded)?incoming.expanded:[...dirs]))if(dirs.has(dir))expanded.add(dir);
+ openTabs=[...new Set((Array.isArray(incoming.openTabs)?incoming.openTabs:[filename]).filter(p=>Object.hasOwn(files,p)))];
+ if(!openTabs.includes(filename))openTabs.push(filename);
+ $('stdin').value=typeof incoming.stdin==='string'?incoming.stdin:'';
+ $('args').value=typeof incoming.args==='string'?incoming.args:'';
+ if(editor)editor.setModel(modelFor(filename));
+ else fallback.value=code;
+ renderTabs();renderFiles();updatePrompt();
+ if(enhancedTerminal&&terminalMode==='shell')enhancedTerminal.setPrompt(displayPath()+' $ ');
+ window.pythonLabSmart?.resetProject();
+ window.pythonLabDebug?.loadProjectBreakpoints(incoming.debugBreakpoints||{});
+}
+function displayProjectName(){
+ $('currentProjectName').textContent=activeProjectName;
+ $('projectTreeLabel').textContent=activeProjectName.toUpperCase();
+ document.title=activeProjectName+' — Python Lab';
+}
+async function openProjectManager(){
+ const dialog=$('projectsDialog');
+ if(!projectReady){alert('Project storage is still opening. Your current files remain in this browser.');return;}
+ await refreshProjectList();
+ if(!dialog.open)dialog.showModal();
+}
+async function refreshProjectList(){
+ const host=$('projectList');if(!host||!projectReady)return;
+ const projectList=await window.pythonLabProjects.list();
+ host.textContent='';
+ const storageMode=window.pythonLabProjects.state().mode;
+ $('projectStorageStatus').textContent=storageMode==='indexeddb'?
+  'Saved in IndexedDB on this browser. Export ZIP backups regularly.' :
+  storageMode==='localStorage'?'Using limited browser storage; export your project ZIP regularly.':
+  'Temporary session storage only! Export ZIP before closing this tab.';
+ for(const project of projectList){
+  const row=document.createElement('div');row.className='project-list-row'+(project.id===activeProjectId?' active':'');
+  const main=document.createElement('button');main.className='project-list-main';
+  const title=document.createElement('strong');title.textContent=project.name;
+  const meta=document.createElement('span');
+  meta.textContent=(project.id===activeProjectId?'Current project · ':'')+
+   'Saved '+new Date(project.updatedAt).toLocaleString()+(project.assignmentKey?' · Assignment':'');
+  main.append(title,meta);
+  main.onclick=()=>selectProject(project.id).catch(err=>alert(err.message));
+  const controls=document.createElement('div');controls.className='project-list-controls';
+  const rename=document.createElement('button');rename.textContent='Rename';rename.title='Rename '+project.name;
+  rename.onclick=()=>renameProject(project).catch(err=>alert(err.message));
+  const remove=document.createElement('button');remove.className='project-delete';remove.textContent='Delete';remove.title='Delete '+project.name;
+  remove.disabled=projectList.length<=1;
+  remove.onclick=()=>deleteProject(project).catch(err=>alert(err.message));
+  controls.append(rename,remove);row.append(main,controls);host.append(row);
+ }
+}
+async function selectProject(id){
+ if(!projectReady||projectBusy||running)return;
+ if(id===activeProjectId){$('projectsDialog')?.close?.();return;}
+ await persist(true);
+ projectBusy=true;
+ try{
+  const next=await window.pythonLabProjects.get(id);
+  if(!next)throw Error('The selected project could not be found');
+  window.pythonLabProjects.select(next.id);
+  activeProjectId=next.id;activeProjectName=next.name;
+  loadWorkspace(next.snapshot);
+  displayProjectName();
+  clearTerminal();
+  append('Opened project: '+next.name+'\n','success-line');
+  createWorker(); // fresh Pyodide filesystem and imported-module state per project
+  $('projectsDialog')?.close?.();
+ }finally{projectBusy=false;}
+ await persist(true);await refreshProjectList();
+}
+async function createNewProject(){
+ if(!projectReady||projectBusy||running)return;
+ const value=prompt('Name your new Python Lab project','Untitled Project');
+ if(value===null||!value.trim())return;
+ const created=await window.pythonLabProjects.create(value,blankProject());
+ await selectProject(created.id);
+}
+async function renameProject(project){
+ if(!projectReady||projectBusy||running)return;
+ const name=prompt('Rename project',project.name);
+ if(name===null||!name.trim())return;
+ const changed=await window.pythonLabProjects.rename(project.id,name);
+ if(changed.id===activeProjectId){activeProjectName=changed.name;displayProjectName();}
+ await refreshProjectList();
+}
+async function deleteProject(project){
+ if(!projectReady||projectBusy||running)return;
+ const records=await window.pythonLabProjects.list();
+ if(records.length<=1){alert('Keep at least one project. Create a new one first.');return;}
+ if(!confirm('Delete "'+project.name+'" permanently from this browser? Export a ZIP backup first if you need it.'))return;
+ if(project.id===activeProjectId){
+  const next=records.find(p=>p.id!==project.id);
+  await selectProject(next.id);
+ }
+ await window.pythonLabProjects.remove(project.id);
+ await refreshProjectList();
+}
+async function createProjectFromSnapshot(name,snapshot,assignmentKey=''){
+ if(!projectReady)throw Error('Project storage is not ready');
+ const created=await window.pythonLabProjects.create(name,snapshot,assignmentKey);
+ await selectProject(created.id);
+ return created;
+}
+async function handleAssignmentLink(){
+ const search=window.location?.search||'';
+ if(!search||!projectReady||!window.pythonLabTemplates?.get)return;
+ const params=new URLSearchParams(search);
+ const starter=params.get('starter'),key=params.get('assignment');
+ if(!starter||!key||!/^[a-z0-9]{6,24}$/i.test(key))return;
+ const template=window.pythonLabTemplates.get(starter);
+ if(!template)return;
+ const existing=(await window.pythonLabProjects.list()).find(p=>p.assignmentKey===key);
+ if(existing){
+  if(existing.id===activeProjectId)return;
+  if(confirm('Continue your saved "'+existing.name+'" assignment on this device?')){
+   await selectProject(existing.id);
+  }
+  return;
+ }
+ if(!confirm('Create a new project for "'+template.title+'"? Your existing projects will stay saved separately.'))return;
+ const workspace={
+  filename:'main.py',code:template.files['main.py']||'',
+  files:{...template.files},dirs:[],cwd:'',expanded:[],openTabs:['main.py'],
+  stdin:'',args:'',debugBreakpoints:{}
+ };
+ await createProjectFromSnapshot(template.title,workspace,key);
+}
+async function bootstrapProjects(){
+ if(!window.pythonLabProjects)return;
+ try{
+  const opened=await window.pythonLabProjects.init(initial);
+  activeProjectId=opened.project.id;activeProjectName=opened.project.name;
+  projectBusy=true;loadWorkspace(opened.project.snapshot);
+  projectBusy=false;projectReady=true;
+  displayProjectName();
+  await persist(true);
+  await handleAssignmentLink();
+ }catch(err){
+  projectBusy=false;projectReady=false;
+  $('saveStatus').textContent='Project storage unavailable — export ZIP';
+  console.error('Unable to initialize project storage',err);
+ }
+}
+
+async function downloadProject(kind='project'){
   workspaceSnapshot();
   if(typeof JSZip==='undefined'){alert('ZIP library unavailable. Check your internet connection.');return;}
   const zip=new JSZip();for(const dir of dirs)zip.folder(dir);for(const [path,content] of Object.entries(files))zip.file(path,content);
-  try{const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='python-lab-project.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);}
+  try{const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=(activeProjectName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'python-lab')+(kind==='submission'?'-submission':'-backup')+'.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);}
   catch(err){alert('Unable to download ZIP: '+err.message);}
 }
 const expanded=new Set(Array.isArray(initial.expanded)?initial.expanded:[...dirs]);
@@ -407,12 +604,17 @@ function executeVirtualTest(alreadyEchoed=false){
  }
  runWorkerCode('','python -m pytest -q',alreadyEchoed,'tests');
 }
-$('downloadProjectBtn').addEventListener('click',downloadProject);
+$('downloadProjectBtn').addEventListener('click',()=>downloadProject());
+$('downloadSubmissionBtn').addEventListener('click',()=>downloadProject('submission'));
+$('projectManagerBtn').addEventListener('click',openProjectManager);
+$('projectManagerClose').addEventListener('click',()=> $('projectsDialog').close());
+$('createProjectBtn').addEventListener('click',createNewProject);
 $('importProjectBtn').addEventListener('click',()=> $('projectInput').click());
 $('projectInput').addEventListener('change',async e=>{
  const archive=e.target.files?.[0];e.target.value='';if(!archive)return;
  if(typeof JSZip==='undefined'){alert('ZIP library is unavailable.');return;}
- if(!confirm('Replace the current project with the contents of this ZIP? Export a backup first if needed.'))return;
+ if(!projectReady){alert('Project storage is still loading. Try again shortly.');return;}
+ if(running){alert('Stop the running Python program before importing a project.');return;}
  try{
   const zip=await JSZip.loadAsync(archive),newFiles={},newDirs=new Set();let count=0;
   for(const [raw,entry] of Object.entries(zip.files)){
@@ -422,18 +624,17 @@ $('projectInput').addEventListener('change',async e=>{
    if(!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(clean))continue;
    if(++count>150)throw Error('Project exceeds 150 text files.');
    const content=await entry.async('string');if(content.length>1024*1024)throw Error('File too large: '+clean);
-   newFiles[clean]=content;let p=parent(clean);while(p){newDirs.add(p);p=parent(p);}
+   newFiles[clean]=content;let parentDir=parent(clean);
+   while(parentDir){newDirs.add(parentDir);parentDir=parent(parentDir);}
   }
   if(!Object.keys(newFiles).length)throw Error('No supported text files were found.');
-  if(editor)editor.setModel(null);
-  for(const m of models.values())m.dispose();models.clear();viewStates.clear();
-  for(const p of Object.keys(files))delete files[p];Object.assign(files,newFiles);
-  dirs.clear();for(const p of newDirs)dirs.add(p);
-  cwd='';filename=Object.hasOwn(files,'main.py')?'main.py':Object.keys(files).sort()[0];
-  openTabs=[filename];expanded.clear();for(const p of dirs)expanded.add(p);
-  if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename];
-  renderTabs();renderFiles();updatePrompt();if(enhancedTerminal&&terminalMode==='shell')enhancedTerminal.setPrompt(displayPath()+' $ ');persist(true);
-  append('Imported '+count+' files from ZIP.\n','success-line');
+  const name=archive.name.replace(/\.zip$/i,'').slice(0,70)||'Imported Project';
+  if(!confirm('Import "'+name+'" as a separate project? Your current files will be preserved.'))return;
+  const selected=Object.hasOwn(newFiles,'main.py')?'main.py':Object.keys(newFiles).sort()[0];
+  const workspace={filename:selected,code:newFiles[selected],files:newFiles,dirs:[...newDirs],
+   expanded:[...newDirs],openTabs:[selected],cwd:'',stdin:'',args:'',debugBreakpoints:{}};
+  await createProjectFromSnapshot(name,workspace);
+  append('Imported '+count+' files into a separate project.\n','success-line');
  }catch(err){alert('Project import failed: '+err.message);}
 });
 $('fileContextMenu').addEventListener('click',e=>{const button=e.target.closest('[data-action]');if(!button)return;const menu=$('fileContextMenu');menu.hidden=true;modifyEntry(menu.dataset.type,menu.dataset.path,button.dataset.action);});
@@ -498,7 +699,9 @@ window.addEventListener('keydown',e=>{
  else if(key==='w'){e.preventDefault();closeTab(filename);}
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
-setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);createWorker();
+setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);
+if(window.pythonLabProjects){bootstrapProjects().then(()=>{if(!worker)createWorker();});}
+else createWorker();
 function attachDebugEditor(){
  window.pythonLabDebug?.attach({
   editor,monaco:typeof monaco!=='undefined'?monaco:null,models,

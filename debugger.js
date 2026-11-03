@@ -163,6 +163,20 @@
   }
   bindEditor();render();
  }
+ function loadProjectBreakpoints(data){
+  clearHighlight();
+  for(const [name,ids] of marks){
+   const model=state.models?.get(name);
+   if(model)try{model.deltaDecorations(ids,[]);}catch{}
+  }
+  marks.clear();
+  state.breakpoints={};
+  for(const [file,lines] of Object.entries(data||{})){
+   if(Array.isArray(lines))state.breakpoints[file]=new Set(lines.filter(n=>Number.isInteger(n)&&n>0));
+  }
+  state.frames=[];state.position=0;state.error='';state.output='';state.running=false;state.truncated=false;
+  updateDecorations();render();
+ }
  function onOpened(){updateDecorations();}
  $('startTraceBtn')?.addEventListener('click',begin);
  $('traceRunBtn')?.addEventListener('click',begin);
@@ -175,5 +189,5 @@
  $('traceRestart')?.addEventListener('click',()=>setPosition(0));
  $('toggleBreakpointBtn')?.addEventListener('click',toggleAtCursor);
  $('debugPanelBtn')?.addEventListener('click',()=>{switchPanel();render();});
- window.pythonLabDebug={attach,begin,request,onResult,abort,onOpened,serialize,toggleBreakpoint,toggleAtCursor,setPosition,stepOver,continueToBreakpoint,next:()=>setPosition(state.position+1)};
+ window.pythonLabDebug={attach,begin,request,onResult,abort,onOpened,loadProjectBreakpoints,serialize,toggleBreakpoint,toggleAtCursor,setPosition,stepOver,continueToBreakpoint,next:()=>setPosition(state.position+1)};
 })();

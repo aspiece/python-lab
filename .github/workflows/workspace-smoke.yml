@@ -29,3 +29,7 @@ jobs:
           python-version: '3.12'
       - name: Exercise recorded trace integration
         run: python3 tests/python-trace-smoke.py
+      - name: Validate browser project storage and migration
+        run: node tests/project-store.mjs
+      - name: Validate classroom project switching and assignment links
+        run: node tests/classroom-projects.mjs
