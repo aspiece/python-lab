@@ -5,20 +5,111 @@ const sample='# Welcome to Python Lab!\n# Write Python and click Run.\n\nname = 
 let initial={};try{initial=JSON.parse(localStorage.getItem(storageKey))||{}}catch{}
 let inputHistory=[],activeRun=null,commandHistory=[],historyIndex=0,terminalMode='shell';let filename=initial.filename||'main.py',code=typeof initial.code==='string'?initial.code:sample,editor=null,worker=null,ready=false,running=false,runStart=0,runSerial=0,saveTimer;
 const files=(initial.files && typeof initial.files==='object')?initial.files:{};const dirs=new Set(Array.isArray(initial.dirs)?initial.dirs:[]);let cwd=initial.cwd||'';
+files[filename]=code;
+let openTabs=[...new Set((Array.isArray(initial.openTabs)?initial.openTabs:[filename]).filter(p=>typeof p==='string'&&Object.hasOwn(files,p)))];
+if(!openTabs.includes(filename))openTabs.push(filename);
+const models=new Map(),viewStates=new Map();
+let panelCollapsed=false;
 function normalize(path,base=cwd){const parts=[];for(const p of (path.startsWith('/')?path:('/'+base+'/'+path)).split('/')){if(!p||p==='.')continue;if(p==='..')parts.pop();else if(/^[\w. -]+$/.test(p))parts.push(p);else throw Error('Invalid path component: '+p);}return parts.join('/');}
 function parent(path){return path.includes('/')?path.slice(0,path.lastIndexOf('/')):'';}
 function ensureDirs(path){let cur='';for(const p of path.split('/').filter(Boolean)){cur=cur?cur+'/'+p:p;dirs.add(cur);}}
 function displayPath(){return '~/python-lab'+(cwd?'/'+cwd:'');}
  const fallback=$('fallbackEditor');fallback.value=code;$('stdin').value=typeof initial.stdin==='string'?initial.stdin:'Alex';
-function getCode(){return editor?editor.getValue():fallback.value;}window.pythonLabWorkspace=()=>{files[filename]=getCode();return {filename,files:{...files},dirs:[...dirs],cwd};};
-function setCode(s){if(editor)editor.setValue(s);else fallback.value=s;persist();}
-function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded]}));}catch{setStatus('Storage unavailable','error');}},220);}
+function getCode(){return editor?editor.getValue():fallback.value;}
+function workspaceSnapshot(){if(Object.hasOwn(files,filename))files[filename]=getCode();}
+window.pythonLabWorkspace=()=>{workspaceSnapshot();return {filename,files:{...files},dirs:[...dirs],cwd};};
+function languageFor(path){const ext=path.split('.').pop().toLowerCase();return ({py:'python',json:'json',md:'markdown',html:'html',css:'css',js:'javascript'})[ext]||'plaintext';}
+function iconFor(path){const ext=path.split('.').pop().toLowerCase();return ext==='py'?'🐍':ext==='json'?'{}':ext==='csv'?'▦':'📄';}
+function modelFor(path){
+ if(typeof monaco==='undefined')return null;
+ if(models.has(path))return models.get(path);
+ const uri=monaco.Uri.parse('file:///python-lab/'+path.split('/').map(encodeURIComponent).join('/'));
+ const model=monaco.editor.createModel(files[path]??'',languageFor(path),uri);models.set(path,model);return model;
+}
+function setCode(value){files[filename]=value;if(editor){if(editor.getValue()!==value)editor.setValue(value);}else fallback.value=value;persist();}
+function persist(immediate=false){
+ clearTimeout(saveTimer);
+ const write=()=>{workspaceSnapshot();try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded],openTabs}));if($('saveStatus'))$('saveStatus').textContent='Saved locally';}catch{setStatus('Storage unavailable','error');}};
+ if(immediate)write();else{if($('saveStatus'))$('saveStatus').textContent='Saving…';saveTimer=setTimeout(write,220);}
+}
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
-function append(s,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=s;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;}
+function append(value,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=value;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;}
 function updateButtons(){$('runBtn').disabled=!ready||running;$('stopBtn').disabled=!running;}
-function setFilename(n){filename=normalize(n||'main.py','');if(!filename.endsWith('.py'))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);$('tabFilename').textContent=filename;const side=$('sideFilename');if(side)side.textContent=filename;persist();}
-function workspaceSnapshot(){files[filename]=getCode();}
-function chooseFile(next){setFilename(next);setCode(files[next]??'');renderFiles();}
+function updateStatusBar(){
+ const node=$('cursorStatus');if(!node)return;
+ if(editor){const p=editor.getPosition();node.textContent=p?'Ln '+p.lineNumber+', Col '+p.column:'Ln 1, Col 1';}
+ else{const pos=fallback.selectionStart||0,parts=fallback.value.slice(0,pos).split('\n');node.textContent='Ln '+parts.length+', Col '+(parts[parts.length-1].length+1);}
+ const lang=$('languageStatus');if(lang)lang.textContent=languageFor(filename)==='python'?'Python':languageFor(filename).toUpperCase();
+}
+function renderTabs(){
+ const host=$('openTabs');if(!host)return;
+ host.textContent='';openTabs=openTabs.filter(path=>Object.hasOwn(files,path));
+ if(!openTabs.includes(filename))openTabs.push(filename);
+ for(const path of openTabs){
+  const tab=document.createElement('div');tab.className='tab'+(path===filename?' active':'');tab.setAttribute('role','tab');tab.setAttribute('aria-selected',String(path===filename));
+  const action=document.createElement('button');action.className='tab-label';action.textContent=iconFor(path)+' '+path.split('/').pop();action.title=path;action.onclick=()=>switchToFile(path);
+  const close=document.createElement('button');close.className='tab-close';close.textContent='×';close.title='Close '+path;close.setAttribute('aria-label','Close '+path);close.onclick=()=>closeTab(path);
+  tab.append(action,close);host.append(tab);
+ }
+ updateStatusBar();
+}
+function setFilename(value){filename=normalize(value||'main.py','');if(!filename.includes('.'))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);if(!openTabs.includes(filename))openTabs.push(filename);renderTabs();updateStatusBar();persist();}
+function switchToFile(next){
+ if(!Object.hasOwn(files,next))return;
+ if(next===filename){if(!openTabs.includes(next))openTabs.push(next);renderTabs();return;}
+ workspaceSnapshot();
+ if(editor)viewStates.set(filename,editor.saveViewState());
+ filename=next;code=files[next];
+ if(!openTabs.includes(next))openTabs.push(next);
+ for(let p=parent(next);p;p=parent(p))expanded.add(p);
+ if(editor){editor.setModel(modelFor(next));const state=viewStates.get(next);if(state)editor.restoreViewState(state);editor.focus();}
+ else fallback.value=code;
+ renderTabs();renderFiles();persist();
+}
+function closeTab(path){
+ if(openTabs.length===1){append('Keep at least one file open in the editor.\n');return;}
+ const ix=openTabs.indexOf(path);if(ix<0)return;
+ workspaceSnapshot();openTabs.splice(ix,1);
+ if(path===filename){const next=openTabs[Math.min(ix,openTabs.length-1)];filename=next;if(editor){editor.setModel(modelFor(next));const state=viewStates.get(next);if(state)editor.restoreViewState(state);}else fallback.value=files[next];}
+ renderTabs();renderFiles();persist();
+}
+function chooseFile(next){switchToFile(next);}
+function toggleSidebar(){
+ const root=$('workspace');if(window.matchMedia('(max-width:850px)').matches){root.classList.toggle('show-sidebar');root.classList.remove('hide-sidebar');}
+ else{root.classList.toggle('hide-sidebar');root.classList.remove('show-sidebar');}
+}
+function togglePanel(){
+ panelCollapsed=!panelCollapsed;$('mainPanel').classList.toggle('panel-collapsed',panelCollapsed);
+ $('togglePanelBtn').textContent=panelCollapsed?'▴':'▾';
+}
+function openPalette(mode='file'){
+ const dialog=$('commandDialog');dialog.dataset.mode=mode;$('commandQuery').value='';$('commandQuery').placeholder=mode==='file'?'Search files by name…':'Type a command…';
+ renderPalette();if(!dialog.open)dialog.showModal();$('commandQuery').focus();
+}
+function paletteCommands(){
+ return [
+  ['New File',()=> $('addFileBtn').click()],
+  ['New Folder',()=> $('addFolderBtn').click()],
+  ['Run Python File',()=>run()],
+  ['Run Tests',()=>executeVirtualTest()],
+  ['Save Locally',()=>persist(true)],
+  ['Download Current File',()=>download()],
+  ['Export Project ZIP',()=>downloadProject()],
+  ['Import Project ZIP',()=> $('projectInput').click()],
+  ['Toggle Explorer',toggleSidebar],
+  ['Toggle Terminal Panel',togglePanel],
+  ['Focus Terminal',()=>{$('terminalInput')?.focus();}],
+  ['Clear Terminal',()=>{$('output').textContent='';}]
+ ];
+}
+function renderPalette(){
+ const mode=$('commandDialog').dataset.mode||'file',q=$('commandQuery').value.trim().toLowerCase(),host=$('commandResults');host.textContent='';
+ const entries=mode==='file'?Object.keys(files).sort().map(path=>[iconFor(path)+' '+path,()=>switchToFile(path)]):paletteCommands();
+ for(const [label,action] of entries.filter(x=>x[0].toLowerCase().includes(q)).slice(0,30)){
+  const item=document.createElement('button');item.className='palette-result';item.textContent=label;item.onclick=()=>{$('commandDialog').close();action();};host.append(item);
+ }
+ if(!host.children.length){const empty=document.createElement('p');empty.textContent='No matches';host.append(empty);}
+}
 function modifyEntry(type,oldPath,action){
   if(running){alert('Stop the running program before changing files.');return;}
   workspaceSnapshot();
