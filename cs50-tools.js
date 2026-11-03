@@ -115,6 +115,7 @@
  }
  function attach(config){callbacks=config||{};}
  $('cs50ToolsBtn')?.addEventListener('click',show);
+ $('cs50FromTemplatesBtn')?.addEventListener('click',()=>{$('templatesDialog')?.close?.();show();});
  $('cs50CloseBtn')?.addEventListener('click',()=> $('cs50SubmissionDialog')?.close?.());
  $('cs50AssignmentSelect')?.addEventListener('change',render);
  $('cs50CopyCheck')?.addEventListener('click',()=>{const problem=getProblem();if(problem)copy(commands(problem).check);});
