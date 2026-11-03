@@ -31,6 +31,9 @@ self.onmessage=async ({data})=>{
     const userFiles=data.files||{};
     const safePath=p=>typeof p==='string'&&p.split('/').every(x=>x&&!['.','..'].includes(x)&&/^[\w. -]+$/.test(x));
     const base='/home/pyodide';
+    // A previous run may have changed cwd into a folder the student deleted.
+    // Return to the workspace root before removing stale files and folders.
+    try{pyodide.FS.chdir(base);}catch{}
     // On each input replay, restore the previous workspace snapshot before
     // executing the script. This avoids duplicate file appends and repeated
     // local writes, but cannot undo external network effects or randomness.
