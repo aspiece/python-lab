@@ -25,6 +25,17 @@ async function init() {
 self.onmessage=async ({data})=>{
   try {
     if(data.type==='init'){await init();return;}
+    if(data.type==='diagnose'){
+      await init();
+      try{
+        pyodide.globals.set('__lab_diag_json',JSON.stringify(data.files||{}));
+        const response=pyodide.runPython("import ast, json\n__lab_problems = []\nfor __lab_path, __lab_code in json.loads(__lab_diag_json).items():\n    try:\n        ast.parse(__lab_code, filename=__lab_path)\n    except SyntaxError as exc:\n        __lab_problems.append({'file': __lab_path, 'line': max(1, exc.lineno or 1), 'column': max(1, exc.offset or 1), 'endLine': max(1, exc.end_lineno or exc.lineno or 1), 'endColumn': max(2, exc.end_offset or (exc.offset or 1) + 1), 'message': exc.msg})\njson.dumps(__lab_problems)");
+        message('diagnostics',{id:data.id,problems:JSON.parse(response)});
+      }catch(err){
+        message('diagnostics',{id:data.id,problems:[],error:'Unable to check syntax: '+String(err)});
+      }
+      return;
+    }
     if(data.type!=='run')return;
     await init();
     let inputs=data.stdin?data.stdin.replace(/\r\n/g,'\n').split('\n'):[];
@@ -109,11 +120,36 @@ finally:
     sys.argv=__lab_old_argv
     if sys.path and sys.path[0] == os.getcwd(): sys.path.pop(0)`;
     try {
-      await pyodide.runPythonAsync(script);
-      if(pyodide.globals.get('__lab_needs_input')) message('needInput');
-      else message('done',{success:true});
+      if(data.purpose==='tests'){
+        await pyodide.loadPackage('pytest');
+        const pytestScript = "import json, pytest\n"+
+        "class __LabPytestCapture:\n"+
+        "    def __init__(self): self.tests=[]\n"+
+        "    def pytest_runtest_logreport(self, report):\n"+
+        "        if report.when == 'call' or (report.when == 'setup' and (report.failed or report.skipped)) or (report.when == 'teardown' and report.failed):\n"+
+        "            location = getattr(report, 'location', ('',0,''))\n"+
+        "            filename = str(location[0]).replace('/home/pyodide/', '')\n"+
+        "            outcome = 'error' if report.failed and report.when != 'call' else str(report.outcome)\n"+
+        "            self.tests.append({'name': str(report.nodeid), 'file': filename, 'line': int(location[1])+1, 'outcome': outcome, 'details': str(getattr(report, 'longreprtext', ''))[:2000] if outcome in ('failed', 'error') else ''})\n"+
+        "    def pytest_collectreport(self, report):\n"+
+        "        if report.failed:\n"+
+        "            location = str(report.nodeid).split('::')[0].replace('/home/pyodide/', '')\n"+
+        "            self.tests.append({'name': str(report.nodeid), 'file': location, 'line': 1, 'outcome': 'error', 'details': str(getattr(report, 'longrepr', ''))[:2000]})\n"+
+        "__lab_pytest_capture = __LabPytestCapture()\n"+
+        "__lab_test_exit = int(pytest.main(['/home/pyodide','-q','--tb=short'], plugins=[__lab_pytest_capture]))\n"+
+        "__lab_tests_json = json.dumps({'tests': __lab_pytest_capture.tests, 'exitCode': __lab_test_exit})\n";
+        await pyodide.runPythonAsync(pytestScript);
+        const results=JSON.parse(pyodide.globals.get('__lab_tests_json'));
+        message('testResults',results);
+        message('done',{success:results.exitCode===0});
+      }else{
+        await pyodide.runPythonAsync(script);
+        if(pyodide.globals.get('__lab_needs_input')) message('needInput');
+        else message('done',{success:true});
+      }
     } catch(err) {
       message('output',{text:String(err)+'\n',stream:'stderr'});
+      if(data.purpose==='tests')message('testResults',{tests:[],exitCode:2,error:String(err)});
       message('done',{success:false});
     } finally {
       // Discover text files and folders created by Python, including nested project folders.
