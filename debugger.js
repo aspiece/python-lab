@@ -33,6 +33,7 @@
   if(lines.has(line))lines.delete(line);else lines.add(line);
   updateDecorations();state.persist?.();render();
  }
+ function toggleAtCursor(){const line=state.editor?.getPosition?.()?.lineNumber||1;toggleBreakpoint(state.activeFile?.(),line);}
  function bindEditor(){
   if(!state.editor||!state.monaco)return;
   state.editor.onMouseDown(event=>{
@@ -172,6 +173,7 @@
  $('traceStepOver')?.addEventListener('click',stepOver);
  $('traceContinue')?.addEventListener('click',continueToBreakpoint);
  $('traceRestart')?.addEventListener('click',()=>setPosition(0));
+ $('toggleBreakpointBtn')?.addEventListener('click',toggleAtCursor);
  $('debugPanelBtn')?.addEventListener('click',()=>{switchPanel();render();});
- window.pythonLabDebug={attach,begin,request,onResult,abort,onOpened,serialize,toggleBreakpoint,setPosition,stepOver,continueToBreakpoint};
+ window.pythonLabDebug={attach,begin,request,onResult,abort,onOpened,serialize,toggleBreakpoint,toggleAtCursor,setPosition,stepOver,continueToBreakpoint,next:()=>setPosition(state.position+1)};
 })();
