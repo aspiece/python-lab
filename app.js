@@ -484,6 +484,9 @@ splitter.addEventListener('pointerdown',event=>{
  splitter.addEventListener('pointermove',move);splitter.addEventListener('pointerup',end);splitter.addEventListener('pointercancel',end);
 });
 window.addEventListener('keydown',e=>{
+ if(e.key==='F9'){e.preventDefault();window.pythonLabDebug?.toggleAtCursor();return;}
+ if(e.key==='F10'){e.preventDefault();window.pythonLabDebug?.stepOver();return;}
+ if(e.key==='F11'&&!e.shiftKey){e.preventDefault();window.pythonLabDebug?.next();return;}
  if(!(e.ctrlKey||e.metaKey)||e.altKey)return;
  const key=e.key.toLowerCase();
  if(key==='enter'){e.preventDefault();run();}
