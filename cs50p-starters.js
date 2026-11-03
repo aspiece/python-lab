@@ -1106,60 +1106,99 @@
  };
  const shape=problem=>reference[problem.set+'/'+problem.slug]||{};
 
- const todo=message=>'    # TODO: '+message+'\n    raise NotImplementedError("Complete this problem with your own code")\n';
- function functionBlock(signature,description){
-  return 'def '+signature+':\n'+todo(description)+'\n';
+ const indentedHint=(text,level=1)=>'    '.repeat(level)+'# TODO: '+text+'\n';
+ const safeGuide=problem=>learnerGuide[problem.set+'/'+problem.slug]||{steps:[problem.goal],checks:['Compare your output with the official examples.']};
+ function header(problem){
+  const guide=safeGuide(problem);
+  const lines=[
+   '# CS50P | Problem Set '+problem.set+' | '+problem.title,
+   '# Official instructions: '+problem.url,
+   '# Original UNSOLVED starter - write the missing code yourself.',
+   '#',
+   '# YOUR MISSION',
+   '# '+problem.goal,
+   '#',
+   '# PLAN YOUR CODE'
+  ];
+  guide.steps.forEach((step,i)=>lines.push('# '+(i+1)+'. '+step));
+  lines.push('#','# CHECK YOUR WORK');
+  guide.checks.forEach(check=>lines.push('# - '+check));
+  return lines.join('\n')+'\n\n';
  }
- function mainBlock(problem){
-  return functionBlock('main()',problem.set===5?'Read an input and call the required function.':problem.goal);
+ function functionBlock(signature,problem){
+  const funcName=signature.split('(')[0];
+  const guide=safeGuide(problem);
+  const focus=funcName==='main'?'Gather inputs, call helpers, and print the required result.':
+   'Decide what '+funcName+' should return or change; consult the official requirements.';
+  const body=[
+   'def '+signature+':',
+   '    # TODO: '+focus,
+   '    # Hint: '+guide.steps[Math.min(1,guide.steps.length-1)],
+   '    pass',
+   ''
+  ];
+  return body.join('\n')+'\n';
  }
  function buildPython(problem){
   const outline=shape(problem),signatures=outline.functions||problem.functions;
-  const label='# CS50P · Problem Set '+problem.set+' · '+problem.title+'\n';
-  const comment='# Assignment: '+problem.url+'\n# Original, unsolved teaching scaffold; compare against official instructions.\n\n';
+  const guide=safeGuide(problem);
   let body=(outline.imports||[]).join('\n');
   if(body)body+='\n\n\n';
   if(signatures.includes('Jar')){
    body+='class Jar:\n';
    for(const signature of ['__init__(self, capacity=12)','__str__(self)','deposit(self, cookies)','withdraw(self, cookies)']){
-    body+='    def '+signature+':\n        # TODO: Implement according to the official specification.\n        raise NotImplementedError("Complete this method")\n\n';
+    const task=signature.startsWith('__init__')?'Set up the cookie count and validate the initial capacity.':
+     signature.startsWith('__str__')?'Return the required cookie display.':
+     signature.startsWith('deposit')?'Check the deposit amount and update the jar safely.':
+     'Check the withdrawal amount before updating the jar.';
+    body+='    def '+signature+':\n'+indentedHint(task,2)+'        pass\n\n';
    }
    for(const signature of ['capacity(self)','size(self)']){
-    body+='    @property\n    def '+signature+':\n        # TODO: Return the required property value.\n        raise NotImplementedError("Complete this property")\n\n';
+    body+='    @property\n    def '+signature+':\n'+indentedHint('Return the corresponding jar value.',2)+'        pass\n\n';
    }
-   return label+comment+body;
+   return header(problem)+body;
   }
   if(problem.slug==='shirtificate'){
-   body+='class PDF(FPDF):\n    def header(self):\n        # TODO: Design the header. Review the FPDF documentation.\n        raise NotImplementedError("Complete the certificate header")\n\n\n';
+   body+='class PDF(FPDF):\n    def header(self):\n'+
+    indentedHint('Use the PDF library to place the header; check the official layout.',2)+
+    '        pass\n\n\n';
   }
   const wantMain=!!outline.main;
-  if(wantMain)body+=mainBlock(problem);
+  if(wantMain)body+=functionBlock('main()',problem);
   for(const signature of signatures){
    if(signature==='PDF.header(self)'||signature==='Jar')continue;
-   body+=(wantMain||body?'\n':'')+functionBlock(signature,'Implement '+signature+' following the official problem description.');
+   body+=(wantMain||body?'\n':'')+functionBlock(signature,problem);
   }
   if(wantMain)body+='\nif __name__ == "__main__":\n    main()\n';
   if(!wantMain&&signatures.filter(x=>x!=='PDF.header(self)').length===0){
-   const hint=topLevelHint[problem.set+'/'+problem.slug]||problem.goal;
-   body+='# TODO: '+hint+'\nraise NotImplementedError("Write your own script here")\n';
+   if(guide.setup)body+=guide.setup+'\n\n';
+   body+='# TODO: '+(topLevelHint[problem.set+'/'+problem.slug]||problem.goal)+'\n';
+   body+='# TODO: Complete the remaining steps in PLAN YOUR CODE above.\n';
   }
-  return label+comment+body;
+  return header(problem)+body;
  }
  function buildTest(filename,source,problem){
   const outline=shape(problem);
   const functions=(outline.functions||problem.functions).filter(x=>x!=='Jar'&&!x.startsWith('PDF.'));
   let imported;
-  if((outline.functions||problem.functions).includes('Jar'))imported='from jar import Jar\n';
-  else if(functions.length)imported='from '+source.replace(/\.py$/,'')+' import '+functions.map(x=>x.split('(')[0]).join(', ')+'\n';
-  else imported='import '+source.replace(/\.py$/,'')+'\n';
-  const testImports=(outline.testImports||[]).filter(line=>!imported.includes(line));
-  const names=outline.testNames||['test_write_your_own_cases'];
-  const stubs=names.map(name=>'def '+name+'():\n'+
-   '    # TODO: Add your own meaningful assertions for this case.\n'+
-   '    raise NotImplementedError("Write your own pytest assertion")\n').join('\n\n');
-  return '# CS50P · '+problem.title+'\n# Assignment: '+problem.url+
-   '\n# These are intentionally empty test outlines, not grading answers.\n\n'+
-   [...testImports,imported.trim()].join('\n')+'\n\n\n'+stubs;
+  if((outline.functions||problem.functions).includes('Jar'))imported='from jar import Jar';
+  else if(functions.length)imported='from '+source.replace(/\.py$/,'')+' import '+functions.map(x=>x.split('(')[0]).join(', ');
+  else imported='import '+source.replace(/\.py$/,'');
+  const imports=[...new Set(['import pytest',...(outline.testImports||[]),imported])];
+  const names=outline.testNames||['test_your_first_case'];
+  const guide=safeGuide(problem);
+  const stubs=names.map((name,i)=>[
+   'def '+name+'():',
+   '    # TODO: Test one specific rule or boundary from the official instructions.',
+   '    # Suggestion: '+guide.checks[i%guide.checks.length],
+   '    # Replace this skip with one or more real assert statements.',
+   '    pytest.skip("Add your own assertions before running this test")',
+   ''
+  ].join('\n')).join('\n');
+  return '# CS50P | '+problem.title+' | Student-written tests\n'+
+   '# Official instructions: '+problem.url+'\n'+
+   '# No answer keys are included. Replace each skip with your own assertions.\n\n'+
+   imports.join('\n')+'\n\n\n'+stubs;
  }
  const resourceNotes={
   emojize:'Requires the emoji package; package availability on GitHub Pages may vary.',
