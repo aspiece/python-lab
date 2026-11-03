@@ -206,7 +206,7 @@ function renderFiles(){
    row.textContent=(expanded.has(path)?'▾ ':'▸ ')+'📁 '+path.split('/').pop();
    row.setAttribute('aria-expanded',String(expanded.has(path)));
    row.addEventListener('contextmenu',e=>entryMenu(e,'folder',path));
-   row.onclick=()=>{if(expanded.has(path))expanded.delete(path);else expanded.add(path);cwd=path;renderFiles();updatePrompt();persist();};
+   row.onclick=()=>{if(expanded.has(path))expanded.delete(path);else expanded.add(path);cwd=path;renderFiles();updatePrompt();if(enhancedTerminal&&terminalMode==='shell')enhancedTerminal.setPrompt(displayPath()+' $ ');persist();};
    host.append(row);
    if(expanded.has(path))children(path,depth+1);
   }
@@ -220,7 +220,7 @@ function renderFiles(){
  }
  children('',0);
 }
-function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';if(enhancedTerminal&&terminalMode==='shell')enhancedTerminal.setPrompt(displayPath()+' $ ');}
+function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
 function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=13');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',scriptTranscript.slice(scriptTranscript.lastIndexOf('\n')+1));if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
   workspaceSnapshot();
   for(const [path,content] of Object.entries(data.files||{})){
@@ -382,7 +382,7 @@ $('projectInput').addEventListener('change',async e=>{
   cwd='';filename=Object.hasOwn(files,'main.py')?'main.py':Object.keys(files).sort()[0];
   openTabs=[filename];expanded.clear();for(const p of dirs)expanded.add(p);
   if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename];
-  renderTabs();renderFiles();updatePrompt();persist(true);
+  renderTabs();renderFiles();updatePrompt();if(enhancedTerminal&&terminalMode==='shell')enhancedTerminal.setPrompt(displayPath()+' $ ');persist(true);
   append('Imported '+count+' files from ZIP.\n','success-line');
  }catch(err){alert('Project import failed: '+err.message);}
 });
