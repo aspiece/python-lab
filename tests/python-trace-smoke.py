@@ -36,6 +36,8 @@ def test_loops_and_locals():
     assert len(result["frames"]) >= 5
     assert any("total" in frame["locals"] for frame in result["frames"])
     assert "3" in result["output"]
+    assert result["frames"][-1]["function"] == "<completed>"
+    assert "3" in result["frames"][-1]["output"]
 
 
 def test_entered_input():
