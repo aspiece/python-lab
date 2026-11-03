@@ -4,12 +4,50 @@
  const $=id=>document.getElementById(id);
  let install=null;
  const source=()=>window.pythonLabCS50P;
+ // Keep previously shared classroom URLs working, but do not show these
+ // older examples in the new CS50P-only gallery.
+ const legacy={
+  'hello-world':{
+   title:'Hello, Python!',description:'Original beginner greetings exercise.',
+   files:{
+    'main.py':'# New greeting practice\nname = input("What is your name? ")\nprint(f"Hello, {name}!")\n',
+    'README.md':'# Hello, Python!\nChange the greeting and add a second question.\n'
+   }
+  },
+  'loops-lists':{
+   title:'Loops and Lists',description:'Original list and loop practice.',
+   files:{
+    'main.py':'scores = [8, 10, 7, 9]\ntotal = 0\nfor score in scores:\n    total += score\n    print(f"Total: {total}")\n',
+    'README.md':'# Loops and Lists\nExperiment with totals, iteration, and averages.\n'
+   }
+  },
+  'functions-tests':{
+   title:'Functions and Tests',description:'Original pytest practice.',
+   files:{
+    'main.py':'def square(number):\n    return number * number\n\nif __name__ == "__main__":\n    print(square(5))\n',
+    'test_main.py':'from main import square\n\ndef test_square():\n    assert square(4) == 16\n',
+    'README.md':'# Functions and Tests\nTest and extend the square function.\n'
+   }
+  },
+  'cs50p-style':{
+   title:'CS50P-Style Practice',description:'Original answer-checking exercise.',
+   files:{
+    'main.py':'def main():\n    answer = input("What is the answer? ").strip()\n    print(answer)\n\nif __name__ == "__main__":\n    main()\n',
+    'README.md':'# CS50P-Style Practice\nAn original practice exercise, not an official CS50 assignment.\n'
+   }
+  }
+ };
  function show(){
   const dialog=$('templatesDialog');
   render();
   if(dialog?.showModal&&!dialog.open)dialog.showModal();
  }
- function get(id){return source()?.get(id)||null;}
+ function get(id){
+  const official=source()?.get(id);
+  if(official)return official;
+  const old=legacy[id];
+  return old?{id,entryFile:'main.py',...JSON.parse(JSON.stringify(old))}:null;
+ }
  function assignmentUrl(id){
   if(!get(id))throw Error('Unknown starter project');
   const url=new URL(window.location.href);
