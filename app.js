@@ -40,7 +40,7 @@ window.pythonLabTerminalHost={
  attach(adapter){
   enhancedTerminal=adapter;
   const previous=$('output').textContent;if(previous)adapter.write(previous);
-  adapter.setMode(terminalMode==='shell'?'shell':terminalMode==='input'?'input':'busy',displayPath()+' $ ');
+  adapter.setMode(terminalMode==='shell'?'shell':terminalMode==='input'?'input':'busy',terminalMode==='input'?scriptTranscript.slice(scriptTranscript.lastIndexOf('\n')+1):displayPath()+' $ ');
  },
  submit:receiveTerminalLine,
  interrupt:()=>stop(),
@@ -221,7 +221,7 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=13');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input');if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=13');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',scriptTranscript.slice(scriptTranscript.lastIndexOf('\n')+1));if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
   workspaceSnapshot();
   for(const [path,content] of Object.entries(data.files||{})){
    const prior=files[path],model=models.get(path);
@@ -249,7 +249,7 @@ function executePython(name,args=[],command=''){
  updateButtons();setStatus('Running…');
  activeRun={code:files[name],filename:name,files:{...files},dirs:[...dirs],cwd:parent(name),args,command};
  lastExecutionFiles={...activeRun.files};
- if(!command)append(displayPath()+' $ python '+name+(args.length?' '+args.join(' '):'')+'\n');
+ if(!command){const label='python '+name+(args.length?' '+args.join(' '):'');if(enhancedTerminal)enhancedTerminal.echoCommand(label);else append(displayPath()+' $ '+label+'\n');}
  sendExecution();persist();
 }
 function run(){if(!filename.endsWith('.py')){append('Select a .py file to run.\n','error-line');return;}executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
@@ -283,7 +283,7 @@ function runWorkerCode(code,command){
  activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command};
  inputHistory=[];replayBaseline='';scriptTranscript='';replayWarned=false;
  lastExecutionFiles={...activeRun.files};
- if(command&&!enhancedTerminal)append(displayPath()+' $ '+command+'\n');
+ if(command){if(enhancedTerminal)enhancedTerminal.echoCommand(command);else append(displayPath()+' $ '+command+'\n');}
  sendExecution();
 }
 function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["/home/pyodide","-q","--tb=short"])','python -m pytest -q');}
@@ -371,7 +371,7 @@ window.addEventListener('keydown',e=>{
  else if(key==='s'){e.preventDefault();persist(true);}
  else if(key==='b'){e.preventDefault();toggleSidebar();}
  else if(key==='p'){e.preventDefault();openPalette(e.shiftKey?'command':'file');}
- else if(e.code==='Backquote'){e.preventDefault();if(panelCollapsed)togglePanel();$('terminalInput')?.focus();}
+ else if(e.code==='Backquote'){e.preventDefault();if(panelCollapsed)togglePanel();if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput')?.focus();}
  else if(key==='w'){e.preventDefault();closeTab(filename);}
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
