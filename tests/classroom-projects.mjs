@@ -95,6 +95,20 @@ await settle();
 assert.equal(first.document.title.includes('My Python Lab'),true);
 assert.equal(first.nodes.fallbackEditor.value,legacy,'Switch did not restore original content');
 
+// Manual starter selection creates its own folder and switches to the correct filename.
+const starterCards=first.nodes.templateGallery.children.filter(item=>item.className==='template-option');
+const indoorCard=starterCards.find(item=>item.children[0].children[0].textContent==='Indoor Voice');
+assert(indoorCard,'Indoor Voice starter not found in classroom gallery');
+indoorCard.children[0].click();
+const afterStarter=first.window.pythonLabWorkspace();
+assert.equal(afterStarter.filename,'cs50p-0-indoor/indoor.py','Starter did not open the required Python filename');
+assert(afterStarter.files['cs50p-0-indoor/indoor.py'],'Starter was not added to a folder');
+assert.equal(afterStarter.files['main.py'],legacy,'Starter selection overwrote original student work');
+// The prior four starter IDs remain usable by already-shared Canvas URLs.
+assert(first.window.pythonLabTemplates.get('functions-tests')?.files['test_main.py']);
+assert(!first.window.pythonLabTemplates.catalog().some(p=>p.id==='functions-tests'),
+ 'Old generic examples should not appear in the CS50P-only gallery');
+
 // Assignment starter URL creates a separate project and deduplicates return visits.
 const assignment='?starter=cs50p-5-test_fuel&assignment=courseunit42';
 const second=createBrowser(assignment);
