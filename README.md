@@ -1,3 +1,15 @@
+# CS50P starters: guided, exception-free, assignment-named folders
+
+All 41 **CS50P Starters** now provide original, student-friendly planning comments, optional input/variable setup, actionable TODOs, and assignment-specific self-check ideas. Every project's README includes a detailed checklist and the official Harvard assignment URL.
+
+Select **Indoor Voice** to create `indoor/indoor.py` (plus `indoor/README.md`). Choosing the same assignment again creates `indoor-2/indoor.py` without overwriting the first. Other assignments follow their official problem slugs, for example `test_fuel/test_fuel.py`, with the related `fuel.py` in the same folder.
+
+The generated starter **does not throw a forced NotImplementedError**. Empty functions and methods use `pass` so students can fill in the logic themselves. Unfinished pytest functions use `pytest.skip(...)` until the student adds meaningful assertions, avoiding falsely passing tests.
+
+Canvas starter links retain their identifiers; an assignment opened in a separate student project is named after its problem folder (such as `indoor`) and stores `indoor.py` at that project root. Older student projects and folders are not automatically renamed or modified. The public starter code contains no working solutions from the private instructor reference repository.
+
+---
+
 ## Reference-aligned CS50P scaffolds and spacing
 
 The CS50P starter gallery retains all 41 existing problem links and filenames. The original, unsolved starter scaffolds now better reflect the expected shape of reference implementations:
@@ -33,9 +45,9 @@ The gallery is grouped by problem set, with search and a dropdown filter:
 
 ### Starter creation
 
-Select **CS50P Starters**, choose a problem, and click its card. The workspace creates a **separate, uniquely named folder** with the appropriate Python filename (for example, indoor.py or test_fuel.py), original TODO blocks, and a README linking to the official assignment.
+Select **CS50P Starters**, choose a problem, and click its card. The workspace creates a **separate folder named for the official assignment slug**, with its expected Python filename (for example, `indoor/indoor.py` or `test_fuel/test_fuel.py`), guided TODO blocks, and a README linking to the official assignment.
 
-Problem Set 5 includes both the student's implementation module (for example, fuel.py) and its test_fuel.py file, which opens automatically. Later assignments that require testing include matching unsolved test-file scaffolds. Students must replace TODOs and add meaningful tests themselves; the starters intentionally raise NotImplementedError until completed. This library does **not** include completed solutions or answer keys.
+Problem Set 5 includes both the student's implementation module (for example, fuel.py) and its test_fuel.py file, which opens automatically. Later assignments that require testing include matching unsolved test-file scaffolds. Students must complete the TODOs and create their own test assertions. Function stubs use `pass`, and uncompleted pytest stubs are explicitly skipped. This library does **not** include completed solutions or answer keys.
 
 Open **Official instructions** from a problem card or select **Copy assignment link** to share a reusable student starter link through Canvas. Returning to the same link in the same browser profile reopens that student's saved assignment.
 
