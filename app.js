@@ -53,7 +53,7 @@ function renderTabs(){
  }
  updateStatusBar();
 }
-function setFilename(value){filename=normalize(value||'main.py','');if(!filename.includes('.'))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);if(!openTabs.includes(filename))openTabs.push(filename);renderTabs();updateStatusBar();persist();}
+function setFilename(value){filename=normalize(value||'main.py','');if(!/\.[^/]+$/.test(filename))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);if(!openTabs.includes(filename))openTabs.push(filename);renderTabs();updateStatusBar();persist();}
 function switchToFile(next){
  if(!Object.hasOwn(files,next))return;
  if(next===filename){if(!openTabs.includes(next))openTabs.push(next);renderTabs();return;}
@@ -185,7 +185,7 @@ function executePython(name,args=[],command=''){files[filename]=getCode();name=(
 function run(){if(!filename.endsWith('.py')){append('Select a .py file to run.\n','error-line');return;}executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
 function stop(){if(!running)return;terminalMode='shell';activeRun=null;inputHistory=[];$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
 function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'text/x-python;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const path=normalize(name,'')+(name.includes('.')?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
+function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
 function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';$('terminalInput').focus();}
 function shellCommand(line){
   files[filename]=getCode();const args=line.trim().match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
@@ -208,7 +208,7 @@ else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible pac
   showShell();
 }
 function runWorkerCode(code,command){if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();updateButtons();activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command};inputHistory=[];sendExecution();}
-function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["-q","--tb=short"])','python -m pytest -q');}
+function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["/home/pyodide","-q","--tb=short"])','python -m pytest -q');}
 $('downloadProjectBtn').addEventListener('click',downloadProject);
 $('importProjectBtn').addEventListener('click',()=> $('projectInput').click());
 $('projectInput').addEventListener('change',async e=>{
@@ -260,7 +260,7 @@ $('addFolderBtn').addEventListener('click',()=>{
 });
 $('addFileBtn').addEventListener('click',()=>{
  const name=prompt('New file path',cwd?cwd+'/test_main.py':'test_main.py');if(!name)return;
- try{const path=normalize(name,'')+(name.includes('.')?'':'.py');if(!path)return;if(Object.hasOwn(files,path)){switchToFile(path);return;}
+ try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(!path)return;if(Object.hasOwn(files,path)){switchToFile(path);return;}
   if(parent(path)&&!dirs.has(parent(path)))throw Error('Create the parent folder first.');
   workspaceSnapshot();files[path]=path.endsWith('.py')?'# '+path+'\n':'';switchToFile(path);
  }catch(err){alert(err.message);}
@@ -269,7 +269,7 @@ $('testBtn').addEventListener('click',executeVirtualTest);
 fallback.addEventListener('input',persist);fallback.addEventListener('click',updateStatusBar);fallback.addEventListener('keyup',updateStatusBar);
 $('fileInput').addEventListener('change',async e=>{
  const f=e.target.files?.[0];e.target.value='';if(!f)return;
- try{if(f.size>1048576)throw Error('File must be under 1 MB');workspaceSnapshot();const path=normalize(cwd?cwd+'/'+f.name:f.name,'');if(parent(path)&&!dirs.has(parent(path)))ensureDirs(parent(path));files[path]=await f.text();switchToFile(path);}
+ try{if(f.size>1048576)throw Error('File must be under 1 MB');workspaceSnapshot();const path=normalize(cwd?cwd+'/'+f.name:f.name,'');if(parent(path)&&!dirs.has(parent(path)))ensureDirs(parent(path));files[path]=await f.text();if(path===filename){setCode(files[path]);renderFiles();}else switchToFile(path);}
  catch(err){append('Open failed: '+err.message+'\n','error-line');}
 });
 $('explorerToggle').addEventListener('click',toggleSidebar);
