@@ -107,7 +107,7 @@
    const start=document.createElement('button');start.className='template-choice';
    const label=document.createElement('strong');label.textContent=problem.title;
    const metadata=document.createElement('span');metadata.className='template-filename';
-   metadata.textContent=problem.filename;
+   metadata.textContent=(problem.folderName||problem.slug||problem.id)+'/'+problem.filename;
    const description=document.createElement('span');description.textContent=problem.description;
    start.append(label,metadata,description);
    start.title='Create '+problem.title+' as a new project folder';
