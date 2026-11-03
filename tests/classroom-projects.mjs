@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext,Script} from 'node:vm';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const html=read('index.html'),app=read('app.js'),storeSource=read('project-store.js'),templates=read('classroom-templates.js');
-for(const [name,source] of [['app.js',app],['project-store.js',storeSource],['classroom-templates.js',templates]])new Script(source,{filename:name});
+const html=read('index.html'),app=read('app.js'),storeSource=read('project-store.js'),templates=read('classroom-templates.js'),cs50=read('cs50p-starters.js');
+for(const [name,source] of [['app.js',app],['project-store.js',storeSource],['classroom-templates.js',templates],['cs50p-starters.js',cs50]])new Script(source,{filename:name});
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 const backing=new Map();
 const localStorage={
@@ -51,6 +51,7 @@ function createBrowser(search=''){
  };
  const storeContext={window,localStorage,Date,Math,JSON,Promise,console};
  runInNewContext(storeSource,storeContext);
+ runInNewContext(cs50,{window});
  runInNewContext(templates,{window,document,URL,Math,JSON,prompt:()=>null,console});
  class Worker{
   constructor(){this.calls=[];Worker.current=this;}
@@ -94,23 +95,37 @@ await settle();
 assert.equal(first.document.title.includes('My Python Lab'),true);
 assert.equal(first.nodes.fallbackEditor.value,legacy,'Switch did not restore original content');
 
+// Manual starter selection creates its own folder and switches to the correct filename.
+const starterCards=first.nodes.templateGallery.children.filter(item=>item.className==='template-option');
+const indoorCard=starterCards.find(item=>item.children[0].children[0].textContent==='Indoor Voice');
+assert(indoorCard,'Indoor Voice starter not found in classroom gallery');
+indoorCard.children[0].click();
+const afterStarter=first.window.pythonLabWorkspace();
+assert.equal(afterStarter.filename,'cs50p-0-indoor/indoor.py','Starter did not open the required Python filename');
+assert(afterStarter.files['cs50p-0-indoor/indoor.py'],'Starter was not added to a folder');
+assert.equal(afterStarter.files['main.py'],legacy,'Starter selection overwrote original student work');
+// The prior four starter IDs remain usable by already-shared Canvas URLs.
+assert(first.window.pythonLabTemplates.get('functions-tests')?.files['test_main.py']);
+assert(!first.window.pythonLabTemplates.catalog().some(p=>p.id==='functions-tests'),
+ 'Old generic examples should not appear in the CS50P-only gallery');
+
 // Assignment starter URL creates a separate project and deduplicates return visits.
-const assignment='?starter=functions-tests&assignment=courseunit42';
+const assignment='?starter=cs50p-5-test_fuel&assignment=courseunit42';
 const second=createBrowser(assignment);
 await settle();
 const assignmentRecords=await second.window.pythonLabProjects.list();
 const assigned=assignmentRecords.find(p=>p.assignmentKey==='courseunit42');
 assert(assigned,'Assignment starter was not created');
 const assignedProject=await second.window.pythonLabProjects.get(assigned.id);
-assert(assignedProject.snapshot.files['test_main.py'],'Assignment tests missing');
-assert(assignedProject.snapshot.files['main.py'],'Assignment starter code missing');
-assert.equal(assignedProject.snapshot.filename,'main.py');
+assert(assignedProject.snapshot.files['test_fuel.py'],'Assignment tests missing');
+assert(assignedProject.snapshot.files['fuel.py'],'Assignment starter code missing');
+assert.equal(assignedProject.snapshot.filename,'test_fuel.py');
 const third=createBrowser(assignment);
 await settle();
 assert.equal((await third.window.pythonLabProjects.list()).length,3,'Reopening assignment created a duplicate');
-const share=third.window.pythonLabTemplates.assignmentUrl('loops-lists');
+const share=third.window.pythonLabTemplates.assignmentUrl('cs50p-2-coke');
 const parsed=new URL(share);
-assert.equal(parsed.searchParams.get('starter'),'loops-lists');
+assert.equal(parsed.searchParams.get('starter'),'cs50p-2-coke');
 assert(parsed.searchParams.get('assignment')?.length>=6,'Assignment link lacks unique key');
 assert(!share.includes('print('),'Student source code should never be encoded in a share link');
 

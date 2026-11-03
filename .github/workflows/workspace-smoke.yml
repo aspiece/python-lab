@@ -33,3 +33,5 @@ jobs:
         run: node tests/project-store.mjs
       - name: Validate classroom project switching and assignment links
         run: node tests/classroom-projects.mjs
+      - name: Verify 41 CS50P scaffold files and searchable template gallery
+        run: node tests/cs50p-starters.mjs
