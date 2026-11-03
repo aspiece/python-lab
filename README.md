@@ -1,3 +1,27 @@
+# Phase 5 — Student Projects and Classroom Workflow
+
+Python Lab now supports **multiple named local projects**. Use the project selector beside the Python Lab title to open, create, rename, or delete projects. Files, folders, open editor tabs, cursor state where supported, and breakpoints are saved separately per project.
+
+## Where student work is saved
+
+- Python Lab primarily saves projects in **IndexedDB in the current browser profile**. Existing work from the original Python Lab localStorage workspace is migrated into the first project automatically.
+- If IndexedDB is unavailable, the app attempts a limited localStorage fallback. When browser storage is blocked altogether, the app warns that work is temporary.
+- **This is not cloud synchronization or a school-account login.** Work does not automatically transfer between school computers, home computers, phones, private browsing sessions, or different browsers. Students should periodically download a **Project ZIP backup**, especially when using shared school computers.
+- The application does not send student source files or project contents to a Python Lab server. Browser execution may still make network requests if student code does so.
+
+## Canvas assignment workflow
+
+1. A teacher opens **Templates** and chooses **Copy assignment link** beside an original starter example. The link contains only a starter template identifier and a random classroom-link key, not a student's files or identity. Paste that link into Canvas.
+2. A student opens the link, confirms the new project, and works in Python Lab. Returning through the **same link on the same browser profile** reopens that saved project rather than creating a duplicate.
+3. The student selects **Submission ZIP** (or the equivalent command in the Command Palette) and uploads the downloaded ZIP as a Canvas file submission. Python Lab does **not** directly submit to Canvas and cannot report a submission grade.
+4. The teacher can import the submitted ZIP into Python Lab as a **separate project** without erasing existing work. Imported files are limited to supported text formats.
+
+Project sharing is **starter-only**. Do not use a starter link as a way to collect student answers or distribute private grading data. The original CS50P-style example is not an official Harvard assignment. Use the official CS50 environment for check50 and submit50.
+
+Cloud persistence with Google or Microsoft accounts and Canvas-authenticated assignment hand-in would require a separately approved, privacy-reviewed authenticated backend. It is not part of this static GitHub Pages release.
+
+---
+
 # Phase 4 — Recorded Debug Traces and Classroom Starter Projects
 
 Python Lab now includes a beginner-friendly **Debug Trace** panel. Click **Debug** (or use the Command Palette) to record a trace of the selected Python script. Enter any input answers one per line. The program executes once inside a temporary Pyodide project copy; the editor then replays the recorded line-by-line snapshots.
