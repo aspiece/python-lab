@@ -61,6 +61,53 @@ for(const id of ['cs50p-5-test_twttr','cs50p-5-test_bank','cs50p-5-test_plates',
 for(const id of ['cs50p-7-numb3rs','cs50p-7-working','cs50p-7-um','cs50p-8-seasons','cs50p-8-jar']){
  assert(Object.keys(api.get(id).files).some(p=>p.startsWith('test_')),'Expected a pytest starter: '+id);
 }
+// Verify unsolved structural outlines against the project owner's reference
+// while intentionally excluding all private implementation bodies and answers.
+const shapes=[
+ ['cs50p-0-faces','faces.py',['def convert(s):'],[]],
+ ['cs50p-2-twttr','twttr.py',['def is_vowel(letter):'],[]],
+ ['cs50p-4-game','game.py',['def get_guess():','def get_level():','def get_number(prompt):'],['import random']],
+ ['cs50p-4-figlet','figlet.py',[],['from pyfiglet import Figlet','import sys']],
+ ['cs50p-5-test_bank','bank.py',['def value(greeting):'],[]],
+ ['cs50p-6-pizza','pizza.py',[],['import csv','from tabulate import tabulate']],
+ ['cs50p-6-scourgify','scourgify.py',[],['import csv','import sys']],
+ ['cs50p-6-shirt','shirt.py',[],['from PIL import Image, ImageOps']],
+ ['cs50p-7-working','working.py',['def convert(s):','def convert_time(t):'],['import re','import sys']],
+ ['cs50p-7-response','response.py',[],['import validators']],
+ ['cs50p-8-seasons','seasons.py',['def calculate(t0, t1):'],['from datetime import date','import inflect']],
+ ['cs50p-8-shirtificate','shirtificate.py',['class PDF(FPDF):','def header(self):'],['from fpdf import FPDF']]
+];
+for(const [id,filename,signatures,imports] of shapes){
+ const code=api.get(id).files[filename];
+ assert(code,'Missing '+filename+' in '+id);
+ for(const signature of signatures)assert(code.includes(signature),'Missing reference signature '+signature+' in '+id);
+ for(const spec of imports)assert(code.includes(spec),'Missing package import '+spec+' in '+id);
+ assert(code.includes('NotImplementedError'),'Source code should remain unsolved: '+id);
+}
+for(const [id,testsExpected] of [
+ ['cs50p-5-test_twttr',['test_shorten']],
+ ['cs50p-5-test_bank',['test_hello','test_with_h','test_without_h']],
+ ['cs50p-5-test_fuel',['test_convert','test_gauge']],
+ ['cs50p-7-working',['test_format','test_with_minutes','test_without_minutes']],
+ ['cs50p-8-seasons',['test_calculate']],
+ ['cs50p-8-jar',['test_init','test_str','test_deposit','test_withdraw']]
+]){
+ const p=api.get(id);
+ const file=Object.entries(p.files).find(([name])=>name.startsWith('test_')&&name.endsWith('.py'));
+ assert(file,'Tests file missing in '+id);
+ for(const functionName of testsExpected)assert(file[1].includes('def '+functionName+'():'),'Missing test case outline '+functionName);
+ assert(!/\bassert\s+(?:True|False|\d)/.test(file[1]),'Do not ship solved test assertions');
+}
+for(const id of ['cs50p-0-indoor','cs50p-1-deep','cs50p-3-grocery','cs50p-6-lines']){
+ const p=api.get(id);
+ assert(!p.files[p.entryFile].includes('def main():'),'Reference top-level script became a forced main() template: '+id);
+}
+const css=read('styles.css');
+assert(css.includes('.cs50p-dialog #templateGallery{'),'Missing CS50P layout refresh');
+assert(css.includes('grid-template-columns:repeat(2,minmax(0,1fr))'),'Wide screen two-column layout missing');
+assert(css.includes('@media(max-width:720px)'),'Compact breakpoint missing');
+assert(css.includes('grid-template-columns:minmax(0,1fr)'),'Single-column mobile layout missing');
+
 const jar=api.get('cs50p-8-jar').files['jar.py'];
 for(const name of ['__init__','__str__','deposit','withdraw','capacity','size']){
  assert(jar.includes('def '+name+'('),'Jar class missing '+name);
