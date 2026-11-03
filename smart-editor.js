@@ -42,7 +42,7 @@
   ['with','with open(${1:"file.txt"}, ${2:"r"}) as ${3:file}:\n    ${0:pass}','File context manager']
  ];
  const docs=new Map(BUILTINS.map(x=>[x[0],x]));
- const state={editor:null,monaco:null,models:null,getFiles:null,getWorker:null,isReady:null,isBusy:null,openFile:null,activeFile:null,reveal:null,requestId:0,timer:null,problems:[],tests:null,view:'terminal'};
+ const state={editor:null,monaco:null,models:null,getFiles:null,getWorker:null,isReady:null,isBusy:null,openFile:null,activeFile:null,reveal:null,requestId:0,timer:null,problems:[],checked:false,checkError:'',tests:null,view:'terminal'};
  function setView(next){
   state.view=next;state.reveal?.();
   const host=$('consoleLayout');
@@ -65,7 +65,7 @@
   const problems=state.problems.slice().sort((a,b)=>a.file.localeCompare(b.file)||a.line-b.line);
   if(!problems.length){
    const message=document.createElement('p');message.className='analysis-empty';
-   message.textContent='No Python syntax errors detected. This checks syntax, not logic or types.';
+   message.textContent=state.checkError||(!state.checked?'Waiting for Python syntax checking…':'No Python syntax errors detected. This checks syntax, not logic or types.');
    list.append(message);return;
   }
   for(const p of problems){
@@ -124,6 +124,7 @@
  function onWorkerMessage(data){
   if(data.type==='diagnostics'){
    if(data.id!==state.requestId)return;
+   state.checked=true;state.checkError=data.error||'';
    state.problems=(Array.isArray(data.problems)?data.problems:[]).filter(p=>p&&typeof p.file==='string');
    updateMarkers();renderProblems();
   }else if(data.type==='testResults'){
