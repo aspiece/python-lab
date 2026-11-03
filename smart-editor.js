@@ -131,6 +131,11 @@
    state.tests={running:false,tests:Array.isArray(data.tests)?data.tests:[],exitCode:data.exitCode,error:data.error||''};renderTests();
   }
  }
+ function resetProject(){
+  clearTimeout(state.timer);state.requestId++;
+  state.problems=[];state.tests=null;state.checked=false;state.checkError='';
+  updateMarkers();renderProblems();renderTests();schedule();
+ }
  function beginTests(){state.tests={running:true,tests:[]};renderTests();setView('tests');}
  function registerProviders(){
   const monaco=state.monaco;
@@ -163,5 +168,5 @@
  function attach(options){Object.assign(state,options);if(state.monaco&&state.editor){registerProviders();onOpened();}renderProblems();renderTests();schedule();}
  for(const [id,view] of [['terminalPanelBtn','terminal'],['problemsPanelBtn','problems'],['testsPanelBtn','tests']])$(id)?.addEventListener('click',()=>setView(view));
  renderProblems();renderTests();
- window.pythonLabSmart={attach,onWorkerReady:schedule,onWorkerMessage,onOpened,schedule,beginTests,setView};
+ window.pythonLabSmart={attach,onWorkerReady:schedule,onWorkerMessage,onOpened,schedule,resetProject,beginTests,setView};
 })();
