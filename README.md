@@ -1,3 +1,24 @@
+# Phase 4 — Recorded Debug Traces and Classroom Starter Projects
+
+Python Lab now includes a beginner-friendly **Debug Trace** panel. Click **Debug** (or use the Command Palette) to record a trace of the selected Python script. Enter any input answers one per line. The program executes once inside a temporary Pyodide project copy; the editor then replays the recorded line-by-line snapshots.
+
+To inspect a trace:
+
+1. Click the editor's line-number gutter or press **F9** to add a breakpoint (red dot).
+2. Choose **Debug → Record Trace** and enter any required inputs. The tracer records at most **450 line events** to guard against runaway loops.
+3. Use **Next** or **F11** to advance one recorded line, **Back** to revisit earlier snapshots, and **Step Over** or **F10** to skip nested function frames. **Continue** jumps to the next breakpoint or the final snapshot.
+4. Inspect the local variables and output-so-far panels. Variables reflect the moment **before** the highlighted Python line executes.
+
+**This is recorded trace playback, not a live paused debugger.** Breakpoints mark positions in the recorded history rather than interrupting execution. Back does not undo side effects. Each trace executes code once in a temporary project directory, but imported packages, network requests, and external effects are not sandboxed. The trace cap limits ordinary Python loops; code that blocks inside native libraries may still require **Stop**. Existing saved project files are not replaced by trace results. The trace uses Pyodide and supports project-relative imports, but is not a replacement for VS Code's full debugger.
+
+### Beginner starter gallery
+
+Select **Templates** or **Create Starter Project** from the Command Palette to create a separately named project folder with starter files. Available examples: Hello Python, Loops and Lists, Functions and Tests, and CS50P-style Practice. Repeated imports create suffixed folders such as hello-world-2 instead of overwriting student work.
+
+The CS50P-style sample is an original practice exercise, **not** an official Harvard CS50 problem set or submission environment.
+
+---
+
 ## Phase 3 — Smart Python editor (GitHub Pages)
 
 Python Lab now provides lightweight Python IntelliSense in Monaco: Python keywords, common built-in functions with hover help, reusable code snippets (for loops, conditionals, functions, classes, try/except, and file access), and simple project identifier completion. These suggestions are intended as beginner assistance, **not** a complete Python language server or static type checker.
