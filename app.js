@@ -258,35 +258,79 @@ function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'te
 function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
 function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';if(enhancedTerminal){enhancedTerminal.setMode('shell',displayPath()+' $ ');}else $('terminalInput').focus();}
 function shellCommand(line,alreadyEchoed=false){
+ try{
   files[filename]=getCode();const args=line.trim().match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
   if(!alreadyEchoed)append(displayPath()+' $ '+line+'\n');
   if(!args.length){showShell();return;}
   const cmd=args[0],rest=args.slice(1);
   if(cmd==='clear'||cmd==='cls'){clearTerminal();}
-  else if(cmd==='help')append('Commands: python FILE.py [args], python -m pytest, pytest, ls, dir, pwd, cd DIR, mkdir [-p] DIR, cat FILE, touch FILE, pip list, pip install PACKAGE, clear, help\nNote: A browser simulation, not a system shell.\n');
-  else if(cmd==='ls'||cmd==='dir'){const target=normalize(rest[0]||'.');if(target&&!dirs.has(target))append('No such directory: '+target+'\n','error-line');else append([...dirs].filter(d=>parent(d)===target).map(d=>d.split('/').pop()+'/').concat(Object.keys(files).filter(f=>parent(f)===target).map(f=>f.split('/').pop())).sort().join('    ')+'\n');}
-  else if(cmd==='pwd')append('/home/pyodide/'+cwd+'\n');
+  else if(cmd==='help')append('Commands: python FILE.py [args], python -c CODE, python -m pytest, pytest, ls, tree, pwd, cd, mkdir [-p], cat, echo, touch, cp, rm, whoami, clear, help\nNote: This is a safe browser simulation, not a full system shell. pip install and submit50 are not available.\n');
+  else if(cmd==='ls'||cmd==='dir'){const target=normalize(rest.find(a=>!a.startsWith('-'))||'.');if(target&&!dirs.has(target))append('No such directory: '+target+'\n','error-line');else append([...dirs].filter(d=>parent(d)===target).map(d=>d.split('/').pop()+'/').concat(Object.keys(files).filter(f=>parent(f)===target).map(f=>f.split('/').pop())).sort().join('    ')+'\n');}
+  else if(cmd==='pwd')append('/home/pyodide'+(cwd?'/'+cwd:'')+'\n');
+  else if(cmd==='echo')append(rest.join(' ')+'\n');
+  else if(cmd==='whoami')append('student (browser simulation)\n');
+  else if(cmd==='python'&&['-V','--version'].includes(rest[0]))append('Python (Pyodide browser runtime)\n');
+  else if((cmd==='python'||cmd==='python3')&&rest[0]==='-c'&&rest[1]!==undefined){runWorkerCode(rest.slice(1).join(' '),line,true);return;}
+  else if(cmd==='tree'){
+    const root=normalize(rest[0]||'.');if(root&&!dirs.has(root)){append('tree: no such directory: '+root+'\n','error-line');}
+    else{
+      const entries=[];
+      for(const p of [...dirs,...Object.keys(files)].sort()){
+        if(root&&!p.startsWith(root+'/'))continue;
+        const rel=root?p.slice(root.length+1):p;
+        if(!rel)continue;
+        entries.push('  '.repeat(Math.max(0,rel.split('/').length-1))+(dirs.has(p)?'📁 ':'📄 ')+rel.split('/').pop());
+      }
+      append((root||'.')+'/\n'+(entries.length?entries.join('\n'):'  (empty)')+'\n');
+    }
+  }
   else if(cmd==='cat'||cmd==='type')append(files[normalize(rest[0]||'')]===undefined?'File not found\n':files[normalize(rest[0])]+'\n');
+  else if(cmd==='cp'){
+    if(rest.length!==2){append('Usage: cp SOURCE DEST\n','error-line');}
+    else{const source=normalize(rest[0]),dest=normalize(rest[1]);
+      if(!Object.hasOwn(files,source))append('cp: source file not found\n','error-line');
+      else if(Object.hasOwn(files,dest)||dirs.has(dest))append('cp: destination already exists\n','error-line');
+      else if(parent(dest)&&!dirs.has(parent(dest)))append('cp: destination folder not found\n','error-line');
+      else{files[dest]=files[source];renderFiles();persist();}
+    }
+  }
+  else if(cmd==='rm'){
+    if(!rest[0])append('Usage: rm FILE\n','error-line');
+    else{const path=normalize(rest[0]);
+      if(!Object.hasOwn(files,path))append('rm: file not found\n','error-line');
+      else if(Object.keys(files).length===1)append('rm: cannot remove the last project file\n','error-line');
+      else if(running)append('rm: stop the running program first\n','error-line');
+      else{
+        delete files[path];openTabs=openTabs.filter(p=>p!==path);
+        const m=models.get(path);if(m){if(editor?.getModel()===m)editor.setModel(null);m.dispose();models.delete(path);}
+        viewStates.delete(path);
+        if(filename===path){filename=Object.keys(files).sort()[0];if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename];}
+        if(!openTabs.includes(filename))openTabs.push(filename);
+        renderFiles();renderTabs();persist();
+      }
+    }
+  }
   else if(cmd==='touch'){if(!rest[0])append('Usage: touch FILE\n');else{const p=normalize(rest[0]);if(!dirs.has(parent(p))&&parent(p))append('No such directory\n','error-line');else {files[p]??='';renderFiles();persist();}}}
   else if(cmd==='mkdir'){if(!rest[0])append('Usage: mkdir [-p] DIRECTORY\n');else{const recursive=rest[0]==='-p';const target=normalize(rest[recursive?1:0]||'');if(!target)append('Invalid directory\n','error-line');else if(dirs.has(target))append('Directory already exists\n');else if(!recursive&&parent(target)&&!dirs.has(parent(target)))append('Parent directory does not exist (try mkdir -p)\n','error-line');else{ensureDirs(target);expanded.add(target);renderFiles();persist();}}}
   else if(cmd==='cd'){const target=rest.length?normalize(rest[0]):'';if(!target||dirs.has(target)){cwd=target;updatePrompt();persist();}else append('cd: no such directory: '+rest[0]+'\n','error-line');}
 else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible packages. Try: pip install <package>\n');
-  else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){executeVirtualTest();return;}
+  else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){executeVirtualTest(true);return;}
   else if((cmd==='python'||cmd==='python3')&&rest[0]?.endsWith('.py')){executePython(rest[0],rest.slice(1),line);return;}
   else if(cmd==='pip'&&rest[0]==='install'&&rest[1]){append('Automatic package installation is available when a supported package is imported in Python. Direct pip install is not yet supported here.\n','error-line');}
   else append(cmd+': command not supported in the browser terminal\n','error-line');
   showShell();
+ }catch(err){append('Command error: '+err.message+'\n','error-line');showShell();}
 }
-function runWorkerCode(code,command){
+function runWorkerCode(code,command,alreadyEchoed=false){
  if(!ready||running)return;workspaceSnapshot();
  running=true;terminalMode='busy';runStart=performance.now();updateButtons();
  activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command};
  inputHistory=[];replayBaseline='';scriptTranscript='';replayWarned=false;
  lastExecutionFiles={...activeRun.files};
- if(command){if(enhancedTerminal)enhancedTerminal.echoCommand(command);else append(displayPath()+' $ '+command+'\n');}
+ if(command&&!alreadyEchoed){if(enhancedTerminal)enhancedTerminal.echoCommand(command);else append(displayPath()+' $ '+command+'\n');}
  sendExecution();
 }
-function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["/home/pyodide","-q","--tb=short"])','python -m pytest -q');}
+function executeVirtualTest(alreadyEchoed=false){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["/home/pyodide","-q","--tb=short"])','python -m pytest -q',alreadyEchoed);}
 $('downloadProjectBtn').addEventListener('click',downloadProject);
 $('importProjectBtn').addEventListener('click',()=> $('projectInput').click());
 $('projectInput').addEventListener('change',async e=>{
