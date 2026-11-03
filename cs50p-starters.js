@@ -533,20 +533,81 @@
  }
 ];
 
+
+ // Derived only from file names, import statements, function/class
+ // signatures, and test names in the project owner's private reference.
+ // No implementation logic, assertions, API tokens, or solution text is copied.
+ const reference={
+  '0/faces':{functions:['convert(s)'],main:true},
+  '0/tip':{functions:['dollars_to_float(d)','percent_to_float(p)'],main:true},
+  '1/meal':{functions:['convert(time)'],main:true},
+  '2/twttr':{functions:['is_vowel(letter)'],main:true},
+  '2/plates':{functions:['is_valid(s)'],main:true},
+  '4/emojize':{imports:['import emoji']},
+  '4/figlet':{imports:['import random','import sys','from pyfiglet import Figlet']},
+  '4/adieu':{imports:['import inflect']},
+  '4/game':{imports:['import random'],functions:['get_guess()','get_level()','get_number(prompt)'],main:true},
+  '4/professor':{imports:['import random'],functions:['get_level()','generate_integer(level)'],main:true},
+  '4/bitcoin':{imports:['import os','import requests','import sys']},
+  '5/test_twttr':{functions:['shorten(word)'],main:true,testNames:['test_shorten']},
+  '5/test_bank':{functions:['value(greeting)'],main:true,testNames:['test_hello','test_with_h','test_without_h']},
+  '5/test_plates':{functions:['is_valid(s)'],main:true,testNames:['test_starts_with_two_letters','test_two_to_six_characters','test_numbers_at_end','test_not_allowed']},
+  '5/test_fuel':{functions:['convert(fraction)','gauge(percentage)'],main:true,testNames:['test_convert','test_gauge'],testImports:['import pytest']},
+  '6/lines':{imports:['import sys']},
+  '6/pizza':{imports:['import csv','import sys','from tabulate import tabulate']},
+  '6/scourgify':{imports:['import csv','import sys']},
+  '6/shirt':{imports:['import os','import sys','from PIL import Image, ImageOps']},
+  '7/numb3rs':{imports:['import re'],functions:['validate(ip)'],main:true,testNames:['test_valid','test_invalid']},
+  '7/watch':{imports:['import re'],functions:['parse(s)'],main:true},
+  '7/working':{imports:['import re','import sys'],functions:['convert(s)','convert_time(t)'],main:true,testNames:['test_format','test_with_minutes','test_without_minutes'],testImports:['import pytest']},
+  '7/um':{imports:['import re'],functions:['count(s)'],main:true,testNames:['test_0','test_1','test_2']},
+  '7/response':{imports:['import validators'],main:true},
+  '8/seasons':{imports:['import inflect','import sys','from datetime import date'],functions:['calculate(t0, t1)'],main:true,testNames:['test_calculate'],testImports:['from datetime import date']},
+  '8/jar':{functions:['Jar'],testNames:['test_init','test_str','test_deposit','test_withdraw'],testImports:['import pytest']},
+  '8/shirtificate':{imports:['from fpdf import FPDF'],functions:['PDF.header(self)'],main:true}
+ };
+ const topLevelHint={
+  '0/indoor':'Read input and print a lowercase version.',
+  '0/playback':'Read input and replace each space with three periods.',
+  '0/einstein':'Ask for mass and calculate energy with the supplied equation.',
+  '1/deep':'Normalize the user input before checking acceptable answers.',
+  '1/bank':'Consider conditions in order, from most to least specific.',
+  '1/extensions':'Use the suffix of a normalized filename to choose a media type.',
+  '1/interpreter':'Split an expression into operands and an operator.',
+  '2/camel':'Iterate through the characters of a camelCase variable name.',
+  '2/coke':'Repeat valid coin deposits until the purchase amount is reached.',
+  '2/nutrition':'Use a mapping and handle an unknown fruit name.',
+  '3/fuel':'Handle invalid fractions and zero denominators using exceptions.',
+  '3/taqueria':'Continue reading item names until the input ends.',
+  '3/grocery':'Count repeated entries and output sorted totals.',
+  '3/outdated':'Accept both common date formats and reject invalid dates.',
+  '4/emojize':'Call the emoji library on the provided text.',
+  '4/figlet':'Validate command-line flags before selecting a text font.',
+  '4/adieu':'Collect names until EOF and format them with inflect.',
+  '4/bitcoin':'Validate command-line input and catch network errors.',
+  '6/lines':'Validate the filename argument, then count source lines.',
+  '6/pizza':'Validate one CSV path and use tabulate to format its records.',
+  '6/scourgify':'Read a source CSV and write the transformed rows to another CSV.',
+  '6/shirt':'Validate matching image extensions before composing the overlay.'
+ };
+ const shape=problem=>reference[problem.set+'/'+problem.slug]||{};
+
  const todo=message=>'    # TODO: '+message+'\n    raise NotImplementedError("Complete this problem with your own code")\n';
  function functionBlock(signature,description){
   return 'def '+signature+':\n'+todo(description)+'\n';
  }
  function mainBlock(problem){
-  return functionBlock('main()',problem.set===5?'Prompt for input and show the computed result.':problem.goal);
+  return functionBlock('main()',problem.set===5?'Read an input and call the required function.':problem.goal);
  }
  function buildPython(problem){
+  const outline=shape(problem),signatures=outline.functions||problem.functions;
   const label='# CS50P · Problem Set '+problem.set+' · '+problem.title+'\n';
-  const comment='# Assignment: '+problem.url+'\n# Original unsolved starter · follow the official instructions carefully.\n\n';
-  let body='';
-  if(problem.functions.includes('Jar')){
-   body='class Jar:\n';
-   for(const signature of ['__init__(self, capacity=12)','__str__(self)','deposit(self, n)','withdraw(self, n)']){
+  const comment='# Assignment: '+problem.url+'\n# Original, unsolved teaching scaffold; compare against official instructions.\n\n';
+  let body=(outline.imports||[]).join('\n');
+  if(body)body+='\n\n\n';
+  if(signatures.includes('Jar')){
+   body+='class Jar:\n';
+   for(const signature of ['__init__(self, capacity=12)','__str__(self)','deposit(self, cookies)','withdraw(self, cookies)']){
     body+='    def '+signature+':\n        # TODO: Implement according to the official specification.\n        raise NotImplementedError("Complete this method")\n\n';
    }
    for(const signature of ['capacity(self)','size(self)']){
@@ -554,29 +615,37 @@
    }
    return label+comment+body;
   }
-  if(problem.set===6||problem.slug==='bitcoin'||problem.slug==='figlet'){
-   body+='import sys\n\n\n';
+  if(problem.slug==='shirtificate'){
+   body+='class PDF(FPDF):\n    def header(self):\n        # TODO: Design the header. Review the FPDF documentation.\n        raise NotImplementedError("Complete the certificate header")\n\n\n';
   }
-  if(problem.slug==='professor'||problem.slug==='game'){
-   body+='import random\n\n\n';
+  const wantMain=!!outline.main;
+  if(wantMain)body+=mainBlock(problem);
+  for(const signature of signatures){
+   if(signature==='PDF.header(self)'||signature==='Jar')continue;
+   body+=(wantMain||body?'\n':'')+functionBlock(signature,'Implement '+signature+' following the official problem description.');
   }
-  if(problem.slug==='seasons')body+='from datetime import date\n\n\n';
-  if(problem.set===7&&problem.slug!=='response')body+='import re\n\n\n';
-  body+=mainBlock(problem);
-  for(const func of problem.functions)body+='\n'+functionBlock(func,'Implement '+func+' according to the official assignment specifications.');
-  body+='\nif __name__ == "__main__":\n    main()\n';
+  if(wantMain)body+='\nif __name__ == "__main__":\n    main()\n';
+  if(!wantMain&&signatures.filter(x=>x!=='PDF.header(self)').length===0){
+   const hint=topLevelHint[problem.set+'/'+problem.slug]||problem.goal;
+   body+='# TODO: '+hint+'\nraise NotImplementedError("Write your own script here")\n';
+  }
   return label+comment+body;
  }
  function buildTest(filename,source,problem){
-  let imported='';const functions=problem.functions.filter(x=>x!=='Jar');
-  if(problem.functions.includes('Jar'))imported='from jar import Jar\n\n\n';
-  else if(functions.length)imported='from '+source.replace(/\.py$/,'')+' import '+functions.map(x=>x.split('(')[0]).join(', ')+'\n\n\n';
-  else imported='import '+source.replace(/\.py$/,'')+'\n\n\n';
+  const outline=shape(problem);
+  const functions=(outline.functions||problem.functions).filter(x=>x!=='Jar'&&!x.startsWith('PDF.'));
+  let imported;
+  if((outline.functions||problem.functions).includes('Jar'))imported='from jar import Jar\n';
+  else if(functions.length)imported='from '+source.replace(/\.py$/,'')+' import '+functions.map(x=>x.split('(')[0]).join(', ')+'\n';
+  else imported='import '+source.replace(/\.py$/,'')+'\n';
+  const testImports=(outline.testImports||[]).filter(line=>!imported.includes(line));
+  const names=outline.testNames||['test_write_your_own_cases'];
+  const stubs=names.map(name=>'def '+name+'():\n'+
+   '    # TODO: Add your own meaningful assertions for this case.\n'+
+   '    raise NotImplementedError("Write your own pytest assertion")\n').join('\n\n');
   return '# CS50P · '+problem.title+'\n# Assignment: '+problem.url+
-   '\n# Write YOUR OWN meaningful pytest assertions; no tests are supplied as answers.\n\n'+
-   imported+'def test_replace_this_placeholder():\n'+
-   '    # TODO: Rename this test, add assertions, and cover edge cases.\n'+
-   '    raise NotImplementedError("Write your own test cases")\n';
+   '\n# These are intentionally empty test outlines, not grading answers.\n\n'+
+   [...testImports,imported.trim()].join('\n')+'\n\n\n'+stubs;
  }
  const resourceNotes={
   emojize:'Requires the emoji package; package availability on GitHub Pages may vary.',
