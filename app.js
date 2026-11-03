@@ -261,7 +261,7 @@ $('addFolderBtn').addEventListener('click',()=>{
 $('addFileBtn').addEventListener('click',()=>{
  const name=prompt('New file path',cwd?cwd+'/test_main.py':'test_main.py');if(!name)return;
  try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(!path)return;if(Object.hasOwn(files,path)){switchToFile(path);return;}
-  if(parent(path)&&!dirs.has(parent(path)))throw Error('Create the parent folder first.');
+  if(dirs.has(path))throw Error('A folder already uses that name.');if(parent(path)&&!dirs.has(parent(path)))throw Error('Create the parent folder first.');
   workspaceSnapshot();files[path]=path.endsWith('.py')?'# '+path+'\n':'';switchToFile(path);
  }catch(err){alert(err.message);}
 });
@@ -269,7 +269,7 @@ $('testBtn').addEventListener('click',executeVirtualTest);
 fallback.addEventListener('input',persist);fallback.addEventListener('click',updateStatusBar);fallback.addEventListener('keyup',updateStatusBar);
 $('fileInput').addEventListener('change',async e=>{
  const f=e.target.files?.[0];e.target.value='';if(!f)return;
- try{if(f.size>1048576)throw Error('File must be under 1 MB');workspaceSnapshot();const path=normalize(cwd?cwd+'/'+f.name:f.name,'');if(parent(path)&&!dirs.has(parent(path)))ensureDirs(parent(path));files[path]=await f.text();if(path===filename){setCode(files[path]);renderFiles();}else switchToFile(path);}
+ try{if(f.size>1048576)throw Error('File must be under 1 MB');workspaceSnapshot();const path=normalize(cwd?cwd+'/'+f.name:f.name,'');if(parent(path)&&!dirs.has(parent(path)))ensureDirs(parent(path));files[path]=await f.text();if(models.has(path)&&models.get(path).getValue()!==files[path])models.get(path).setValue(files[path]);if(path===filename){setCode(files[path]);renderFiles();}else switchToFile(path);}
  catch(err){append('Open failed: '+err.message+'\n','error-line');}
 });
 $('explorerToggle').addEventListener('click',toggleSidebar);
