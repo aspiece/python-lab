@@ -5,20 +5,111 @@ const sample='# Welcome to Python Lab!\n# Write Python and click Run.\n\nname = 
 let initial={};try{initial=JSON.parse(localStorage.getItem(storageKey))||{}}catch{}
 let inputHistory=[],activeRun=null,commandHistory=[],historyIndex=0,terminalMode='shell';let filename=initial.filename||'main.py',code=typeof initial.code==='string'?initial.code:sample,editor=null,worker=null,ready=false,running=false,runStart=0,runSerial=0,saveTimer;
 const files=(initial.files && typeof initial.files==='object')?initial.files:{};const dirs=new Set(Array.isArray(initial.dirs)?initial.dirs:[]);let cwd=initial.cwd||'';
+files[filename]=code;
+let openTabs=[...new Set((Array.isArray(initial.openTabs)?initial.openTabs:[filename]).filter(p=>typeof p==='string'&&Object.hasOwn(files,p)))];
+if(!openTabs.includes(filename))openTabs.push(filename);
+const models=new Map(),viewStates=new Map();
+let panelCollapsed=false;
 function normalize(path,base=cwd){const parts=[];for(const p of (path.startsWith('/')?path:('/'+base+'/'+path)).split('/')){if(!p||p==='.')continue;if(p==='..')parts.pop();else if(/^[\w. -]+$/.test(p))parts.push(p);else throw Error('Invalid path component: '+p);}return parts.join('/');}
 function parent(path){return path.includes('/')?path.slice(0,path.lastIndexOf('/')):'';}
 function ensureDirs(path){let cur='';for(const p of path.split('/').filter(Boolean)){cur=cur?cur+'/'+p:p;dirs.add(cur);}}
 function displayPath(){return '~/python-lab'+(cwd?'/'+cwd:'');}
  const fallback=$('fallbackEditor');fallback.value=code;$('stdin').value=typeof initial.stdin==='string'?initial.stdin:'Alex';
-function getCode(){return editor?editor.getValue():fallback.value;}window.pythonLabWorkspace=()=>{files[filename]=getCode();return {filename,files:{...files},dirs:[...dirs],cwd};};
-function setCode(s){if(editor)editor.setValue(s);else fallback.value=s;persist();}
-function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded]}));}catch{setStatus('Storage unavailable','error');}},220);}
+function getCode(){return editor?editor.getValue():fallback.value;}
+function workspaceSnapshot(){if(Object.hasOwn(files,filename))files[filename]=getCode();}
+window.pythonLabWorkspace=()=>{workspaceSnapshot();return {filename,files:{...files},dirs:[...dirs],cwd};};
+function languageFor(path){const ext=path.split('.').pop().toLowerCase();return ({py:'python',json:'json',md:'markdown',html:'html',css:'css',js:'javascript'})[ext]||'plaintext';}
+function iconFor(path){const ext=path.split('.').pop().toLowerCase();return ext==='py'?'🐍':ext==='json'?'{}':ext==='csv'?'▦':'📄';}
+function modelFor(path){
+ if(typeof monaco==='undefined')return null;
+ if(models.has(path))return models.get(path);
+ const uri=monaco.Uri.parse('file:///python-lab/'+path.split('/').map(encodeURIComponent).join('/'));
+ const model=monaco.editor.createModel(files[path]??'',languageFor(path),uri);models.set(path,model);return model;
+}
+function setCode(value){files[filename]=value;if(editor){if(editor.getValue()!==value)editor.setValue(value);}else fallback.value=value;persist();}
+function persist(immediate=false){
+ clearTimeout(saveTimer);
+ const write=()=>{workspaceSnapshot();try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded],openTabs}));if($('saveStatus'))$('saveStatus').textContent='Saved locally';}catch{setStatus('Storage unavailable','error');}};
+ if(immediate)write();else{if($('saveStatus'))$('saveStatus').textContent='Saving…';saveTimer=setTimeout(write,220);}
+}
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
-function append(s,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=s;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;}
+function append(value,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=value;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;}
 function updateButtons(){$('runBtn').disabled=!ready||running;$('stopBtn').disabled=!running;}
-function setFilename(n){filename=normalize(n||'main.py','');if(!filename.endsWith('.py'))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);$('tabFilename').textContent=filename;const side=$('sideFilename');if(side)side.textContent=filename;persist();}
-function workspaceSnapshot(){files[filename]=getCode();}
-function chooseFile(next){setFilename(next);setCode(files[next]??'');renderFiles();}
+function updateStatusBar(){
+ const node=$('cursorStatus');if(!node)return;
+ if(editor){const p=editor.getPosition();node.textContent=p?'Ln '+p.lineNumber+', Col '+p.column:'Ln 1, Col 1';}
+ else{const pos=fallback.selectionStart||0,parts=fallback.value.slice(0,pos).split('\n');node.textContent='Ln '+parts.length+', Col '+(parts[parts.length-1].length+1);}
+ const lang=$('languageStatus');if(lang)lang.textContent=languageFor(filename)==='python'?'Python':languageFor(filename).toUpperCase();
+}
+function renderTabs(){
+ const host=$('openTabs');if(!host)return;
+ host.textContent='';openTabs=openTabs.filter(path=>Object.hasOwn(files,path));
+ if(!openTabs.includes(filename))openTabs.push(filename);
+ for(const path of openTabs){
+  const tab=document.createElement('div');tab.className='tab'+(path===filename?' active':'');tab.setAttribute('role','tab');tab.setAttribute('aria-selected',String(path===filename));
+  const action=document.createElement('button');action.className='tab-label';action.textContent=iconFor(path)+' '+path.split('/').pop();action.title=path;action.onclick=()=>switchToFile(path);
+  const close=document.createElement('button');close.className='tab-close';close.textContent='×';close.title='Close '+path;close.setAttribute('aria-label','Close '+path);close.onclick=()=>closeTab(path);
+  tab.append(action,close);host.append(tab);
+ }
+ updateStatusBar();
+}
+function setFilename(value){filename=normalize(value||'main.py','');if(!/\.[^/]+$/.test(filename))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);if(!openTabs.includes(filename))openTabs.push(filename);renderTabs();updateStatusBar();persist();}
+function switchToFile(next){
+ if(!Object.hasOwn(files,next))return;
+ if(next===filename){if(!openTabs.includes(next))openTabs.push(next);renderTabs();return;}
+ workspaceSnapshot();
+ if(editor)viewStates.set(filename,editor.saveViewState());
+ filename=next;code=files[next];
+ if(!openTabs.includes(next))openTabs.push(next);
+ for(let p=parent(next);p;p=parent(p))expanded.add(p);
+ if(editor){editor.setModel(modelFor(next));const state=viewStates.get(next);if(state)editor.restoreViewState(state);editor.focus();}
+ else fallback.value=code;
+ renderTabs();renderFiles();persist();
+}
+function closeTab(path){
+ if(openTabs.length===1){append('Keep at least one file open in the editor.\n');return;}
+ const ix=openTabs.indexOf(path);if(ix<0)return;
+ workspaceSnapshot();openTabs.splice(ix,1);
+ if(path===filename){const next=openTabs[Math.min(ix,openTabs.length-1)];filename=next;if(editor){editor.setModel(modelFor(next));const state=viewStates.get(next);if(state)editor.restoreViewState(state);}else fallback.value=files[next];}
+ renderTabs();renderFiles();persist();
+}
+function chooseFile(next){switchToFile(next);}
+function toggleSidebar(){
+ const root=$('workspace');if(window.matchMedia('(max-width:850px)').matches){root.classList.toggle('show-sidebar');root.classList.remove('hide-sidebar');}
+ else{root.classList.toggle('hide-sidebar');root.classList.remove('show-sidebar');}
+}
+function togglePanel(){
+ panelCollapsed=!panelCollapsed;$('mainPanel').classList.toggle('panel-collapsed',panelCollapsed);
+ $('togglePanelBtn').textContent=panelCollapsed?'▴':'▾';
+}
+function openPalette(mode='file'){
+ const dialog=$('commandDialog');dialog.dataset.mode=mode;$('commandQuery').value='';$('commandQuery').placeholder=mode==='file'?'Search files by name…':'Type a command…';
+ renderPalette();if(!dialog.open)dialog.showModal();$('commandQuery').focus();
+}
+function paletteCommands(){
+ return [
+  ['New File',()=> $('addFileBtn').click()],
+  ['New Folder',()=> $('addFolderBtn').click()],
+  ['Run Python File',()=>run()],
+  ['Run Tests',()=>executeVirtualTest()],
+  ['Save Locally',()=>persist(true)],
+  ['Download Current File',()=>download()],
+  ['Export Project ZIP',()=>downloadProject()],
+  ['Import Project ZIP',()=> $('projectInput').click()],
+  ['Toggle Explorer',toggleSidebar],
+  ['Toggle Terminal Panel',togglePanel],
+  ['Focus Terminal',()=>{$('terminalInput')?.focus();}],
+  ['Clear Terminal',()=>{$('output').textContent='';}]
+ ];
+}
+function renderPalette(){
+ const mode=$('commandDialog').dataset.mode||'file',q=$('commandQuery').value.trim().toLowerCase(),host=$('commandResults');host.textContent='';
+ const entries=mode==='file'?Object.keys(files).sort().map(path=>[iconFor(path)+' '+path,()=>switchToFile(path)]):paletteCommands();
+ for(const [label,action] of entries.filter(x=>x[0].toLowerCase().includes(q)).slice(0,30)){
+  const item=document.createElement('button');item.className='palette-result';item.textContent=label;item.onclick=()=>{$('commandDialog').close();action();};host.append(item);
+ }
+ if(!host.children.length){const empty=document.createElement('p');empty.textContent='No matches';host.append(empty);}
+}
 function modifyEntry(type,oldPath,action){
   if(running){alert('Stop the running program before changing files.');return;}
   workspaceSnapshot();
@@ -27,13 +118,17 @@ function modifyEntry(type,oldPath,action){
     if(type==='folder'){for(const p of Object.keys(files))if(p.startsWith(oldPath+'/'))delete files[p];for(const p of [...dirs])if(p===oldPath||p.startsWith(oldPath+'/'))dirs.delete(p);}
     else delete files[oldPath];
     if(type==='folder'&&(cwd===oldPath||cwd.startsWith(oldPath+'/')))cwd='';
-    if(!(filename in files)){const remaining=Object.keys(files).sort();if(remaining.length)chooseFile(remaining[0]);else{filename='main.py';files[filename]='# New Python program\n';setFilename(filename);setCode(files[filename]);}}
-    renderFiles();persist();return;
+    for(const [path,model] of [...models])if(!Object.hasOwn(files,path)){if(editor&&editor.getModel()===model)editor.setModel(null);model.dispose();models.delete(path);viewStates.delete(path);}
+    openTabs=openTabs.filter(path=>Object.hasOwn(files,path));
+    if(!Object.hasOwn(files,filename)){const next=Object.keys(files).sort()[0]||'main.py';if(!Object.hasOwn(files,next))files[next]='# New Python program\n';filename=next;}
+    if(!openTabs.includes(filename))openTabs.push(filename);
+    if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename]??'';
+    renderTabs();renderFiles();persist();return;
   }
   const name=prompt(action==='move'?'Move to path (including name):':'Rename (new name or path):',oldPath);
   if(name===null)return;
   let dest;
-  try{dest=normalize(name,'');if(!dest||dest===oldPath)return;if(type==='file'&&!dest.endsWith('.py'))throw Error('Python files must end in .py');if(type==='folder'&&dest.startsWith(oldPath+'/'))throw Error('Cannot move a folder inside itself');if(type==='folder'&&Object.keys(files).some(p=>p.startsWith(oldPath+'/')&&Object.hasOwn(files,dest+p.slice(oldPath.length))))throw Error('Destination has conflicting files');if((type==='folder'&&dirs.has(dest))||Object.hasOwn(files,dest)||[...dirs].some(d=>d===dest&&type==='file'))throw Error('Destination already exists');if(parent(dest)&&!dirs.has(parent(dest)))throw Error('Destination folder does not exist');}
+  try{dest=normalize(name,'');if(!dest||dest===oldPath)return;if(type==='file'&&!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(dest))throw Error('Use a supported text file extension (.py, .txt, .csv, .json, .md, etc.)');if(type==='folder'&&dest.startsWith(oldPath+'/'))throw Error('Cannot move a folder inside itself');if(type==='folder'&&Object.keys(files).some(p=>p.startsWith(oldPath+'/')&&Object.hasOwn(files,dest+p.slice(oldPath.length))))throw Error('Destination has conflicting files');if((type==='folder'&&dirs.has(dest))||Object.hasOwn(files,dest)||[...dirs].some(d=>d===dest&&type==='file'))throw Error('Destination already exists');if(parent(dest)&&!dirs.has(parent(dest)))throw Error('Destination folder does not exist');}
   catch(err){alert(err.message);return;}
   if(type==='file'){files[dest]=files[oldPath];delete files[oldPath];if(filename===oldPath)filename=dest;}
   else {
@@ -43,7 +138,11 @@ function modifyEntry(type,oldPath,action){
     const movedDirs=[...dirs].map(movePath);dirs.clear();for(const p of movedDirs)dirs.add(p);
     filename=movePath(filename);cwd=movePath(cwd);
   }
-  $('tabFilename').textContent=filename;const side=$('sideFilename');if(side)side.textContent=filename;renderFiles();persist();
+  const mapPath=p=>p===oldPath?dest:type==='folder'&&p.startsWith(oldPath+'/')?dest+p.slice(oldPath.length):p;
+  for(const [p,model] of [...models])if(mapPath(p)!==p){if(editor&&editor.getModel()===model)editor.setModel(null);model.dispose();models.delete(p);viewStates.delete(p);}
+  openTabs=[...new Set(openTabs.map(mapPath))];
+  if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename]??'';
+  renderTabs();renderFiles();persist();
 }
 function entryMenu(event,type,path){event.preventDefault();const menu=$('fileContextMenu');menu.hidden=false;menu.style.left=Math.min(event.clientX,innerWidth-175)+'px';menu.style.top=Math.min(event.clientY,innerHeight-145)+'px';menu.dataset.type=type;menu.dataset.path=path;}
 async function downloadProject(){
@@ -71,22 +170,22 @@ function renderFiles(){
   }
   for(const path of allFiles.filter(p=>parent(p)===folder).sort()){
    const btn=document.createElement('button');btn.className='file-item'+(path===filename?' active':'');
-   btn.style.paddingLeft=(26+depth*16)+'px';btn.textContent='🐍 '+path.split('/').pop();btn.title=path;
+   btn.style.paddingLeft=(26+depth*16)+'px';btn.textContent=iconFor(path)+' '+path.split('/').pop();btn.title=path;
    btn.addEventListener('contextmenu',e=>entryMenu(e,'file',path));
-   btn.onclick=()=>{if(path===filename)return;files[filename]=getCode();setFilename(path);setCode(files[path]??'');renderFiles();};
+   btn.onclick=()=>switchToFile(path);
    host.append(btn);
   }
  }
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=11');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')append(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;$('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){Object.assign(files,data.files||{});renderFiles();persist();}if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=12');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='ready'){ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')append(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;$('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){for(const [path,content] of Object.entries(data.files||{})){const prior=files[path];files[path]=content;ensureDirs(parent(path));const model=models.get(path);if(model&&model.getValue()===prior&&content!==prior)model.setValue(content);}for(const dir of (data.dirs||[]))ensureDirs(dir);renderFiles();renderTabs();persist();}if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
 function sendExecution(){if(!activeRun)return;$('terminalPrompt').hidden=true;$('output').textContent='';append('$ '+(activeRun.command||('python '+activeRun.filename))+'\n\n');worker.postMessage({type:'run',...activeRun,stdin:inputHistory.join('\n')});}
 function executePython(name,args=[],command=''){files[filename]=getCode();name=(name in files)?name:normalize(name);if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();inputHistory=[];updateButtons();setStatus('Running…');activeRun={code:files[name],filename:name,files:{...files},dirs:[...dirs],cwd:parent(name),args,command};sendExecution();persist();}
-function run(){executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
+function run(){if(!filename.endsWith('.py')){append('Select a .py file to run.\n','error-line');return;}executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
 function stop(){if(!running)return;terminalMode='shell';activeRun=null;inputHistory=[];$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
 function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'text/x-python;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function resetFile(){files[filename]=getCode();let name=prompt('New Python filename',cwd?cwd+'/main.py':'main.py');if(!name)return;setFilename(name);setCode(files[filename]||'# New Python program\n\n');renderFiles();$('stdin').value='';persist();}
+function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
 function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';$('terminalInput').focus();}
 function shellCommand(line){
   files[filename]=getCode();const args=line.trim().match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
@@ -109,14 +208,116 @@ else if(cmd==='pip'&&rest[0]==='list')append('Pyodide + installed compatible pac
   showShell();
 }
 function runWorkerCode(code,command){if(!ready||running)return;running=true;terminalMode='busy';runStart=performance.now();updateButtons();activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command};inputHistory=[];sendExecution();}
-function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/^test_.*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["-q","--tb=short"])','python -m pytest -q');}
-$('downloadProjectBtn').addEventListener('click',downloadProject);$('fileContextMenu').addEventListener('click',e=>{const button=e.target.closest('[data-action]');if(!button)return;const menu=$('fileContextMenu');menu.hidden=true;modifyEntry(menu.dataset.type,menu.dataset.path,button.dataset.action);});document.addEventListener('click',e=>{if(!e.target.closest('#fileContextMenu'))$('fileContextMenu').hidden=true;});document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fileContextMenu').hidden=true;});
+function executeVirtualTest(){files[filename]=getCode();if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){append('No test_*.py files found\n','error-line');showShell();return;}runWorkerCode('import pytest\npytest.main(["/home/pyodide","-q","--tb=short"])','python -m pytest -q');}
+$('downloadProjectBtn').addEventListener('click',downloadProject);
+$('importProjectBtn').addEventListener('click',()=> $('projectInput').click());
+$('projectInput').addEventListener('change',async e=>{
+ const archive=e.target.files?.[0];e.target.value='';if(!archive)return;
+ if(typeof JSZip==='undefined'){alert('ZIP library is unavailable.');return;}
+ if(!confirm('Replace the current project with the contents of this ZIP? Export a backup first if needed.'))return;
+ try{
+  const zip=await JSZip.loadAsync(archive),newFiles={},newDirs=new Set();let count=0;
+  for(const [raw,entry] of Object.entries(zip.files)){
+   const clean=raw.replace(/\/$/,'');
+   if(!clean||clean.startsWith('/')||clean.split('/').some(p=>p==='..'||p==='.'||!p||!/^[\w. -]+$/.test(p)))continue;
+   if(entry.dir){newDirs.add(clean);continue;}
+   if(!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(clean))continue;
+   if(++count>150)throw Error('Project exceeds 150 text files.');
+   const content=await entry.async('string');if(content.length>1024*1024)throw Error('File too large: '+clean);
+   newFiles[clean]=content;let p=parent(clean);while(p){newDirs.add(p);p=parent(p);}
+  }
+  if(!Object.keys(newFiles).length)throw Error('No supported text files were found.');
+  if(editor)editor.setModel(null);
+  for(const m of models.values())m.dispose();models.clear();viewStates.clear();
+  for(const p of Object.keys(files))delete files[p];Object.assign(files,newFiles);
+  dirs.clear();for(const p of newDirs)dirs.add(p);
+  cwd='';filename=Object.hasOwn(files,'main.py')?'main.py':Object.keys(files).sort()[0];
+  openTabs=[filename];expanded.clear();for(const p of dirs)expanded.add(p);
+  if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename];
+  renderTabs();renderFiles();updatePrompt();persist(true);
+  append('Imported '+count+' files from ZIP.\n','success-line');
+ }catch(err){alert('Project import failed: '+err.message);}
+});
+$('fileContextMenu').addEventListener('click',e=>{const button=e.target.closest('[data-action]');if(!button)return;const menu=$('fileContextMenu');menu.hidden=true;modifyEntry(menu.dataset.type,menu.dataset.path,button.dataset.action);});
+document.addEventListener('click',e=>{if(!e.target.closest('#fileContextMenu'))$('fileContextMenu').hidden=true;});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fileContextMenu').hidden=true;});
 $('newBtn').addEventListener('click',()=>{const d=$('confirmDialog');if(d.showModal)d.showModal();else if(confirm('Create a new file?'))resetFile();});
 $('confirmDialog').addEventListener('close',()=>{if($('confirmDialog').returnValue==='confirm')resetFile();});
-$('openBtn').addEventListener('click',()=>$('fileInput').click());$('saveBtn').addEventListener('click',download);$('runBtn').addEventListener('click',run);$('stopBtn').addEventListener('click',stop);$('clearBtn').addEventListener('click',()=>$('output').textContent='');$('terminalInput').addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.max(0,historyIndex-1);e.currentTarget.value=commandHistory[historyIndex]||'';}else if(e.key==='ArrowDown'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.min(commandHistory.length,historyIndex+1);e.currentTarget.value=commandHistory[historyIndex]||'';}else if(e.key==='Enter'){e.preventDefault();const answer=e.currentTarget.value;e.currentTarget.value='';if(terminalMode==='input'&&activeRun){inputHistory.push(answer);setStatus('Running…');sendExecution();}else if(terminalMode==='shell'){if(answer.trim())commandHistory.push(answer);historyIndex=commandHistory.length;shellCommand(answer);}}});$('stdin').addEventListener('input',persist);$('args').value=initial.args||'';$('args').addEventListener('input',persist);$('addFolderBtn').addEventListener('click',()=>{const input=prompt('Folder path',cwd?cwd+'/week0':'week0');if(!input)return;try{const path=normalize(input,'');if(!path||dirs.has(path))return;ensureDirs(path);expanded.add(path);renderFiles();persist();}catch(err){append(err.message+'\n','error-line');}});$('addFileBtn').addEventListener('click',()=>{let name=prompt('Name the new Python file',cwd?cwd+'/test_main.py':'test_main.py');if(!name)return;files[filename]=getCode();setFilename(name);setCode(files[filename]||'# '+filename+'\n');renderFiles();});$('testBtn').addEventListener('click',executeVirtualTest);fallback.addEventListener('input',persist);
-$('fileInput').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{if(f.size>1048576)throw Error('File must be under 1 MB');files[filename]=getCode();setFilename(cwd?cwd+'/'+f.name:f.name);setCode(await f.text());renderFiles();}catch(err){append('Open failed: '+err.message+'\n','error-line');}e.target.value='';});
-window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run();}if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();download();}});
+$('openBtn').addEventListener('click',()=> $('fileInput').click());
+$('saveBtn').addEventListener('click',download);
+$('runBtn').addEventListener('click',run);
+$('stopBtn').addEventListener('click',stop);
+$('clearBtn').addEventListener('click',()=> $('output').textContent='');
+$('terminalInput').addEventListener('keydown',e=>{
+ if(e.key==='ArrowUp'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.max(0,historyIndex-1);e.currentTarget.value=commandHistory[historyIndex]||'';}
+ else if(e.key==='ArrowDown'&&terminalMode==='shell'){e.preventDefault();historyIndex=Math.min(commandHistory.length,historyIndex+1);e.currentTarget.value=commandHistory[historyIndex]||'';}
+ else if(e.key==='Enter'){e.preventDefault();const answer=e.currentTarget.value;e.currentTarget.value='';if(terminalMode==='input'&&activeRun){inputHistory.push(answer);setStatus('Running…');sendExecution();}else if(terminalMode==='shell'){if(answer.trim())commandHistory.push(answer);historyIndex=commandHistory.length;shellCommand(answer);}}
+});
+$('stdin').addEventListener('input',persist);$('args').value=initial.args||'';$('args').addEventListener('input',persist);
+$('addFolderBtn').addEventListener('click',()=>{
+ const input=prompt('Folder path',cwd?cwd+'/week0':'week0');if(!input)return;
+ try{const path=normalize(input,'');if(!path||dirs.has(path))return;ensureDirs(path);expanded.add(path);renderFiles();persist();}catch(err){append(err.message+'\n','error-line');}
+});
+$('addFileBtn').addEventListener('click',()=>{
+ const name=prompt('New file path',cwd?cwd+'/test_main.py':'test_main.py');if(!name)return;
+ try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(!path)return;if(Object.hasOwn(files,path)){switchToFile(path);return;}
+  if(dirs.has(path))throw Error('A folder already uses that name.');if(parent(path)&&!dirs.has(parent(path)))throw Error('Create the parent folder first.');
+  workspaceSnapshot();files[path]=path.endsWith('.py')?'# '+path+'\n':'';switchToFile(path);
+ }catch(err){alert(err.message);}
+});
+$('testBtn').addEventListener('click',executeVirtualTest);
+fallback.addEventListener('input',persist);fallback.addEventListener('click',updateStatusBar);fallback.addEventListener('keyup',updateStatusBar);
+$('fileInput').addEventListener('change',async e=>{
+ const f=e.target.files?.[0];e.target.value='';if(!f)return;
+ try{if(f.size>1048576)throw Error('File must be under 1 MB');workspaceSnapshot();const path=normalize(cwd?cwd+'/'+f.name:f.name,'');if(parent(path)&&!dirs.has(parent(path)))ensureDirs(parent(path));files[path]=await f.text();if(models.has(path)&&models.get(path).getValue()!==files[path])models.get(path).setValue(files[path]);if(path===filename){setCode(files[path]);renderFiles();}else switchToFile(path);}
+ catch(err){append('Open failed: '+err.message+'\n','error-line');}
+});
+$('explorerToggle').addEventListener('click',toggleSidebar);
+$('paletteBtn').addEventListener('click',()=>openPalette('command'));
+$('togglePanelBtn').addEventListener('click',togglePanel);
+$('commandQuery').addEventListener('input',renderPalette);
+$('commandQuery').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('commandResults').querySelector('button')?.click();}});
+const splitter=$('panelSplitter'),consoleLayout=$('consoleLayout');
+splitter.addEventListener('pointerdown',event=>{
+ if(panelCollapsed)return;event.preventDefault();splitter.setPointerCapture(event.pointerId);
+ const initialY=event.clientY,initialHeight=consoleLayout.getBoundingClientRect().height;
+ const move=e=>{const max=Math.max(130,$('mainPanel').clientHeight-200);consoleLayout.style.height=Math.max(110,Math.min(max,initialHeight+initialY-e.clientY))+'px';editor?.layout();};
+ const end=()=>{splitter.removeEventListener('pointermove',move);splitter.removeEventListener('pointerup',end);splitter.removeEventListener('pointercancel',end);};
+ splitter.addEventListener('pointermove',move);splitter.addEventListener('pointerup',end);splitter.addEventListener('pointercancel',end);
+});
+window.addEventListener('keydown',e=>{
+ if(!(e.ctrlKey||e.metaKey)||e.altKey)return;
+ const key=e.key.toLowerCase();
+ if(key==='enter'){e.preventDefault();run();}
+ else if(key==='s'&&e.shiftKey){e.preventDefault();download();}
+ else if(key==='s'){e.preventDefault();persist(true);}
+ else if(key==='b'){e.preventDefault();toggleSidebar();}
+ else if(key==='p'){e.preventDefault();openPalette(e.shiftKey?'command':'file');}
+ else if(e.code==='Backquote'){e.preventDefault();if(panelCollapsed)togglePanel();$('terminalInput')?.focus();}
+ else if(key==='w'){e.preventDefault();closeTab(filename);}
+ else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
+},true);
 setFilename(filename);renderFiles();updatePrompt();createWorker();
 function enableFallback(){fallback.hidden=false;$('editor').style.display='none';}
-if(typeof window.require==='function'){try{const base='https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/';window.MonacoEnvironment={getWorkerUrl:()=> 'data:text/javascript;charset=utf-8,'+encodeURIComponent("self.MonacoEnvironment={baseUrl:'"+base+"'};importScripts('"+base+"vs/base/worker/workerMain.js');")};window.require.config({paths:{vs:base+'vs'}});window.require(['vs/editor/editor.main'],()=>{try{editor=monaco.editor.create($('editor'),{value:code,language:'python',theme:'vs-dark',fontSize:14,lineHeight:23,minimap:{enabled:false},automaticLayout:true,scrollBeyondLastLine:false,tabSize:4,insertSpaces:true,fontFamily:'Consolas, monospace',padding:{top:18},wordWrap:'on'});editor.onDidChangeModelContent(persist);fallback.hidden=true;}catch{enableFallback();}},enableFallback);}catch{enableFallback();}}else enableFallback();
+if(typeof window.require==='function'){
+ try{
+  const base='https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/';
+  window.MonacoEnvironment={getWorkerUrl:()=> 'data:text/javascript;charset=utf-8,'+encodeURIComponent("self.MonacoEnvironment={baseUrl:'"+base+"'};importScripts('"+base+"vs/base/worker/workerMain.js');")};
+  window.require.config({paths:{vs:base+'vs'}});
+  window.require(['vs/editor/editor.main'],()=>{
+   try{
+    editor=monaco.editor.create($('editor'),{
+     model:modelFor(filename),theme:'vs-dark',fontSize:14,lineHeight:23,
+     minimap:{enabled:false},automaticLayout:true,scrollBeyondLastLine:false,tabSize:4,
+     insertSpaces:true,fontFamily:'Consolas, monospace',padding:{top:18},wordWrap:'on',
+     bracketPairColorization:{enabled:true},guides:{indentation:true,bracketPairs:true},
+     renderWhitespace:'selection',stickyScroll:{enabled:false}
+    });
+    editor.onDidChangeModelContent(()=>persist());
+    editor.onDidChangeCursorPosition(updateStatusBar);
+    fallback.hidden=true;renderTabs();updateStatusBar();
+   }catch(err){console.warn('Monaco failed',err);enableFallback();}
+  },enableFallback);
+ }catch{enableFallback();}
+}else enableFallback();
 })();

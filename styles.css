@@ -6,3 +6,59 @@
 .file-context-menu{position:fixed;z-index:999;background:#202b3b;border:1px solid #4a5c74;border-radius:8px;padding:5px;min-width:155px;box-shadow:0 8px 28px #0008}.file-context-menu button{display:block;width:100%;text-align:left;padding:9px 12px}.file-context-menu button[data-action=delete]{color:#f3a0a0}.folder-item{color:#e2c477}
 
 #terminalPrompt{display:flex;align-items:center;gap:9px;white-space:nowrap}.terminal-chevron{font:12px Consolas,monospace;white-space:nowrap;flex:none;color:#87dfa5}#terminalInput{min-width:40px}.folder-item{text-align:left}.file-item{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+
+/* Phase 1: VS Code-style layout enhancements */
+.workspace{position:relative}
+.rail-item{display:grid;place-items:center;width:100%;padding:0;border:0;border-radius:0;font-size:15px;background:transparent;cursor:pointer}
+.rail button.rail-item:focus-visible{outline-offset:-3px}
+.sidebar{display:flex;flex-direction:column}
+.section-heading{display:flex;align-items:center;justify-content:space-between;padding:14px 12px 12px 17px;min-height:48px}
+.explorer-actions{display:flex;align-items:center;gap:1px}
+.explorer-actions button{font-size:18px;padding:4px 6px;line-height:1.1}
+#fileList{flex:1;max-height:none;overflow:auto}
+.sidebar-note{margin-top:auto;padding:14px}
+.workspace.hide-sidebar .sidebar{display:none}
+.open-tabs{display:flex;min-width:0;overflow-x:auto;scrollbar-width:thin;flex:1}
+.tabs .spacer{flex:0 0 8px}
+.tab{height:40px;min-width:95px;max-width:230px;padding:0 4px 0 10px;gap:3px;flex:none;align-items:center;background:#192231;border-right:1px solid #303b4a;border-bottom:1px solid transparent}
+.tab.active{background:#111821;border-bottom:1px solid #7ab6ff}
+.tab-label{display:block;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;font-size:12px;padding:7px 5px}
+.tab-close{flex:none;padding:3px 7px;font-size:17px;line-height:1;opacity:.6}
+.tab:hover .tab-close,.tab.active .tab-close{opacity:1}
+.panel-splitter{height:6px;flex:none;cursor:row-resize;background:#273241;border-top:1px solid #3c495b}
+.panel-splitter:hover{background:#3a668f}
+.panel-header .panel-actions{display:flex;align-items:center;gap:6px}
+.panel-header #togglePanelBtn{font-size:16px;line-height:1;padding:2px 8px}
+.main.panel-collapsed .console-layout{display:none}
+.main.panel-collapsed .panel-splitter{display:none}
+.footer{gap:12px}
+.footer-editor{display:flex;gap:14px;margin-left:auto}
+#saveStatus{color:#d6eeff}
+.command-dialog{position:fixed;top:11vh;margin:0 auto;width:min(530px,94vw);max-width:none;max-height:70vh;padding:14px;background:#202a39;border:1px solid #63718a;box-shadow:0 22px 65px #000b}
+.command-dialog label{font-size:12px;font-weight:650;color:#adbed4;display:block;margin-bottom:8px}
+.command-dialog input{width:100%;font:14px Consolas,monospace;background:#121b29;color:#edf5ff;border:1px solid #61718b;padding:12px;border-radius:6px;outline-color:#75baff}
+#commandResults{margin-top:9px;max-height:48vh;overflow:auto}
+.palette-result{display:block;width:100%;text-align:left;font-size:13px;padding:10px;border-radius:5px}
+.palette-result:hover,.palette-result:focus-visible{background:#324966}
+#commandResults p{padding:8px 10px;font-size:13px;color:#8e9fb6}
+@media(max-width:850px){
+ .workspace .sidebar{display:none}
+ .workspace.show-sidebar .sidebar{display:flex;position:absolute;left:37px;top:0;bottom:0;z-index:15;width:min(255px,calc(100vw - 45px));box-shadow:8px 0 25px #0008}
+ .workspace.hide-sidebar .sidebar{display:none}
+ #openBtn,#saveBtn,#downloadProjectBtn,#importProjectBtn,#testBtn{display:none}
+ .actions{gap:3px}
+ .footer-editor{gap:8px}
+}
+@media(max-width:560px){
+ .rail{display:flex;width:37px;flex:none;flex-direction:column}
+ .sidebar{width:220px}
+ .app{min-height:0}
+ .topbar{flex:none}
+ .topbar .actions button{padding:6px}
+ .console-layout{height:200px}
+ .footer{font-size:9px;padding:0 7px}
+ .footer-editor{gap:6px}
+ #saveStatus{display:none}
+ .tab{min-width:90px;max-width:150px}
+}
