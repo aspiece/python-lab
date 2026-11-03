@@ -377,7 +377,7 @@ async function handleAssignmentLink(){
   files:{...template.files},dirs:[],cwd:'',expanded:[],openTabs:[entry],
   stdin:'',args:'',debugBreakpoints:{}
  };
- await createProjectFromSnapshot(template.title,workspace,key);
+ await createProjectFromSnapshot(template.folderName||template.slug||template.title,workspace,key);
 }
 async function bootstrapProjects(){
  if(!window.pythonLabProjects)return;
@@ -480,7 +480,7 @@ function installTemplate(project){
  if(running){alert('Finish or stop the running program before importing a starter project.');return false;}
  if(!project||!project.id||!project.files)return false;
  workspaceSnapshot();
- const rootName=project.id.replace(/[^a-zA-Z0-9-]/g,'-');
+ const rootName=String(project.folderName||project.slug||project.id).replace(/[^a-zA-Z0-9_-]/g,'-').slice(0,70)||'starter';
  let root=rootName,index=2;
  while(dirs.has(root)||Object.keys(files).some(path=>path===root||path.startsWith(root+'/')))root=rootName+'-'+index++;
  ensureDirs(root);
