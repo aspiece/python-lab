@@ -165,7 +165,7 @@ function paletteCommands(){
   ['Run Python File',()=>run()],
   ['Run Tests',()=>executeVirtualTest()],
   ['Record Debug Trace',()=>window.pythonLabDebug?.begin()],
-  ['Create Starter Project',()=>window.pythonLabTemplates?.show()],
+  ['Browse CS50P Problem Starters',()=>window.pythonLabTemplates?.show()],
   ['Show Problems',()=>window.pythonLabSmart?.setView('problems')],
   ['Show Test Results',()=>window.pythonLabSmart?.setView('tests')],
   ['Save Locally',()=>persist(true)],
@@ -370,9 +370,11 @@ async function handleAssignmentLink(){
   return;
  }
  if(!confirm('Create a new project for "'+template.title+'"? Your existing projects will stay saved separately.'))return;
+ const entry=template.entryFile&&Object.hasOwn(template.files,template.entryFile)?template.entryFile:Object.keys(template.files).find(name=>name.endsWith('.py'));
+ if(!entry)return;
  const workspace={
-  filename:'main.py',code:template.files['main.py']||'',
-  files:{...template.files},dirs:[],cwd:'',expanded:[],openTabs:['main.py'],
+  filename:entry,code:template.files[entry],
+  files:{...template.files},dirs:[],cwd:'',expanded:[],openTabs:[entry],
   stdin:'',args:'',debugBreakpoints:{}
  };
  await createProjectFromSnapshot(template.title,workspace,key);
@@ -488,8 +490,10 @@ function installTemplate(project){
   files[path]=source;
  }
  expanded.add(root);
- const main=root+'/main.py';
- if(Object.hasOwn(files,main))switchToFile(main);
+ const preferred=project.entryFile&&Object.hasOwn(project.files,project.entryFile)?project.entryFile:
+  Object.keys(project.files).find(name=>name.endsWith('.py'));
+ const entry=preferred?root+'/'+preferred:'';
+ if(entry&&Object.hasOwn(files,entry))switchToFile(entry);
  else renderFiles();
  persist(true);
  return true;
