@@ -1,7 +1,7 @@
 /* Python Lab worker: isolated Python runtime, visible errors, package discovery. */
 const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/';
 let pyodide, initialized=false, initializing;
-let lastWorkspaceFiles=new Set();
+let lastWorkspaceFiles=new Set(),lastWorkspaceDirs=new Set();
 function message(type, extra={}) { self.postMessage({type,...extra}); }
 async function init() {
   if(initialized)return;
@@ -11,8 +11,8 @@ async function init() {
       importScripts(PYODIDE_BASE+'pyodide.js');
       if(typeof loadPyodide!=='function')throw Error('Pyodide loader was unavailable');
       pyodide=await loadPyodide({indexURL:PYODIDE_BASE});
-      pyodide.setStdout({batched:s=>message('output',{text:s+'\n'})});
-      pyodide.setStderr({batched:s=>message('output',{text:s+'\n',stream:'stderr'})});
+      pyodide.setStdout({batched:s=>message('output',{text:s})});
+      pyodide.setStderr({batched:s=>message('output',{text:s,stream:'stderr'})});
       initialized=true;
       message('ready');
     } catch(err) {
@@ -31,12 +31,26 @@ self.onmessage=async ({data})=>{
     const userFiles=data.files||{};
     const safePath=p=>typeof p==='string'&&p.split('/').every(x=>x&&!['.','..'].includes(x)&&/^[\w. -]+$/.test(x));
     const base='/home/pyodide';
+    // A previous run may have changed cwd into a folder the student deleted.
+    // Return to the workspace root before removing stale files and folders.
+    try{pyodide.FS.chdir(base);}catch{}
+    // On each input replay, restore the previous workspace snapshot before
+    // executing the script. This avoids duplicate file appends and repeated
+    // local writes, but cannot undo external network effects or randomness.
     // Keep the virtual filesystem consistent with Explorer renames and deletions.
     for(const old of lastWorkspaceFiles){
       if(!Object.hasOwn(userFiles,old))try{pyodide.FS.unlink(base+'/'+old);}catch{}
     }
     lastWorkspaceFiles=new Set(Object.keys(userFiles));
     const dirs=[...(data.dirs||[]),...Object.keys(userFiles).map(n=>n.includes('/')?n.slice(0,n.lastIndexOf('/')):'')].filter(Boolean);
+    const expectedDirs=new Set();
+    for(const dir of dirs)if(safePath(dir)){let p='';for(const seg of dir.split('/')){p=p?p+'/'+seg:seg;expectedDirs.add(p);}}
+    // A deleted Explorer folder must not reappear merely because Pyodide retained it.
+    for(const dir of [...lastWorkspaceDirs].sort((a,b)=>b.length-a.length)){
+      if(expectedDirs.has(dir))continue;
+      try{pyodide.FS.rmdir(base+'/'+dir);}catch{}
+    }
+    lastWorkspaceDirs=new Set(expectedDirs);
     for(const dir of dirs.sort((a,b)=>a.length-b.length)){
       if(!safePath(dir))continue;
       let current=base;
@@ -81,7 +95,6 @@ def __lab_input(prompt=''):
         answer = next(__lab_iterator)
     except StopIteration:
         raise __LabNeedInput()
-    print(answer, flush=True)
     return answer
 builtins.input=__lab_input
 sys.argv=[__lab_filename]+list(__lab_args)
@@ -121,6 +134,7 @@ finally:
       }
       try{collect(base,'',0);}catch(err){message('output',{text:'Workspace synchronization: '+String(err)+'\n',stream:'stderr'});}
       lastWorkspaceFiles=new Set(Object.keys(changed));
+      lastWorkspaceDirs=new Set(newDirs);
       message('files',{files:changed,dirs:newDirs});
     }
   }catch(err){message('fatal',{message:String(err)+(err&&err.stack?'\n'+err.stack:'')});}

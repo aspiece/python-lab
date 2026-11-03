@@ -62,3 +62,13 @@
  #saveStatus{display:none}
  .tab{min-width:90px;max-width:150px}
 }
+
+
+/* Enhanced simulated terminal: keep the original pre/input as a CDN-failure fallback. */
+.console-main.terminal-enhanced{overflow:hidden;padding:0;position:relative}
+.console-main.terminal-enhanced #output,
+.console-main.terminal-enhanced #terminalPrompt{display:none!important}
+.browser-terminal{height:100%;width:100%;padding:7px 8px;overflow:hidden}
+.browser-terminal .xterm{height:100%}
+.browser-terminal .xterm-viewport{scrollbar-width:thin}
+.browser-terminal .xterm-screen{cursor:text}
