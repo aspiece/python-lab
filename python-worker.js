@@ -1,6 +1,7 @@
 /* Python Lab worker: isolated Python runtime, visible errors, package discovery. */
 const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/';
 let pyodide, initialized=false, initializing;
+let lastWorkspaceFiles=new Set();
 function message(type, extra={}) { self.postMessage({type,...extra}); }
 async function init() {
   if(initialized)return;
@@ -30,6 +31,11 @@ self.onmessage=async ({data})=>{
     const userFiles=data.files||{};
     const safePath=p=>typeof p==='string'&&p.split('/').every(x=>x&&!['.','..'].includes(x)&&/^[\w. -]+$/.test(x));
     const base='/home/pyodide';
+    // Keep the virtual filesystem consistent with Explorer renames and deletions.
+    for(const old of lastWorkspaceFiles){
+      if(!Object.hasOwn(userFiles,old))try{pyodide.FS.unlink(base+'/'+old);}catch{}
+    }
+    lastWorkspaceFiles=new Set(Object.keys(userFiles));
     const dirs=[...(data.dirs||[]),...Object.keys(userFiles).map(n=>n.includes('/')?n.slice(0,n.lastIndexOf('/')):'')].filter(Boolean);
     for(const dir of dirs.sort((a,b)=>a.length-b.length)){
       if(!safePath(dir))continue;
@@ -97,11 +103,25 @@ finally:
       message('output',{text:String(err)+'\n',stream:'stderr'});
       message('done',{success:false});
     } finally {
-      const changed={};
-      for(const name of Object.keys(userFiles)){
-        try{changed[name]=pyodide.FS.readFile('/home/pyodide/'+name,{encoding:'utf8'});}catch{}
+      // Discover text files and folders created by Python, including nested project folders.
+      const changed={},newDirs=[];let count=0;
+      function collect(directory,relative,depth){
+        if(depth>9||count>200)return;
+        for(const name of pyodide.FS.readdir(directory)){
+          if(name==='.'||name==='..'||name==='__pycache__'||name.startsWith('.'))continue;
+          const path=relative?relative+'/'+name:name;
+          if(!safePath(path))continue;
+          const absolute=directory+'/'+name;
+          let stat;try{stat=pyodide.FS.stat(absolute);}catch{continue;}
+          if(pyodide.FS.isDir(stat.mode)){newDirs.push(path);collect(absolute,path,depth+1);}
+          else if(pyodide.FS.isFile(stat.mode)&&stat.size<=1024*1024&&/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(path)){
+            count++;try{const value=pyodide.FS.readFile(absolute,{encoding:'utf8'});if(!value.includes('\0'))changed[path]=value;}catch{}
+          }
+        }
       }
-      message('files',{files:changed});
+      try{collect(base,'',0);}catch(err){message('output',{text:'Workspace synchronization: '+String(err)+'\n',stream:'stderr'});}
+      lastWorkspaceFiles=new Set(Object.keys(changed));
+      message('files',{files:changed,dirs:newDirs});
     }
   }catch(err){message('fatal',{message:String(err)+(err&&err.stack?'\n'+err.stack:'')});}
 };
