@@ -10,6 +10,7 @@ let openTabs=[...new Set((Array.isArray(initial.openTabs)?initial.openTabs:[file
 if(!openTabs.includes(filename))openTabs.push(filename);
 const models=new Map(),viewStates=new Map();
 let panelCollapsed=false;
+let activeProjectId=null,activeProjectName='My Python Lab',projectReady=false,projectBusy=false;
 let enhancedTerminal=null,replayBaseline='',scriptTranscript='',replayWarned=false,lastExecutionFiles={};
 function clearTerminal(){
  $('output').textContent='';
@@ -69,11 +70,34 @@ function modelFor(path){
  const model=monaco.editor.createModel(files[path]??'',languageFor(path),uri);models.set(path,model);return model;
 }
 function setCode(value){files[filename]=value;if(editor){if(editor.getValue()!==value)editor.setValue(value);}else fallback.value=value;persist();}
+function projectSnapshot(){
+ workspaceSnapshot();
+ return {
+  filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,
+  files:{...files},dirs:[...dirs],cwd,expanded:[...expanded],openTabs:[...openTabs],
+  debugBreakpoints:window.pythonLabDebug?.serialize()||initial.debugBreakpoints||{}
+ };
+}
 function persist(immediate=false){
  window.pythonLabSmart?.schedule();
  clearTimeout(saveTimer);
- const write=()=>{workspaceSnapshot();try{localStorage.setItem(storageKey,JSON.stringify({filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,files,dirs:[...dirs],cwd,expanded:[...expanded],openTabs,debugBreakpoints:window.pythonLabDebug?.serialize()||initial.debugBreakpoints||{}}));if($('saveStatus'))$('saveStatus').textContent='Saved locally';}catch{setStatus('Storage unavailable','error');}};
- if(immediate)write();else{if($('saveStatus'))$('saveStatus').textContent='Saving…';saveTimer=setTimeout(write,220);}
+ const write=()=>{
+  const snapshot=projectSnapshot();
+  try{localStorage.setItem(storageKey,JSON.stringify(snapshot));}
+  catch{$('saveStatus').textContent='Browser storage limited — export a ZIP';}
+  if(!projectReady||!activeProjectId||projectBusy)return Promise.resolve();
+  const task=window.pythonLabProjects.save(activeProjectId,snapshot);
+  return task.then(()=>{
+   const mode=window.pythonLabProjects.state().mode;
+   $('saveStatus').textContent=mode==='memory'?'Temporary session only — export ZIP':'Saved on this device';
+  }).catch(err=>{
+   $('saveStatus').textContent='Save failed — export ZIP';
+   console.error('Python Lab local project save failed',err);
+  });
+ };
+ if(immediate)return write();
+ $('saveStatus').textContent='Saving…';
+ saveTimer=setTimeout(write,280);
 }
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
 function append(value,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=value;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;enhancedTerminal?.write(value,cls);}
@@ -142,6 +166,9 @@ function paletteCommands(){
   ['Save Locally',()=>persist(true)],
   ['Download Current File',()=>download()],
   ['Export Project ZIP',()=>downloadProject()],
+  ['Download Canvas Submission ZIP',()=>downloadProject('submission')],
+  ['Manage Saved Projects',()=>openProjectManager()],
+  ['Create New Project',()=>createNewProject()],
   ['Import Project ZIP',()=> $('projectInput').click()],
   ['Toggle Explorer',toggleSidebar],
   ['Toggle Terminal Panel',togglePanel],
@@ -192,11 +219,11 @@ function modifyEntry(type,oldPath,action){
   renderTabs();renderFiles();persist();
 }
 function entryMenu(event,type,path){event.preventDefault();const menu=$('fileContextMenu');menu.hidden=false;menu.style.left=Math.min(event.clientX,innerWidth-175)+'px';menu.style.top=Math.min(event.clientY,innerHeight-145)+'px';menu.dataset.type=type;menu.dataset.path=path;}
-async function downloadProject(){
+async function downloadProject(kind='project'){
   workspaceSnapshot();
   if(typeof JSZip==='undefined'){alert('ZIP library unavailable. Check your internet connection.');return;}
   const zip=new JSZip();for(const dir of dirs)zip.folder(dir);for(const [path,content] of Object.entries(files))zip.file(path,content);
-  try{const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='python-lab-project.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);}
+  try{const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=(activeProjectName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'python-lab')+(kind==='submission'?'-submission':'-backup')+'.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);}
   catch(err){alert('Unable to download ZIP: '+err.message);}
 }
 const expanded=new Set(Array.isArray(initial.expanded)?initial.expanded:[...dirs]);
@@ -407,7 +434,11 @@ function executeVirtualTest(alreadyEchoed=false){
  }
  runWorkerCode('','python -m pytest -q',alreadyEchoed,'tests');
 }
-$('downloadProjectBtn').addEventListener('click',downloadProject);
+$('downloadProjectBtn').addEventListener('click',()=>downloadProject());
+$('downloadSubmissionBtn').addEventListener('click',()=>downloadProject('submission'));
+$('projectManagerBtn').addEventListener('click',openProjectManager);
+$('projectManagerClose').addEventListener('click',()=> $('projectsDialog').close());
+$('createProjectBtn').addEventListener('click',createNewProject);
 $('importProjectBtn').addEventListener('click',()=> $('projectInput').click());
 $('projectInput').addEventListener('change',async e=>{
  const archive=e.target.files?.[0];e.target.value='';if(!archive)return;
