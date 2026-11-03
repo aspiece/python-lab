@@ -46,9 +46,16 @@ for(const problem of rows){
  assert(Object.hasOwn(p.files,p.entryFile),'Missing actual editor entry file '+p.entryFile);
  assert(p.files['README.md'].includes(problem.url),'Instructions URL missing from README for '+p.id);
  assert(p.files['README.md'].includes('NOT an official'),'Unsolved/original notice missing for '+p.id);
+ assert(p.files['README.md'].includes('## Step-by-step plan'),'No student plan in '+p.id);
+ assert(p.files['README.md'].includes('## Check your work'),'No self-check tasks in '+p.id);
+ assert.equal(p.folderName,p.slug,'Folder does not match official problem slug for '+p.id);
+ assert(p.files[p.entryFile].includes('Official instructions:')||p.files[p.entryFile].includes('# Assignment:'),
+  'Starter missing official instructions link: '+p.id);
  for(const [name,code] of Object.entries(p.files)){
   if(name.endsWith('.py')){
-   assert(code.includes('NotImplementedError'),'Starter unexpectedly contains code with no TODO: '+p.id+'/'+name);
+   assert(code.includes('TODO'),'Starter lacks actionable TODOs: '+p.id+'/'+name);
+   assert(!code.includes('raise NotImplementedError'),'Starter must not raise NotImplementedError: '+p.id+'/'+name);
+   assert(!code.includes('Write your own script here'),'Old exception prompt remains: '+p.id+'/'+name);
    files[p.id+'/'+name]=code;
   }
  }
@@ -82,7 +89,7 @@ for(const [id,filename,signatures,imports] of shapes){
  assert(code,'Missing '+filename+' in '+id);
  for(const signature of signatures)assert(code.includes(signature),'Missing reference signature '+signature+' in '+id);
  for(const spec of imports)assert(code.includes(spec),'Missing package import '+spec+' in '+id);
- assert(code.includes('NotImplementedError'),'Source code should remain unsolved: '+id);
+ assert(code.includes('TODO'),'Source code must contain an unsolved TODO: '+id);
 }
 for(const [id,testsExpected] of [
  ['cs50p-5-test_twttr',['test_shorten']],
@@ -108,6 +115,17 @@ assert(css.includes('grid-template-columns:repeat(2,minmax(0,1fr))'),'Wide scree
 assert(css.includes('@media(max-width:720px)'),'Compact breakpoint missing');
 assert(css.includes('grid-template-columns:minmax(0,1fr)'),'Single-column mobile layout missing');
 
+const indoor=api.get('cs50p-0-indoor');
+assert.equal(indoor.folderName,'indoor');
+assert.equal(indoor.entryFile,'indoor.py');
+assert(indoor.files['indoor.py'].includes('speech = input('),'Indoor should have a useful input starter');
+assert(indoor.files['indoor.py'].includes('# PLAN YOUR CODE'),'Indoor missing plan');
+assert(indoor.files['indoor.py'].includes('# CHECK YOUR WORK'),'Indoor missing self-checks');
+const fuelTests=api.get('cs50p-5-test_fuel').files['test_fuel.py'];
+assert(fuelTests.includes('import pytest'),'Tests should explicitly import pytest');
+assert(fuelTests.includes('pytest.skip('),'Unfinished tests should skip rather than appear to pass');
+assert(!fuelTests.includes('raise NotImplementedError'),'Tests must not force the old error');
+assert(fuelTests.includes('def test_convert():')&&fuelTests.includes('def test_gauge():'));
 const jar=api.get('cs50p-8-jar').files['jar.py'];
 for(const name of ['__init__','__str__','deposit','withdraw','capacity','size']){
  assert(jar.includes('def '+name+'('),'Jar class missing '+name);
