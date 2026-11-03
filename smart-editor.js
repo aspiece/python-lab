@@ -81,7 +81,7 @@
   const list=$('testsList'),summary=$('testsSummary');if(!list)return;list.textContent='';
   if(!state.tests){if(summary)summary.textContent='Run Tests to collect pytest results.';return;}
   if(state.tests.running){if(summary)summary.textContent='Running pytest in the browser…';return;}
-  const tests=state.tests.tests||[],total=tests.length;
+  const report=state.tests,tests=report.tests||[],total=tests.length;
   const passed=tests.filter(t=>t.outcome==='passed').length;
   const failed=tests.filter(t=>t.outcome==='failed').length;
   const skipped=tests.filter(t=>t.outcome==='skipped').length;
