@@ -2,6 +2,7 @@
 const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/';
 let pyodide, initialized=false, initializing;
 let lastWorkspaceFiles=new Set(),lastWorkspaceDirs=new Set();
+let runningProgram=false;
 function message(type, extra={}) { self.postMessage({type,...extra}); }
 async function init() {
   if(initialized)return;
@@ -26,6 +27,7 @@ self.onmessage=async ({data})=>{
   try {
     if(data.type==='init'){await init();return;}
     if(data.type==='diagnose'){
+      if(runningProgram)return; // avoid competing Pyodide calls during execution
       await init();
       try{
         pyodide.globals.set('__lab_diag_json',JSON.stringify(data.files||{}));
@@ -37,6 +39,8 @@ self.onmessage=async ({data})=>{
       return;
     }
     if(data.type!=='run')return;
+    if(runningProgram)return;
+    runningProgram=true;
     await init();
     let inputs=data.stdin?data.stdin.replace(/\r\n/g,'\n').split('\n'):[];
     const userFiles=data.files||{};
@@ -174,4 +178,5 @@ finally:
       message('files',{files:changed,dirs:newDirs});
     }
   }catch(err){message('fatal',{message:String(err)+(err&&err.stack?'\n'+err.stack:'')});}
+  finally{if(data.type==='run')runningProgram=false;}
 };
