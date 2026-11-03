@@ -126,6 +126,21 @@ finally:
     except Exception:
         pass
 
+# A final completion snapshot exposes output from the last executed line.
+# Line-event snapshots above represent state BEFORE each line executes.
+if _frames and not _error:
+    _last = _frames[-1]
+    _frames.append(
+        {
+            "file": _last["file"],
+            "line": _last["line"],
+            "function": "<completed>",
+            "depth": 0,
+            "locals": _last["locals"],
+            "output": _output.getvalue()[-2000:],
+        }
+    )
+
 __pl_trace_result_json = json.dumps(
     {
         "frames": _frames,
