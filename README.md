@@ -1,3 +1,24 @@
+## Phase 2 — Enhanced browser terminal (GitHub Pages)
+
+Python Lab now uses **xterm.js** to render a VS Code-style simulated terminal in the public GitHub Pages app. The terminal supports command history (↑/↓), backspace and cursor navigation, basic Tab completion, clear screen (Ctrl+L), and Ctrl+C to stop a running Python program. If xterm.js cannot load, the previous HTML-based terminal remains available.
+
+Supported browser commands include:
+
+- Run: `python FILE.py [args]`, `python -c "CODE"`, `python -m pytest`, `pytest`
+- Navigate: `pwd`, `ls`, `tree`, `cd`, `mkdir -p`
+- Files: `cat`, `touch`, `cp`, `rm`
+- Other: `echo`, `whoami`, `clear`, `help`
+
+These are **simulated commands** mapped to the workspace. They do not invoke a real operating-system shell. Native CLI tools (for example, `submit50`, `check50`, a full `pip install` workflow, or arbitrary shell processes) remain unavailable on the static public site.
+
+### Input behavior
+
+Python prompts such as `input("Name: ")` now render without an unwanted newline; typing occurs at that prompt. On each input response, the browser reruns the program using the previously collected answers. The terminal suppresses repeated output when it matches the previous run and resets local workspace file contents to the run's original snapshot, reducing duplicated file writes. **This is not a truly paused Python process**: random data, clock values, external requests, irreversible side effects, and import-time state can still change or repeat. Use a real Python environment for coursework that relies on those semantics.
+
+The simulated terminal is independent of the optional localhost backend. The backend continues to provide the real shell only when the app runs locally at http://127.0.0.1:8000. Do not expose the localhost backend to the public internet.
+
+---
+
 # Python Lab — VS Code-inspired browser workspace
 
 Public site: https://aspiece.github.io/python-lab/
@@ -52,7 +73,7 @@ Folders appear in Explorer and are saved in browser local storage alongside Pyth
 
 ## Browser simulated terminal (GitHub Pages)
 
-The public website now accepts a subset of commands directly in its terminal input field: `help`, `python FILE.py [args]`, `python -m pytest`, `pytest`, `ls`/`dir`, `pwd`, `cat FILE`, `touch FILE`, `clear`/`cls`. Command history: Up/Down arrows. Python code executes using Pyodide. `pip install`, directory navigation, and arbitrary system commands are not fully supported.
+The public website accepts a subset of simulated shell commands in the terminal: `help`, `python FILE.py [args]`, `python -m pytest`, `pytest`, `ls`/`dir`, `pwd`, `cat FILE`, `touch FILE`, `clear`/`cls`. Command history: Up/Down arrows. Python code executes using Pyodide. Directory navigation works in the simulated project workspace; direct `pip install` and arbitrary system commands are not supported.
 
 **Interactive input limitation:** Python `input()` currently uses a replay strategy: each additional answer re-executes the Python script with accumulated answers. This is NOT a true paused process and may repeat side effects; a future implementation needs a different runtime strategy. Do not use it for coursework relying on nondeterminism or persistent file side effects.
 
