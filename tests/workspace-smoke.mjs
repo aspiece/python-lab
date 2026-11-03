@@ -53,6 +53,22 @@ Worker.current.fire({type:'output',text:'Hello Alex\n'});
 Worker.current.fire({type:'done',success:true});
 assert.equal(output.filter(x=>x==='Name: ').length,1,'Repeated prompt');
 assert.equal(output.filter(x=>x==='Hello Alex\n').length,1,'Missing response output');
+// Regression: two input() prompts must not repeat the first at the second caret.
+elements.runBtn.click();
+Worker.current.fire({type:'output',text:'First? '});
+Worker.current.fire({type:'needInput'});
+window.pythonLabTerminalHost.submit('one');
+Worker.current.fire({type:'output',text:'First? '});
+Worker.current.fire({type:'output',text:'Second? '});
+Worker.current.fire({type:'needInput'});
+assert(output.includes('MODE input Second? '),'Second input prompt includes already-answered question');
+assert(!output.includes('MODE input First? Second? '),'Input replay duplicated previous prompt');
+window.pythonLabTerminalHost.submit('two');
+assert.equal(Worker.current.sent.at(-1).stdin,'one\ntwo');
+Worker.current.fire({type:'output',text:'First? '});
+Worker.current.fire({type:'output',text:'Second? '});
+Worker.current.fire({type:'output',text:'Done\n'});
+Worker.current.fire({type:'done',success:true});
 window.pythonLabTerminalHost.submit('cp main.py week1/copy.py');
 assert(window.pythonLabWorkspace().files['week1/copy.py']);
 window.pythonLabTerminalHost.submit('rm week1/copy.py');
@@ -60,25 +76,69 @@ assert(!window.pythonLabWorkspace().files['week1/copy.py']);
 listeners.keydown({ctrlKey:true,metaKey:false,altKey:false,shiftKey:false,key:'s',code:'KeyS',preventDefault(){}});
 assert.equal(localStorage.saved.filename,'main.py','Save shortcut failed');
 
-const tContainer=new El('browserTerminal'),tWrites=[],submitted=[];
+const tContainer=new El('browserTerminal'),submitted=[];
 tContainer.parentElement={classList:{add(){},remove(){}},addEventListener(){}};
-class MockTerminal{
- static instance;
- constructor(){MockTerminal.instance=this;}
- open(){}write(value){tWrites.push(value)}clear(){}focus(){}resize(){}scrollToBottom(){}
- onData(cb){this.onDataFn=cb}
-}
-const host={attach(adapter){this.adapter=adapter;adapter.setMode('shell','~/python-lab $ ')},submit(value){submitted.push(value);this.adapter.setMode('shell','~/python-lab $ ')},interrupt(){},complete:s=>s==='py'?['python']:[]};
-runInNewContext(terminal,{window:{Terminal:MockTerminal,pythonLabTerminalHost:host},location:{hostname:'aspiece.github.io',port:''},document:{getElementById:()=>tContainer,createElement:()=>({}),head:{append(){}}},ResizeObserver:class{observe(){}},console:{warn(){}}});
-assert(host.adapter,'Browser terminal adapter missing');
-MockTerminal.instance.onDataFn('py');
-MockTerminal.instance.onDataFn('\t');
-MockTerminal.instance.onDataFn('\r');
+let interrupted=0;
+const host={
+ attach(adapter){this.adapter=adapter;adapter.setMode('shell','~/python-lab $ ')},
+ submit(value){submitted.push(value);this.adapter.setMode('shell','~/python-lab $ ')},
+ interrupt(){interrupted++;},
+ complete:s=>s==='py'?['python']:[]
+};
+runInNewContext(terminal,{
+ window:{pythonLabTerminalHost:host},
+ location:{hostname:'aspiece.github.io',port:''},
+ document:{getElementById:()=>tContainer,createElement:tag=>new El(tag)},
+ console:{warn(){}}
+});
+assert(host.adapter,'Editor-style terminal adapter missing');
+const terminalEditor=host.adapter.inputElement;
+assert(terminalEditor,'Terminal input must be a native editable field');
+const press=(key,opts={})=>{
+ const event={key,shiftKey:false,ctrlKey:false,metaKey:false,altKey:false,
+  isComposing:false,prevented:false,preventDefault(){this.prevented=true},...opts};
+ terminalEditor.events.keydown(event);return event;
+};
+terminalEditor.value='py';terminalEditor.selectionStart=2;terminalEditor.selectionEnd=2;
+press('Tab');
+assert.equal(terminalEditor.value,'python ','Tab completion failed');
+press('Enter');
 assert.equal(submitted[0],'python ');
-host.adapter.write('Name: ');host.adapter.setMode('input','Name: ');
-MockTerminal.instance.onDataFn('Alex');MockTerminal.instance.onDataFn('\r');
+assert.equal(terminalEditor.value,'');
+host.adapter.write('Name: ');
+host.adapter.setMode('input','Name: ');
+assert.equal(tContainer.children[1].children[0].textContent,'Name: ','Input label missing');
+terminalEditor.value='Alex';terminalEditor.selectionStart=terminalEditor.selectionEnd=4;
+press('Enter');
 assert.equal(submitted[1],'Alex');
-assert(tWrites.some(x=>x.includes('Name: ')&&x.includes('Alex')),'Input prompt was erased');
+const historyText=()=>tContainer.children[0].children.map(c=>c.textContent).join('');
+assert(historyText().includes('Name: Alex\n'),'Inline input and answer not visible together');
+assert.equal((historyText().match(/Name: /g)||[]).length,1,'Input prompt was displayed twice');
+host.adapter.write('Age? ');
+host.adapter.setMode('input','Age? ');
+assert.equal(tContainer.children[1].children[0].textContent,'Age? ','Second input prompt missing');
+assert(!historyText().endsWith('Age? '),'Pending prompt should be displayed inline');
+terminalEditor.value='18';terminalEditor.selectionStart=terminalEditor.selectionEnd=2;press('Enter');
+assert.equal(submitted[2],'18');
+assert(historyText().includes('Age? 18\n'),'Second inline answer missing');
+host.adapter.setMode('shell','~/python-lab $ ');
+terminalEditor.value='copy me';terminalEditor.selectionStart=0;terminalEditor.selectionEnd=4;
+const copyKey=press('c',{ctrlKey:true});
+assert(!copyKey.prevented,'Ctrl+C with text selected must preserve native copy');
+terminalEditor.value='draft';terminalEditor.selectionStart=5;terminalEditor.selectionEnd=5;
+const selectAll=press('a',{ctrlKey:true});
+assert(!selectAll.prevented,'Native text selection should work');
+const paste=press('v',{ctrlKey:true});
+assert(!paste.prevented,'Native clipboard paste should work');
+const newline=press('Enter',{shiftKey:true});
+assert(!newline.prevented,'Shift+Enter should allow editing multiline commands');
+assert.equal(submitted.length,3,'Shift+Enter should not submit a command');
+terminalEditor.value='first command';terminalEditor.selectionStart=terminalEditor.selectionEnd=13;
+press('Enter');
+terminalEditor.value='';terminalEditor.selectionStart=terminalEditor.selectionEnd=0;
+press('ArrowUp');
+assert.equal(terminalEditor.value,'first command','Command history does not work');
+host.adapter.clear();assert.equal(tContainer.children[0].children.length,0,'Clear did not reset history');
 // Phase 3: the smart editor reports real parser diagnostics returned by the worker.
 const mockCompletion={},markerCalls=[];
 const mockMonaco={
@@ -127,4 +187,4 @@ Worker.current.fire({type:'testResults',tests:[
 assert(elements.testsSummary.textContent.includes('1 passed'),'Test summary missing passed result');
 assert(elements.testsSummary.textContent.includes('1 failed'),'Test summary missing failed result');
 assert.equal(elements.testsList.children.length,2,'Test result list incomplete');
-console.log('Workspace, terminal and smart editor smoke checks passed.');
+console.log('Workspace, editor-like terminal input, and smart editor smoke checks passed.');
