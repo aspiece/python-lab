@@ -1,7 +1,7 @@
 /* Python Lab worker: isolated Python runtime, visible errors, package discovery. */
 const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/';
 let pyodide, initialized=false, initializing;
-let lastWorkspaceFiles=new Set();
+let lastWorkspaceFiles=new Set(),lastWorkspaceDirs=new Set();
 function message(type, extra={}) { self.postMessage({type,...extra}); }
 async function init() {
   if(initialized)return;
@@ -40,6 +40,14 @@ self.onmessage=async ({data})=>{
     }
     lastWorkspaceFiles=new Set(Object.keys(userFiles));
     const dirs=[...(data.dirs||[]),...Object.keys(userFiles).map(n=>n.includes('/')?n.slice(0,n.lastIndexOf('/')):'')].filter(Boolean);
+    const expectedDirs=new Set();
+    for(const dir of dirs)if(safePath(dir)){let p='';for(const seg of dir.split('/')){p=p?p+'/'+seg:seg;expectedDirs.add(p);}}
+    // A deleted Explorer folder must not reappear merely because Pyodide retained it.
+    for(const dir of [...lastWorkspaceDirs].sort((a,b)=>b.length-a.length)){
+      if(expectedDirs.has(dir))continue;
+      try{pyodide.FS.rmdir(base+'/'+dir);}catch{}
+    }
+    lastWorkspaceDirs=new Set(expectedDirs);
     for(const dir of dirs.sort((a,b)=>a.length-b.length)){
       if(!safePath(dir))continue;
       let current=base;
@@ -123,6 +131,7 @@ finally:
       }
       try{collect(base,'',0);}catch(err){message('output',{text:'Workspace synchronization: '+String(err)+'\n',stream:'stderr'});}
       lastWorkspaceFiles=new Set(Object.keys(changed));
+      lastWorkspaceDirs=new Set(newDirs);
       message('files',{files:changed,dirs:newDirs});
     }
   }catch(err){message('fatal',{message:String(err)+(err&&err.stack?'\n'+err.stack:'')});}
