@@ -10,6 +10,7 @@ let openTabs=[...new Set((Array.isArray(initial.openTabs)?initial.openTabs:[file
 if(!openTabs.includes(filename))openTabs.push(filename);
 const models=new Map(),viewStates=new Map();
 let panelCollapsed=false;
+let cs50Installing=false;
 let activeProjectId=null,activeProjectName='My Python Lab',projectReady=false,projectBusy=false;
 let enhancedTerminal=null,replayBaseline='',scriptTranscript='',replayWarned=false,lastExecutionFiles={};
 function clearTerminal(){
@@ -106,7 +107,7 @@ function persist(immediate=false){
 }
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
 function append(value,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=value;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;enhancedTerminal?.write(value,cls);}
-function updateButtons(){$('runBtn').disabled=!ready||running;$('stopBtn').disabled=!running;}
+function updateButtons(){$('runBtn').disabled=!ready||running||cs50Installing;$('stopBtn').disabled=!running;}
 function updateStatusBar(){
  const node=$('cursorStatus');if(!node)return;
  if(editor){const p=editor.getPosition();node.textContent=p?'Ln '+p.lineNumber+', Col '+p.column:'Ln 1, Col 1';}
@@ -433,16 +434,18 @@ function renderFiles(){
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
 function installCs50Browser(){
- if(!worker||!ready||running){
+ if(!worker||!ready||running||cs50Installing){
   const error='Python runtime is not ready or is running another program.';
   append(error+'\n','error-line');
   window.pythonLabCS50Tools?.packageResult({name:'cs50',success:false,error});
   return;
  }
+ cs50Installing=true;updateButtons();
  append('Attempting to install the cs50 Python library (not submit50) in the browser runtime…\n');
  worker.postMessage({type:'installPackage',name:'cs50'});
 }
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=16');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'){
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;cs50Installing=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=16');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'){
+  cs50Installing=false;updateButtons();
   window.pythonLabCS50Tools?.packageResult(data);
   append(data.success?'✓ cs50 library is ready to import in this browser.\n':'CS50 package install unavailable: '+String(data.error||'Unknown error')+'\n',data.success?'success-line':'error-line');
 }if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',latestInputPrompt());if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='traceResults'){running=false;updateButtons();setStatus('Python ready','ready');window.pythonLabDebug?.onResult(data);showShell();}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
