@@ -1,3 +1,17 @@
+## Editor-style terminal input (November 2026)
+
+The public GitHub Pages terminal now has an inline **native text editor at the active `$` prompt**, using the same monospace font sizing and cursor behavior as the code workspace.
+
+- Click the prompt and type directly. Click inside your command to reposition the caret, highlight text with the mouse or Shift+arrow keys, and use normal copy/paste, cut, and undo/redo.
+- **Enter** runs the current simulated command or submits one Python `input()` answer. **Shift+Enter** adds a newline while preparing a longer command.
+- **Up/Down** recalls simulated shell history. **Tab** completes shell command/file names; when answering a Python prompt, Tab inserts spaces.
+- **Ctrl/Cmd+L** clears output, while **Ctrl/Cmd+C** copies selected input text or interrupts the current input when nothing is selected.
+- Python `input("...")` prompts appear immediately beside the editable input field, rather than in a separate text box.
+
+The command output above the prompt remains read-only but selectable and copyable. This interface does not grant a real system shell or remove Pyodide's replay-based Python input limitation. The optional localhost backend still uses its own real xterm terminal.
+
+---
+
 # Phase 5 — Student Projects and Classroom Workflow
 
 Python Lab now supports **multiple named local projects**. Use the project selector beside the Python Lab title to open, create, rename, or delete projects. Files, folders, open editor tabs, cursor state where supported, and breakpoints are saved separately per project.
