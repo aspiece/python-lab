@@ -79,7 +79,7 @@ window.pythonLabDebug.abort();
 let installed=null;
 window.pythonLabTemplates.attach(project=>{installed=project;return true;});
 assert.equal(elements.templateGallery.children.length,4,'Expected four starter projects');
-elements.templateGallery.children[2].click();
+elements.templateGallery.children[2].children[0].click();
 assert(installed.files['main.py']&&installed.files['test_main.py']);
 assert(installed.files['README.md']);
 assert(installed.id==='functions-tests');
