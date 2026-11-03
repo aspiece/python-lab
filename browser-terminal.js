@@ -38,6 +38,7 @@
   function setMode(next,nextPrompt){
    mode=next;line='';cursor=0;historyIndex=history.length;
    if(next==='shell'){prompt=nextPrompt||'~/python-lab $ ';term.write(safePrompt());}
+   else if(next==='input')prompt=nextPrompt||'';
    else prompt='';
   }
   function submit(){
@@ -100,6 +101,7 @@
     if(mode==='busy'||mode==='input')term.scrollToBottom();
    },
    setMode,focus:()=>term.focus(),clear:()=>{term.clear();},
+   echoCommand(command){if(mode==='shell'){setLine(command);term.write('\r\n');line='';cursor=0;}else term.write('\r\n'+safePrompt()+command+'\r\n');},
    resize:()=>{const width=container.clientWidth,height=container.clientHeight;
     if(width>50&&height>40)term.resize(Math.max(22,Math.floor((width-20)/7.85)),Math.max(4,Math.floor((height-16)/17.2)));
    }
