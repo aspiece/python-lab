@@ -124,7 +124,6 @@ press('ArrowUp');
 assert.equal(terminalEditor.value,'first command','Command history does not work');
 host.adapter.clear();assert.equal(tContainer.children[0].children.length,0,'Clear did not reset history');
 // Phase 3: the smart editor reports real parser diagnostics returned by the worker.
- reports real parser diagnostics returned by the worker.
 const mockCompletion={},markerCalls=[];
 const mockMonaco={
  languages:{
