@@ -264,7 +264,7 @@ function shellCommand(line,alreadyEchoed=false){
   if(!args.length){showShell();return;}
   const cmd=args[0],rest=args.slice(1);
   if(cmd==='clear'||cmd==='cls'){clearTerminal();}
-  else if(cmd==='help')append('Commands: python FILE.py [args], python -c CODE, python -m pytest, pytest, ls, tree, pwd, cd, mkdir [-p], cat, echo, touch, cp, rm, whoami, clear, help\nNote: This is a safe browser simulation, not a full system shell. pip install and submit50 are not available.\n');
+  else if(cmd==='help')append('Commands: python FILE.py [args], python -c CODE, python -m pytest, pytest, ls, tree, pwd, cd, mkdir [-p], rmdir, cat, echo, touch, cp, mv, rm, whoami, clear, help\nNote: This is a safe browser simulation, not a full system shell. pip install and submit50 are not available.\n');
   else if(cmd==='ls'||cmd==='dir'){const target=normalize(rest.find(a=>!a.startsWith('-'))||'.');if(target&&!dirs.has(target))append('No such directory: '+target+'\n','error-line');else append([...dirs].filter(d=>parent(d)===target).map(d=>d.split('/').pop()+'/').concat(Object.keys(files).filter(f=>parent(f)===target).map(f=>f.split('/').pop())).sort().join('    ')+'\n');}
   else if(cmd==='pwd')append('/home/pyodide'+(cwd?'/'+cwd:'')+'\n');
   else if(cmd==='echo')append(rest.join(' ')+'\n');
@@ -308,6 +308,32 @@ function shellCommand(line,alreadyEchoed=false){
         if(!openTabs.includes(filename))openTabs.push(filename);
         renderFiles();renderTabs();persist();
       }
+    }
+  }
+  else if(cmd==='mv'){
+    if(rest.length!==2)append('Usage: mv SOURCE DEST\n','error-line');
+    else{
+      const source=normalize(rest[0]),dest=normalize(rest[1]);
+      if(!Object.hasOwn(files,source))append('mv: source must be a file (move folders in Explorer)\n','error-line');
+      else if(Object.hasOwn(files,dest)||dirs.has(dest))append('mv: destination already exists\n','error-line');
+      else if(parent(dest)&&!dirs.has(parent(dest)))append('mv: destination folder not found\n','error-line');
+      else{
+        files[dest]=files[source];delete files[source];
+        const previous=models.get(source);
+        if(previous){if(editor?.getModel()===previous)editor.setModel(null);previous.dispose();models.delete(source);}
+        viewStates.delete(source);
+        openTabs=openTabs.map(p=>p===source?dest:p);
+        if(filename===source){filename=dest;if(editor)editor.setModel(modelFor(dest));else fallback.value=files[dest];}
+        renderTabs();renderFiles();persist();
+      }
+    }
+  }
+  else if(cmd==='rmdir'){
+    if(!rest[0])append('Usage: rmdir EMPTY_DIRECTORY\n','error-line');
+    else{const dir=normalize(rest[0]);
+      if(!dirs.has(dir))append('rmdir: directory not found\n','error-line');
+      else if([...dirs].some(p=>p.startsWith(dir+'/'))||Object.keys(files).some(p=>p.startsWith(dir+'/')))append('rmdir: directory is not empty\n','error-line');
+      else{dirs.delete(dir);expanded.delete(dir);if(cwd===dir)cwd=parent(dir);renderFiles();persist();}
     }
   }
   else if(cmd==='touch'){if(!rest[0])append('Usage: touch FILE\n');else{const p=normalize(rest[0]);if(!dirs.has(parent(p))&&parent(p))append('No such directory\n','error-line');else {files[p]??='';renderFiles();persist();}}}
