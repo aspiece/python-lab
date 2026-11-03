@@ -333,3 +333,33 @@
  .cs50p-dialog .template-link{min-width:0}
  .cs50p-dialog .template-dialog-footer{gap:8px}
 }
+
+
+/* Official CS50 handoff: no direct submission, no account credentials. */
+.cs50-submit-dialog{width:min(680px,96vw);max-width:680px;max-height:90dvh;overflow:auto;padding:20px 23px;}
+.cs50-submit-dialog h3{margin:0 0 9px;font-size:18px;}
+.cs50-submit-dialog p{line-height:1.55;}
+.cs50-submit-dialog label{margin:13px 0 5px;}
+.cs50-submit-dialog select{display:block;width:100%;min-height:37px;padding:8px 10px;color:#eaf2ff;background:#131e2d;border:1px solid #60738a;border-radius:6px;}
+.cs50-problem-title{font-weight:650;color:#c7e4ff!important;font-size:12px;margin:12px 0!important;}
+.cs50-command-block{background:#121c2a;border:1px solid #3c526b;border-radius:7px;margin:10px 0;padding:10px 12px;}
+.cs50-command-block>span{display:block;font-size:11px;color:#b5cbe2;font-weight:600;margin-bottom:8px;}
+.cs50-command-block code,.cs50-files-list{font:12px/1.65 Consolas,Menlo,monospace;color:#e2eefc;}
+.cs50-command-line{display:flex;align-items:center;gap:8px;min-width:0;justify-content:space-between;}
+.cs50-command-line code{overflow-wrap:anywhere;min-width:0;}
+.cs50-command-line button{border:1px solid #496888;flex:none;padding:6px 10px;}
+.cs50-files-list{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:105px;overflow:auto;}
+.cs50-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0;}
+.cs50-actions a{color:#a4ceff;font-size:12px;text-decoration:underline;text-underline-offset:2px;padding:7px 0;}
+.cs50-actions button{font-size:12px;}
+.cs50-status{display:block;min-height:14px;font-size:11px!important;color:#b5c6dc!important;}
+.cs50-disclaimer{font-size:11px!important;color:#a1b4ca!important;}
+.cs50-library-panel{border-top:1px solid #43536a;margin-top:15px;padding-top:14px;}
+.cs50-library-panel strong{font-size:12px;color:#d9e9ff;}
+.cs50-library-panel p{font-size:11px;margin:8px 0;}
+.cs50-library-panel button{border:1px solid #59758f;}
+.cs50-library-panel .cs50-status{margin-top:8px;}
+.cs50-footer{display:flex;justify-content:flex-end;border-top:1px solid #364960;margin-top:12px;padding-top:11px;}
+.cs50-footer button{border:1px solid #536d8c;}
+@media(max-width:1180px){#cs50ToolsBtn{display:none}}
+@media(max-width:620px){.cs50-submit-dialog{padding:14px 12px;max-height:94dvh}.cs50-command-line{align-items:flex-start;flex-wrap:wrap}.cs50-actions{flex-direction:column;align-items:flex-start}}
