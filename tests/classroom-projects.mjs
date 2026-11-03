@@ -101,9 +101,15 @@ const indoorCard=starterCards.find(item=>item.children[0].children[0].textConten
 assert(indoorCard,'Indoor Voice starter not found in classroom gallery');
 indoorCard.children[0].click();
 const afterStarter=first.window.pythonLabWorkspace();
-assert.equal(afterStarter.filename,'cs50p-0-indoor/indoor.py','Starter did not open the required Python filename');
-assert(afterStarter.files['cs50p-0-indoor/indoor.py'],'Starter was not added to a folder');
+assert.equal(afterStarter.filename,'indoor/indoor.py','Starter did not open the expected indoor/indoor.py filename');
+assert(afterStarter.files['indoor/indoor.py'],'Starter was not added to the assignment-named folder');
 assert.equal(afterStarter.files['main.py'],legacy,'Starter selection overwrote original student work');
+indoorCard.children[0].click();
+const afterDuplicate=first.window.pythonLabWorkspace();
+assert.equal(afterDuplicate.filename,'indoor-2/indoor.py','Repeat starter should use a safe -2 folder suffix');
+assert(afterDuplicate.files['indoor/indoor.py'],'First starter lost when installing a duplicate');
+assert.equal(afterDuplicate.files['main.py'],legacy,'Repeat starter overwrote student work');
+
 // The prior four starter IDs remain usable by already-shared Canvas URLs.
 assert(first.window.pythonLabTemplates.get('functions-tests')?.files['test_main.py']);
 assert(!first.window.pythonLabTemplates.catalog().some(p=>p.id==='functions-tests'),
@@ -120,6 +126,7 @@ const assignedProject=await second.window.pythonLabProjects.get(assigned.id);
 assert(assignedProject.snapshot.files['test_fuel.py'],'Assignment tests missing');
 assert(assignedProject.snapshot.files['fuel.py'],'Assignment starter code missing');
 assert.equal(assignedProject.snapshot.filename,'test_fuel.py');
+assert.equal(assigned.name,'test_fuel','Canvas starter project should be named by assignment folder');
 const third=createBrowser(assignment);
 await settle();
 assert.equal((await third.window.pythonLabProjects.list()).length,3,'Reopening assignment created a duplicate');
