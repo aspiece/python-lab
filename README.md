@@ -1,3 +1,37 @@
+# CS50P Starter Code Gallery — 41 Problems (November 2026)
+
+Python Lab's **CS50P Starters** gallery contains **41 original, unsolved scaffolds** corresponding to every assignment listed in [Harvard's CS50 Introduction to Programming with Python Problem Sets 0–8](https://cs50.harvard.edu/python/psets/).
+
+The gallery is grouped by problem set, with search and a dropdown filter:
+
+| Problem set | Topic | Problems |
+| --- | --- | ---: |
+| 0 | Functions, Variables | 5 |
+| 1 | Conditionals | 5 |
+| 2 | Loops | 5 |
+| 3 | Exceptions | 4 |
+| 4 | Libraries | 6 |
+| 5 | Unit Tests | 4 |
+| 6 | File I/O | 4 |
+| 7 | Regular Expressions | 5 |
+| 8 | Object-Oriented Programming | 3 |
+
+### Starter creation
+
+Select **CS50P Starters**, choose a problem, and click its card. The workspace creates a **separate, uniquely named folder** with the appropriate Python filename (for example, indoor.py or test_fuel.py), original TODO blocks, and a README linking to the official assignment.
+
+Problem Set 5 includes both the student's implementation module (for example, fuel.py) and its test_fuel.py file, which opens automatically. Later assignments that require testing include matching unsolved test-file scaffolds. Students must replace TODOs and add meaningful tests themselves; the starters intentionally raise NotImplementedError until completed. This library does **not** include completed solutions or answer keys.
+
+Open **Official instructions** from a problem card or select **Copy assignment link** to share a reusable student starter link through Canvas. Returning to the same link in the same browser profile reopens that student's saved assignment.
+
+### Environment limitations
+
+These are **Python Lab-authored, unofficial** starter files, not exact copies of starter files distributed by Harvard. The official problem pages remain the definitive specifications. Some assignments require external libraries (such as emoji, pyfiglet, inflect, requests, Pillow, or fpdf2), images, CSVs, internet APIs, or a real operating-system shell. GitHub Pages cannot guarantee all of those capabilities; affected starter READMEs include an environment note.
+
+Official check50, submit50, and CS50 grading are not included in Python Lab. Students doing CS50 coursework must follow Harvard's [Academic Honesty](https://cs50.harvard.edu/python/honesty/) requirements and use authorized testing and submission environments.
+
+---
+
 ## Editor-style terminal input (November 2026)
 
 The public GitHub Pages terminal now has an inline **native text editor at the active `$` prompt**, using the same monospace font sizing and cursor behavior as the code workspace.
