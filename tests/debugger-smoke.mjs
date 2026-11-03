@@ -47,7 +47,7 @@ window.pythonLabDebug.attach({
 });
 assert(mouseDown,'Monaco breakpoint click handler missing');
 mouseDown({target:{type:1,position:{lineNumber:2}}});
-assert.deepEqual(window.pythonLabDebug.serialize()['main.py'],[2]);
+assert.equal(JSON.stringify(window.pythonLabDebug.serialize()['main.py']),JSON.stringify([2]));
 assert(persistCount>0,'Breakpoints not persisted');
 assert.equal(model.decorations.length,1);
 window.pythonLabDebug.begin();
