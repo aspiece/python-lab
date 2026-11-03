@@ -11,8 +11,8 @@ async function init() {
       importScripts(PYODIDE_BASE+'pyodide.js');
       if(typeof loadPyodide!=='function')throw Error('Pyodide loader was unavailable');
       pyodide=await loadPyodide({indexURL:PYODIDE_BASE});
-      pyodide.setStdout({batched:s=>message('output',{text:s+'\n'})});
-      pyodide.setStderr({batched:s=>message('output',{text:s+'\n',stream:'stderr'})});
+      pyodide.setStdout({batched:s=>message('output',{text:s})});
+      pyodide.setStderr({batched:s=>message('output',{text:s,stream:'stderr'})});
       initialized=true;
       message('ready');
     } catch(err) {
@@ -31,6 +31,9 @@ self.onmessage=async ({data})=>{
     const userFiles=data.files||{};
     const safePath=p=>typeof p==='string'&&p.split('/').every(x=>x&&!['.','..'].includes(x)&&/^[\w. -]+$/.test(x));
     const base='/home/pyodide';
+    // On each input replay, restore the previous workspace snapshot before
+    // executing the script. This avoids duplicate file appends and repeated
+    // local writes, but cannot undo external network effects or randomness.
     // Keep the virtual filesystem consistent with Explorer renames and deletions.
     for(const old of lastWorkspaceFiles){
       if(!Object.hasOwn(userFiles,old))try{pyodide.FS.unlink(base+'/'+old);}catch{}
@@ -81,7 +84,6 @@ def __lab_input(prompt=''):
         answer = next(__lab_iterator)
     except StopIteration:
         raise __LabNeedInput()
-    print(answer, flush=True)
     return answer
 builtins.input=__lab_input
 sys.argv=[__lab_filename]+list(__lab_args)
