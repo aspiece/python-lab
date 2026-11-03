@@ -1,3 +1,19 @@
+## Phase 3 — Smart Python editor (GitHub Pages)
+
+Python Lab now provides lightweight Python IntelliSense in Monaco: Python keywords, common built-in functions with hover help, reusable code snippets (for loops, conditionals, functions, classes, try/except, and file access), and simple project identifier completion. These suggestions are intended as beginner assistance, **not** a complete Python language server or static type checker.
+
+### Python Problems panel
+
+The **Problems** tab automatically checks project .py files with the Python **ast.parse** parser in the Pyodide worker after editing settles. Syntax errors are underlined in Monaco and listed by file, line, and column. Select a problem to jump directly to its location. This checks Python grammar and indentation; it does not detect all runtime errors, logic mistakes, type errors, or undefined variables. Diagnostics are skipped for exceptionally large Python files.
+
+### Test Results panel
+
+Use **▶ Tests**, the Command Palette's **Run Tests**, or the simulated `python -m pytest` command to run the project's test_*.py files. The **Test Results** tab shows individual passed, failed, skipped, and collection-error cases, with clickable file locations and failure details when pytest supplies them. The terminal remains available for the full pytest log.
+
+**Limitations:** pytest runs in Pyodide and may not support packages or plugins needing native binaries, filesystem permissions, or external services. The public site's input() simulation still replays the script after answers, as described below. Students should use the official CS50 environment for check50/submit50 and official grading.
+
+---
+
 ## Phase 2 — Enhanced browser terminal (GitHub Pages)
 
 Python Lab now uses **xterm.js** to render a VS Code-style simulated terminal in the public GitHub Pages app. The terminal supports command history (↑/↓), backspace and cursor navigation, basic Tab completion, clear screen (Ctrl+L), and Ctrl+C to stop a running Python program. If xterm.js cannot load, the previous HTML-based terminal remains available.
