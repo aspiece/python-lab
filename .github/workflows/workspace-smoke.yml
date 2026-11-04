@@ -19,6 +19,8 @@ jobs:
           node-version: '22'
       - name: Validate Python Lab JavaScript and simulated terminal
         run: node tests/workspace-smoke.mjs
+      - name: Exercise simulated CLI and file downloads
+        run: node tests/cli-smoke.mjs
       - name: Validate Pyodide worker contracts and Python parser code
         run: node tests/worker-contract.mjs
       - name: Validate recorded debugger and classroom projects
