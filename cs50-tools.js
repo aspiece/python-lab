@@ -45,14 +45,14 @@
   const selected={};
   if(prefix){
    for(const [path,value] of Object.entries(files)){
-    if(path.startsWith(prefix+'/')&&typeof value==='string')selected[path.slice(prefix.length+1)]=value;
+    const name=path.slice(prefix.length+1);
+    if(path.startsWith(prefix+'/')&&name.endsWith('.py')&&typeof value==='string')selected[name]=value;
    }
   }else{
-   const known=new Set(Object.keys(problem.files).filter(file=>file!=='README.md'));
+   const known=new Set(Object.keys(problem.files).filter(file=>file.endsWith('.py')));
    for(const [path,value] of Object.entries(files)){
     if(!path.includes('/')&&known.has(path)&&typeof value==='string')selected[path]=value;
    }
-   if(typeof files['README.md']==='string'&&Object.keys(selected).length)selected['README.md']=files['README.md'];
   }
   return selected;
  }
@@ -65,14 +65,14 @@
   $('cs50SubmitCommand').textContent=cmd.submit;
   const selected=submissionFiles(problem);
   const names=Object.keys(selected).sort();
-  const fileCount=names.filter(name=>name.endsWith('.py')).length;
+  const fileCount=names.length;
   $('cs50FilesList').textContent=names.length?
    names.map(name=>problem.slug+'/'+name).join('\n'):
    'No matching files found. Select a starter or open the assignment files first.';
 
   $('cs50PackageStatus').textContent=names.length?
-   fileCount+' Python file(s) detected. Right-click each assignment file in Explorer and select Download File.':
-   'No matching files for this assignment. Open an assignment file in Explorer first.';
+   'Download '+(fileCount===1?'this Python file':'these '+fileCount+' Python files')+' from Explorer. Do not send README.md.':
+   'No Python files found for this problem. Open your code in Explorer first.';
  }
  function show(){
   const select=$('cs50AssignmentSelect');if(!select)return;

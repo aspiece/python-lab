@@ -568,514 +568,556 @@
  };
  const learnerGuide={
  "0/indoor": {
+  "mission": "Make a program that turns typed words into lowercase letters.",
   "steps": [
-   "Ask the user for a sentence and save the response.",
-   "Find the string method that makes letters lowercase.",
-   "Print the changed text without adding an explanation."
+   "Ask the user to type a word or a sentence.",
+   "Use a string tool to make the letters lowercase.",
+   "Print the new text."
   ],
   "checks": [
-   "Try mixed-case words.",
-   "Make sure spaces and punctuation stay where they were."
+   "Try the input HELLO.",
+   "Try a sentence with spaces and numbers."
   ],
   "setup": "speech = input(\"Say something: \")"
  },
  "0/playback": {
+  "mission": "Make a program that slows down a sentence by changing its spaces.",
   "steps": [
-   "Collect a sentence from the user.",
-   "Replace each normal space with three periods.",
-   "Print the entire transformed sentence."
+   "Ask the user to type a sentence.",
+   "Change each space into three dots.",
+   "Print the new sentence."
   ],
   "checks": [
-   "Try one word with no spaces.",
-   "Try several words separated by spaces."
+   "Try a sentence with three words.",
+   "Try one word with no spaces."
   ],
   "setup": "speech = input(\"Enter a sentence: \")"
  },
  "0/faces": {
+  "mission": "Make a program that swaps typed faces for emoji.",
   "steps": [
-   "Write convert(s) to receive a string and return a changed string.",
-   "Identify the two emoticon text patterns specified in the assignment.",
-   "In main(), read the text, call convert, and print its result."
+   "Write the convert(s) function to change the two faces listed in the problem.",
+   "In main(), ask for text and call convert(s).",
+   "Print the changed text."
   ],
   "checks": [
-   "Try each supported emoticon.",
-   "Check a sentence containing both patterns."
+   "Try each face on its own.",
+   "Try a sentence with both faces."
   ]
  },
  "0/einstein": {
+  "mission": "Use a math rule to find energy from mass.",
   "steps": [
-   "Read a mass in kilograms and convert the input to a number.",
-   "Use the energy equation from the assignment with the speed of light.",
-   "Print the computed energy as a number."
+   "Ask the user for a mass in kilograms.",
+   "Turn the input into a number.",
+   "Use the math rule shown on the problem page.",
+   "Print the energy value."
   ],
   "checks": [
-   "Try a small integer mass.",
-   "Check the units and that you squared the correct quantity."
+   "Try a mass of 1.",
+   "Check that you used the speed of light twice."
   ],
   "setup": "mass_text = input(\"Mass (kg): \")"
  },
  "0/tip": {
+  "mission": "Make a tip calculator for a restaurant meal.",
   "steps": [
-   "Read the two inputs in main(): a formatted dollar amount and a percentage.",
-   "Complete dollars_to_float(d) to return the numeric dollar value.",
-   "Complete percent_to_float(p) to return a decimal rate.",
-   "Calculate the tip and format the result as required."
+   "Ask for the meal cost and the tip percent.",
+   "Write dollars_to_float(d) to read a price.",
+   "Write percent_to_float(p) to read a percent.",
+   "Find the tip and print it as shown in the problem."
   ],
   "checks": [
-   "Try both whole numbers and decimals.",
-   "Check the result when the percentage includes a percent sign."
+   "Try a cost with cents.",
+   "Try a percent with the % sign."
   ]
  },
  "1/deep": {
+  "mission": "Check if the user knows a special answer.",
   "steps": [
-   "Ask the user for their proposed answer.",
-   "Normalize the text so extra surrounding whitespace and capitalization do not cause a mismatch.",
-   "Check the permitted numeric and written answers.",
-   "Print the exact response specified in the instructions."
+   "Ask the user for an answer.",
+   "Remove extra spaces at the start and end.",
+   "Check the answers listed on the problem page.",
+   "Print the right message."
   ],
   "checks": [
-   "Try the numeric form.",
-   "Try written answers with mixed capitalization."
+   "Try an answer written as digits.",
+   "Try the word form with capital letters."
   ],
   "setup": "answer = input(\"What is the Answer? \")"
  },
  "1/bank": {
+  "mission": "Pick a dollar amount based on a greeting.",
   "steps": [
-   "Read a greeting.",
-   "Normalize case and remove leading spaces.",
-   "Use ordered conditions so the most specific greeting is checked first.",
-   "Print the correct amount for the greeting."
+   "Ask the user for a greeting.",
+   "Make the letters the same case.",
+   "Check the most exact greeting first.",
+   "Print the dollar amount it earns."
   ],
   "checks": [
-   "Try a greeting starting with the full special word.",
-   "Try another greeting beginning with the same initial letter."
+   "Try the special greeting.",
+   "Try a different greeting that starts with H."
   ],
   "setup": "greeting = input(\"Greeting: \")"
  },
  "1/extensions": {
+  "mission": "Find the file type from its name.",
   "steps": [
-   "Read a filename and ignore capitalization and surrounding spaces.",
-   "Identify the filename's extension, including formats that share a MIME type.",
-   "Choose the correct output for a known extension.",
-   "Use the fallback output for unrecognized extensions."
+   "Ask for a file name.",
+   "Look at the letters after the last dot.",
+   "Match the ending to a file type.",
+   "Use the default type if the ending is unknown."
   ],
   "checks": [
-   "Test JPG and JPEG filenames.",
-   "Try a filename with an unknown extension."
+   "Try a .jpg and a .jpeg file.",
+   "Try a file ending you do not know."
   ],
   "setup": "filename = input(\"File name: \")"
  },
  "1/interpreter": {
+  "mission": "Make a simple math program for two numbers.",
   "steps": [
-   "Read a simple expression containing two operands and an operator.",
-   "Separate it into three parts.",
-   "Convert numeric pieces into numbers and perform the requested operation.",
-   "Print the result in the format required by the problem."
+   "Ask for a math problem with two numbers and a sign.",
+   "Split the text into three parts.",
+   "Do the math shown by the sign.",
+   "Print the answer as the problem asks."
   ],
   "checks": [
-   "Try addition, subtraction, multiplication, and division.",
-   "Check a result that is not a whole number."
+   "Try each of the four math signs.",
+   "Try a division problem with a decimal answer."
   ],
   "setup": "expression = input(\"Expression: \")"
  },
  "1/meal": {
+  "mission": "Find which meal fits a time of day.",
   "steps": [
-   "In main(), ask for a time in the supported 24-hour format.",
-   "Implement convert(time) so it returns a numeric hour value.",
-   "Compare the resulting time with the meal ranges.",
-   "Print a meal name only when the time is within a range."
+   "Ask for a time in the form shown on the problem page.",
+   "Write convert(time) to turn the time into hours.",
+   "Check if the time falls in a meal range.",
+   "Print the meal name when there is a match."
   ],
   "checks": [
-   "Try a time exactly at a boundary.",
-   "Try a time that is between meal periods."
+   "Try the first minute of a meal range.",
+   "Try a time between meal ranges."
   ]
  },
  "2/camel": {
+  "mission": "Change a camelCase name into snake_case.",
   "steps": [
-   "Read a camelCase variable name.",
-   "Look at each character in order.",
-   "When you encounter an uppercase letter, prepare the correct separator and lowercase letter.",
-   "Print the new snake_case name."
+   "Ask for a camelCase name.",
+   "Look at one letter at a time.",
+   "When a letter is uppercase, add an underscore before it.",
+   "Make the letter lowercase and print the new name."
   ],
   "checks": [
-   "Try several capital letters.",
-   "Try a name that has no uppercase letters."
+   "Try a name with two uppercase letters.",
+   "Try a name with no uppercase letters."
   ],
   "setup": "variable_name = input(\"camelCase: \")"
  },
  "2/coke": {
+  "mission": "Make a coin machine that tracks money owed.",
   "steps": [
-   "Set the starting amount due from the official specification.",
-   "Repeatedly show the amount still owed.",
-   "Accept only the coin denominations the problem permits.",
-   "Stop when the balance is paid and calculate any change."
+   "Start with the price listed on the problem page.",
+   "Show how much money is still needed.",
+   "Keep asking for coins the machine accepts.",
+   "Stop when the user has paid enough."
   ],
   "checks": [
    "Try paying the exact amount.",
-   "Try inserting a coin that the machine should reject."
+   "Try a coin the machine should not take."
   ],
   "setup": "amount_due = 50  # cents; read the allowed coin values in the assignment"
  },
  "2/twttr": {
+  "mission": "Remove vowels from a word or sentence.",
   "steps": [
-   "Ask the user for a word or sentence.",
-   "Inspect each character to determine whether it should be omitted.",
-   "Build the result from the characters you keep.",
-   "Print the resulting text."
+   "Ask for a word or a sentence.",
+   "Look at each letter.",
+   "Keep the letters that are not vowels.",
+   "Print the new text."
   ],
   "checks": [
-   "Try mixed uppercase and lowercase vowels.",
-   "Check that punctuation and digits remain unchanged."
+   "Try both big and small vowel letters.",
+   "Check that numbers and marks stay in place."
   ]
  },
  "2/plates": {
+  "mission": "Check if a license plate follows the rules.",
   "steps": [
-   "In main(), read a plate and call is_valid(s).",
-   "Check minimum and maximum length and required starting characters.",
-   "Check any digits and their allowed position.",
-   "Reject punctuation or other disallowed characters."
+   "Ask the user to type a plate.",
+   "Write is_valid(s) to check its length and first letters.",
+   "Check where numbers are allowed.",
+   "Return True if all rules pass. Return False if not."
   ],
   "checks": [
-   "Test a plate at each length limit.",
-   "Test a plate with a digit in an invalid position."
+   "Try a plate that is too short.",
+   "Try a plate with a number in the wrong place."
   ]
  },
  "2/nutrition": {
+  "mission": "Look up the calories in a food.",
   "steps": [
-   "Create a dictionary of the foods and calorie values from the assignment.",
-   "Read a fruit name and normalize capitalization.",
-   "Look up the value only if the item is in the dictionary.",
-   "Print the required output without inventing values for unknown entries."
+   "Make a dictionary with the foods from the problem page.",
+   "Ask the user for a food name.",
+   "Find the food in the dictionary.",
+   "Print its calories if the food is listed."
   ],
   "checks": [
-   "Try a food that appears in the table.",
-   "Try a word that is not in the table."
+   "Try a food from the chart.",
+   "Try a word that is not on the chart."
   ],
   "setup": "fruit = input(\"Item: \")\n# TODO: Create the calorie lookup dictionary from the official table."
  },
  "3/fuel": {
+  "mission": "Show how full a gas tank is from a fraction.",
   "steps": [
-   "Read a fraction written as X/Y.",
-   "Validate that the pieces can be converted to integers.",
-   "Handle invalid values and a zero denominator by asking again.",
-   "Convert the fraction to a percentage and use the gauge formatting rules."
+   "Ask for a fraction like 1/4.",
+   "Check that both parts are whole numbers.",
+   "Ask again if the fraction is not valid.",
+   "Show the percent or the letter from the problem rules."
   ],
   "checks": [
-   "Try values near empty and full.",
-   "Try a denominator of zero or a malformed fraction."
+   "Try a tank that is almost empty.",
+   "Try a fraction with zero on the bottom."
   ],
   "setup": "# TODO: Build a retry loop for valid X/Y input.\n# A try/except block can handle invalid numeric conversions."
  },
  "3/taqueria": {
+  "mission": "Add up the cost of food orders.",
   "steps": [
-   "Create a menu dictionary using the official listed prices.",
-   "Read item names repeatedly until end-of-input.",
-   "Ignore entries that are not on the menu.",
-   "Keep and display a properly formatted running total."
+   "Make a dictionary of the menu prices.",
+   "Ask for one food item at a time.",
+   "Add each valid food price to the total.",
+   "Show the new total until the user ends the order."
   ],
   "checks": [
-   "Try multiple items with different prices.",
-   "Use end-of-input to complete the order."
+   "Try ordering two different foods.",
+   "Try a food that is not on the menu."
   ],
   "setup": "total = 0.0\n# TODO: Add the official menu prices and an input loop."
  },
  "3/grocery": {
+  "mission": "Count how many times each food is entered.",
   "steps": [
-   "Read item names until the user signals end-of-input.",
-   "Normalize repeated names consistently.",
-   "Count how often each item appears.",
-   "Print the sorted item counts using the required formatting."
+   "Ask for food names until the user ends the list.",
+   "Keep a count for each food.",
+   "Sort the food names from A to Z.",
+   "Print each food and its count."
   ],
   "checks": [
-   "Try the same item with different capitalization.",
-   "Check that the final output is alphabetically sorted."
+   "Enter the same food more than once.",
+   "Enter food names in mixed case."
   ],
   "setup": "counts = {}\n# TODO: Collect items until EOF and update counts."
  },
  "3/outdated": {
+  "mission": "Change a date into the year-month-day form.",
   "steps": [
-   "Ask for a date in either supported format.",
-   "Validate the month, day, and year rather than only counting separators.",
-   "Repeat the question when the input is invalid.",
-   "Print a zero-padded ISO-style date."
+   "Ask the user for a date.",
+   "Read either date form shown in the problem.",
+   "Ask again if the date does not make sense.",
+   "Print the date with two digits for month and day."
   ],
   "checks": [
-   "Try a month name and a numeric month.",
-   "Try an impossible calendar date."
+   "Try a date with a named month.",
+   "Try a date with a day that does not exist."
   ],
   "setup": "# TODO: Keep requesting a date until a valid date is entered."
  },
  "4/emojize": {
+  "mission": "Turn written emoji names into emoji pictures.",
   "steps": [
-   "Read the user's text.",
-   "Read the official instructions for the supported emoji alias syntax.",
-   "Use the emoji library to produce a changed string.",
-   "Print the result."
+   "Ask the user for text.",
+   "Look at the emoji name rules on the problem page.",
+   "Use the emoji library to change known names.",
+   "Print the new text."
   ],
   "checks": [
-   "Try one recognized emoji code.",
-   "Try ordinary text that contains no emoji codes."
+   "Try a known emoji name.",
+   "Try text with no emoji name."
   ],
   "setup": "text = input(\"Input: \")"
  },
  "4/figlet": {
+  "mission": "Print words using large text letters.",
   "steps": [
-   "Inspect command-line arguments before using them.",
-   "Handle the allowed font-option forms and invalid usage.",
-   "Use pyfiglet to render the user's text.",
-   "Print the rendered banner."
+   "Read the options typed after the program name.",
+   "Check that the font option is allowed.",
+   "Use pyfiglet to draw the user's text.",
+   "Print the result."
   ],
   "checks": [
-   "Run with no command-line flag.",
-   "Try a valid named font and an invalid font."
+   "Run with no font option.",
+   "Try a font name that is not allowed."
   ],
   "setup": "# TODO: Examine sys.argv and decide which font to use."
  },
  "4/adieu": {
+  "mission": "Print a farewell message with a list of names.",
   "steps": [
-   "Collect names in a list until end-of-input.",
-   "Use inflect for natural-language list formatting.",
-   "Match the exact opening and punctuation requested.",
-   "Print the result after input ends."
+   "Ask for names until the user stops.",
+   "Keep the names in a list.",
+   "Use inflect to join the names into one phrase.",
+   "Print the full farewell message."
   ],
   "checks": [
-   "Try one name, two names, and several names.",
-   "Check the separators and final conjunction."
+   "Try one name, then two names.",
+   "Try three or more names."
   ],
   "setup": "names = []\n# TODO: Keep accepting names until EOF."
  },
  "4/game": {
+  "mission": "Make a game where the player guesses a number.",
   "steps": [
-   "In main(), choose the allowed difficulty range.",
-   "Complete get_level() so it validates the player's choice.",
-   "Generate a secret integer within that range.",
-   "Use get_guess() to accept guesses until the correct one is entered."
+   "Ask the player to pick a level.",
+   "Choose a secret number in that level's range.",
+   "Keep asking for guesses.",
+   "Give hints until the guess is right."
   ],
   "checks": [
-   "Try values outside the allowed range.",
-   "Make sure incorrect guesses do not end the game."
+   "Try a guess that is too high.",
+   "Try a level that is not allowed."
   ]
  },
  "4/professor": {
+  "mission": "Make a quiz that asks math questions.",
   "steps": [
-   "Ask the player to choose one of the supported levels.",
-   "Complete generate_integer(level) using the range rules.",
-   "Ask the required number of addition questions.",
-   "Track attempts, error messages, and the final score."
+   "Ask the player to pick a level.",
+   "Pick numbers in the range for that level.",
+   "Ask the number of questions shown in the problem.",
+   "Track wrong tries and the final score."
   ],
   "checks": [
-   "Test each permitted level.",
-   "Test wrong answers and the retry limit."
+   "Try each game level.",
+   "Try wrong answers until tries run out."
   ]
  },
  "4/bitcoin": {
+  "mission": "Find the cost of a chosen amount of Bitcoin.",
   "steps": [
-   "Read and validate the command-line quantity.",
-   "Request the pricing data from the specified endpoint.",
-   "Handle invalid quantities and network or response errors.",
-   "Calculate and format the resulting price."
+   "Read the amount typed after the program name.",
+   "Check that it is a number.",
+   "Ask the web service for the current price.",
+   "Find and print the total cost."
   ],
   "checks": [
-   "Try a fractional quantity.",
-   "Try missing and nonnumeric arguments."
+   "Try a decimal amount.",
+   "Try leaving the amount blank."
   ],
   "setup": "# TODO: Validate sys.argv, obtain the current price, and calculate the total."
  },
  "5/test_twttr": {
+  "mission": "Write tests for the program that removes vowels.",
   "steps": [
-   "Review shorten(word) in twttr.py.",
-   "Choose test inputs with vowels in different positions and cases.",
-   "Write pytest assertions in test_twttr.py for expected results.",
-   "Run Tests and correct the implementation or tests as needed."
+   "Read the shorten(word) function in twttr.py.",
+   "Make test cases for words with and without vowels.",
+   "Add assert checks to test_twttr.py.",
+   "Run pytest and fix any problems you find."
   ],
   "checks": [
-   "Include uppercase and lowercase cases.",
-   "Include text with no vowels."
+   "Test big and small letters.",
+   "Test a word with no vowels."
   ]
  },
  "5/test_bank": {
+  "mission": "Write tests for a program that checks greetings.",
   "steps": [
-   "Review value(greeting) in bank.py.",
-   "Test greetings in each category, including mixed capitalization.",
-   "Write test_hello(), test_with_h(), and test_without_h().",
-   "Use pytest to check both normal and boundary inputs."
+   "Read the value(greeting) function in bank.py.",
+   "Plan tests for each kind of greeting.",
+   "Add assert checks in test_bank.py.",
+   "Run pytest to see which tests pass."
   ],
   "checks": [
-   "Test full greetings and shorter variations.",
-   "Verify case and leading whitespace behavior."
+   "Try a greeting that starts with H.",
+   "Try greetings with extra spaces or capital letters."
   ]
  },
  "5/test_plates": {
+  "mission": "Write tests for license plate rules.",
   "steps": [
-   "Review all validation rules for is_valid(s).",
-   "Test starting letters and minimum/maximum length.",
-   "Test number placement and disallowed punctuation.",
-   "Add separate pytest assertions for each category."
+   "Read the is_valid(s) function in plates.py.",
+   "Write tests for the first two letters and total length.",
+   "Write tests for numbers and other symbols.",
+   "Run pytest and check each result."
   ],
   "checks": [
-   "Cover both valid and invalid strings.",
-   "Use examples exactly at the length boundaries."
+   "Test both good and bad plates.",
+   "Try the shortest and longest valid lengths."
   ]
  },
  "5/test_fuel": {
+  "mission": "Write tests for the gas tank functions.",
   "steps": [
-   "Implement convert(fraction) to return a numeric percentage.",
-   "Implement gauge(percentage) to format empty/full/partial states.",
-   "Write pytest tests for valid fractions and expected errors.",
-   "Use Tests to run both functions against boundary cases."
+   "Write convert(fraction) to turn a fraction into a percent.",
+   "Write gauge(percentage) to show a tank level.",
+   "Add assert checks to test_fuel.py.",
+   "Run pytest and check for errors."
   ],
   "checks": [
-   "Include zero denominator and invalid text.",
-   "Include thresholds near empty and full."
+   "Test zero on the bottom of a fraction.",
+   "Try values near empty and full."
   ]
  },
  "6/lines": {
+  "mission": "Count the code lines in a Python file.",
   "steps": [
-   "Validate that exactly one Python filename was supplied.",
-   "Verify the file extension and handle a file that cannot be opened.",
-   "Read the file and count only meaningful source-code lines.",
-   "Print the final count."
+   "Read the file name typed after the program name.",
+   "Check that it ends in .py and can be opened.",
+   "Count code lines, but not blank lines or comments.",
+   "Print the number of lines."
   ],
   "checks": [
-   "Try blank lines and comment-only lines.",
-   "Test missing or extra arguments."
+   "Try a file with blank lines.",
+   "Try a file that cannot be found."
   ],
   "setup": "# TODO: Check sys.argv and read the selected .py file."
  },
  "6/pizza": {
+  "mission": "Show a pizza menu from a CSV file.",
   "steps": [
-   "Require one CSV filename from sys.argv.",
-   "Validate the argument and readable CSV input.",
-   "Use csv to build a table of rows.",
-   "Use tabulate and the required table format to display it."
+   "Read the CSV file name typed after the program name.",
+   "Use csv to read each row.",
+   "Use tabulate to turn the rows into a table.",
+   "Print the table in the format shown in the problem."
   ],
   "checks": [
-   "Try each provided menu CSV.",
-   "Try a nonexistent or non-CSV filename."
+   "Try each menu file from the problem.",
+   "Try a file name that does not exist."
   ],
   "setup": "# TODO: Validate the CSV path, read rows, then format with tabulate."
  },
  "6/scourgify": {
+  "mission": "Fix the names in a CSV file.",
   "steps": [
-   "Read an input CSV and output CSV from the command line.",
-   "Validate the number and types of arguments.",
-   "Use DictReader to access fields by column name.",
-   "Separate the combined name and write the new columns with DictWriter."
+   "Read the input and output file names.",
+   "Use csv.DictReader to read the rows.",
+   "Split each full name into first and last names.",
+   "Use csv.DictWriter to save the new rows."
   ],
   "checks": [
-   "Check column headers and row count.",
-   "Try invalid command-line arguments."
+   "Check the new column names.",
+   "Try leaving out a file name."
   ],
   "setup": "# TODO: Read with csv.DictReader and write with csv.DictWriter."
  },
  "6/shirt": {
+  "mission": "Place a shirt picture over a photo.",
   "steps": [
-   "Read two image paths from the command line.",
-   "Check the allowed extensions and ensure they match.",
-   "Open the images and adjust the photo to the overlay dimensions.",
-   "Overlay the shirt image and save the output safely."
+   "Read the two image file names.",
+   "Check that both file endings are allowed.",
+   "Open and size the photo to fit the shirt.",
+   "Put the shirt image on top and save the result."
   ],
   "checks": [
-   "Try unsupported or mismatched extensions.",
-   "Check the saved output image dimensions."
+   "Try files with two different endings.",
+   "Check that the output photo was saved."
   ],
   "setup": "# TODO: Validate paths before opening or editing an image."
  },
  "7/numb3rs": {
+  "mission": "Check if text is a valid IP address.",
   "steps": [
-   "Write validate(ip) to examine a candidate IPv4 address.",
-   "Check the expected number of dot-separated components.",
-   "Validate each component's numeric format and range.",
-   "Return a boolean and write pytest cases for invalid inputs."
+   "Write validate(ip) to check a set of numbers with dots.",
+   "Check that there are four number parts.",
+   "Check the size of each number.",
+   "Return True or False and write tests."
   ],
   "checks": [
-   "Test the lowest and highest allowed component values.",
-   "Test missing or extra components."
+   "Try the smallest and largest allowed numbers.",
+   "Try an address with too many parts."
   ]
  },
  "7/watch": {
+  "mission": "Find a YouTube link in a piece of HTML.",
   "steps": [
-   "Write parse(s) to accept an HTML snippet.",
-   "Locate the supported video-embed address without matching unrelated text.",
-   "Extract the video identifier.",
-   "Return the requested URL form or None when no match is found."
+   "Write parse(s) to read HTML text.",
+   "Find the YouTube link in the video tag.",
+   "Take out the video ID.",
+   "Return the link form shown in the problem."
   ],
   "checks": [
-   "Try a supported embed tag.",
-   "Try malformed HTML and unrelated URLs."
+   "Try HTML with a working video link.",
+   "Try HTML with no video link."
   ]
  },
  "7/working": {
+  "mission": "Change a time range to 24-hour time.",
   "steps": [
-   "Write convert(s) to parse the allowed 12-hour time ranges.",
-   "Check format and time ranges rather than accepting any digits.",
-   "Use convert_time(t) as a helper if useful.",
-   "Return the requested 24-hour representation and test invalid inputs."
+   "Write convert(s) to read a time range.",
+   "Check that the times use the right format.",
+   "Use convert_time(t) as a helper if you want.",
+   "Return the new time range and write tests."
   ],
   "checks": [
    "Try noon and midnight.",
-   "Try invalid minutes and separators."
+   "Try minutes that are not valid."
   ]
  },
  "7/um": {
+  "mission": "Count the times a word appears in a sentence.",
   "steps": [
-   "Write count(s) to search a sentence for the standalone word.",
-   "Use regular expressions with appropriate word boundaries.",
-   "Ignore letter capitalization.",
-   "Test when the letters appear inside another word."
+   "Write count(s) to find the word on its own.",
+   "Use a pattern that does not count parts of other words.",
+   "Count both big and small letter forms.",
+   "Write tests for a few sentences."
   ],
   "checks": [
-   "Compare standalone matches with embedded words.",
-   "Try punctuation next to a match."
+   "Try the word next to a comma.",
+   "Try the same letters inside a longer word."
   ]
  },
  "7/response": {
+  "mission": "Check if an email address looks valid.",
   "steps": [
-   "Read an email address from the user.",
-   "Use the designated validation library.",
-   "Translate the validation result into the required message.",
-   "Try both valid and invalid forms."
+   "Ask the user for an email address.",
+   "Use the validators library to check it.",
+   "Print the message shown in the problem.",
+   "Test some good and bad addresses."
   ],
   "checks": [
-   "Try a missing domain or @ sign.",
-   "Check the exact required output text."
+   "Try an address with no @ sign.",
+   "Try an address with no website ending."
   ],
   "setup": "# TODO: Read an email address and validate it."
  },
  "8/seasons": {
+  "mission": "Find how many minutes a person has been alive.",
   "steps": [
-   "Ask the user for a birth date in the supported format.",
-   "Parse dates and compute elapsed time using date arithmetic.",
-   "Use calculate(t0, t1) as a helper for the time calculation.",
-   "Format the answer in words using the inflection library."
+   "Ask for a date of birth.",
+   "Use dates to find how much time has passed.",
+   "Write calculate(t0, t1) to help with the math.",
+   "Write the answer in words and test your code."
   ],
   "checks": [
-   "Test a date exactly one year earlier.",
-   "Try invalid date formats and future dates."
+   "Try a date one year ago.",
+   "Try a date that is not valid."
   ]
  },
  "8/jar": {
+  "mission": "Make a class that holds a number of cookies.",
   "steps": [
-   "Implement Jar.__init__ with an optional capacity.",
-   "Maintain and expose the capacity and number of cookies.",
-   "Implement deposit and withdraw with proper validation.",
-   "Create __str__ using the requested cookie representation."
+   "Set up a Jar with a limit on how many cookies it holds.",
+   "Write deposit and withdraw to change the cookie count.",
+   "Make the size and capacity values easy to read.",
+   "Show the cookies as the problem asks."
   ],
   "checks": [
-   "Test negative and oversized operations.",
-   "Check the string representation and both properties."
+   "Try adding too many cookies.",
+   "Try taking out more cookies than you have."
   ]
  },
  "8/shirtificate": {
+  "mission": "Make a PDF award with a shirt picture.",
   "steps": [
-   "Ask for the student's name.",
-   "Create a PDF document using fpdf2.",
-   "Add the title, centered shirt graphic, and student name.",
-   "Save a PDF with the exact required filename."
+   "Ask for the person's name.",
+   "Make a PDF page with fpdf2.",
+   "Add the shirt picture, title, and name.",
+   "Save the PDF with the required file name."
   ],
   "checks": [
-   "Try both short and long names.",
-   "Confirm the graphic placement in the exported PDF."
+   "Try a short name and a long name.",
+   "Check that the picture and name fit on the page."
   ]
  }
 };
@@ -1131,60 +1173,51 @@
  const indentedHint=(text,level=1)=>'    '.repeat(level)+'# TODO: '+text+'\n';
  const safeGuide=problem=>learnerGuide[problem.set+'/'+problem.slug]||{steps:[problem.goal],checks:['Compare your output with the official examples.']};
  function header(problem){
-  const guide=safeGuide(problem);
-  const lines=[
-   '# CS50P | Problem Set '+problem.set+' | '+problem.title,
-   '# Official instructions: '+problem.url,
-   '# Original UNSOLVED starter - write the missing code yourself.',
-   '#',
-   '# YOUR MISSION',
-   '# '+problem.goal,
-   '#',
-   '# PLAN YOUR CODE'
-  ];
-  guide.steps.forEach((step,i)=>lines.push('# '+(i+1)+'. '+step));
-  lines.push('#','# CHECK YOUR WORK');
-  guide.checks.forEach(check=>lines.push('# - '+check));
-  return lines.join('\n')+'\n\n';
+  return [
+   '# CS50P | Set '+problem.set+' | '+problem.title,
+   '# Read README.md for steps, tips, and ways to check your work.',
+   '# Full problem: '+problem.url,
+   ''
+  ].join('\n')+'\n';
  }
  function functionBlock(signature,problem){
   const funcName=signature.split('(')[0];
-  const guide=safeGuide(problem);
-  const focus=funcName==='main'?'Gather inputs, call helpers, and print the required result.':
-   'Decide what '+funcName+' should return or change; consult the official requirements.';
   const initial=funcName==='main'?(mainInputs[problem.set+'/'+problem.slug]||[]):[];
-  const body=[
+  const todo=funcName==='main'?
+   'Use your functions and print the answer.':
+   'Finish '+funcName+' using the steps in README.md.';
+  return [
    'def '+signature+':',
    ...initial.map(line=>'    '+line),
-   '    # TODO: '+focus,
-   '    # Hint: '+guide.steps[Math.min(1,guide.steps.length-1)],
+   '    # TODO: '+todo,
    '    pass',
+   '',
    ''
-  ];
-  return body.join('\n')+'\n';
+  ].join('\n');
  }
  function buildPython(problem){
   const outline=shape(problem),signatures=outline.functions||problem.functions;
   const guide=safeGuide(problem);
   let body=(outline.imports||[]).join('\n');
-  if(body)body+='\n\n\n';
+  if(body)body+='\n\n';
   if(signatures.includes('Jar')){
    body+='class Jar:\n';
-   for(const signature of ['__init__(self, capacity=12)','__str__(self)','deposit(self, cookies)','withdraw(self, cookies)']){
-    const task=signature.startsWith('__init__')?'Set up the cookie count and validate the initial capacity.':
-     signature.startsWith('__str__')?'Return the required cookie display.':
-     signature.startsWith('deposit')?'Check the deposit amount and update the jar safely.':
-     'Check the withdrawal amount before updating the jar.';
+   for(const [signature,task] of [
+    ['__init__(self, capacity=12)','Save the limit and start with an empty jar.'],
+    ['__str__(self)','Show the cookies as text.'],
+    ['deposit(self, cookies)','Add cookies if there is room.'],
+    ['withdraw(self, cookies)','Take cookies out if there are enough.']
+   ]){
     body+='    def '+signature+':\n'+indentedHint(task,2)+'        pass\n\n';
    }
    for(const signature of ['capacity(self)','size(self)']){
-    body+='    @property\n    def '+signature+':\n'+indentedHint('Return the corresponding jar value.',2)+'        pass\n\n';
+    body+='    @property\n    def '+signature+':\n'+indentedHint('Return this value.',2)+'        pass\n\n';
    }
    return header(problem)+body;
   }
   if(problem.slug==='shirtificate'){
    body+='class PDF(FPDF):\n    def header(self):\n'+
-    indentedHint('Use the PDF library to place the header; check the official layout.',2)+
+    indentedHint('Add the top part of the PDF page.',2)+
     '        pass\n\n\n';
   }
   const wantMain=!!outline.main;
@@ -1196,8 +1229,7 @@
   if(wantMain)body+='\nif __name__ == "__main__":\n    main()\n';
   if(!wantMain&&signatures.filter(x=>x!=='PDF.header(self)').length===0){
    if(guide.setup)body+=guide.setup+'\n\n';
-   body+='# TODO: '+(guide.setup?'Use the starter variable(s) above to complete the remaining steps.':(topLevelHint[problem.set+'/'+problem.slug]||problem.goal))+'\n';
-   body+='# TODO: Check your work using the scenarios above.\n';
+   body+='# TODO: '+guide.steps[Math.min(1,guide.steps.length-1)]+'\n';
   }
   return header(problem)+body;
  }
@@ -1210,32 +1242,46 @@
   else imported='import '+source.replace(/\.py$/,'');
   const imports=[...new Set(['import pytest',...(outline.testImports||[]),imported])];
   const names=outline.testNames||['test_your_first_case'];
-  const guide=safeGuide(problem);
-  const stubs=names.map((name,i)=>[
+  const stubs=names.map(name=>[
    'def '+name+'():',
-   '    # TODO: Test one specific rule or boundary from the official instructions.',
-   '    # Suggestion: '+guide.checks[i%guide.checks.length],
-   '    # Replace this skip with one or more real assert statements.',
-   '    pytest.skip("Add your own assertions before running this test")',
+   '    # TODO: Add your own test. See README.md.',
+   '    pytest.skip("Add an assert test, then remove this line.")',
    ''
   ].join('\n')).join('\n');
-  return '# CS50P | '+problem.title+' | Student-written tests\n'+
-   '# Official instructions: '+problem.url+'\n'+
-   '# No answer keys are included. Replace each skip with your own assertions.\n\n'+
-   imports.join('\n')+'\n\n\n'+stubs;
+  return [
+   '# CS50P | '+problem.title+' | Student tests',
+   '# Read README.md for steps and ideas for tests.',
+   '# Full problem: '+problem.url,
+   '',
+   ...imports,
+   '',
+   '',
+   ...stubs.split('\n')
+  ].join('\n');
  }
  const resourceNotes={
-  emojize:'Requires the emoji package; package availability on GitHub Pages may vary.',
-  figlet:'Requires pyfiglet. Compare behavior with the official CS50 development environment.',
-  adieu:'Requires inflect. Browser packages may not behave like a full local Python environment.',
-  bitcoin:'Uses requests and a live API; network access and API response can vary.',
-  pizza:'Use the original CSV resource from the official assignment; it is not bundled here.',
-  scourgify:'Download the original before.csv from the official assignment; it is not bundled here.',
-  shirt:'Requires Pillow and input images; original binary images are not included in this browser template.',
-  shirtificate:'Requires fpdf2 and the official shirtificate.png image; binary image and PDF preview features may not work in Python Lab.',
-  response:'Requires an email-validation package as directed by the official assignment.',
-  seasons:'May require inflect and other packages for converting numbers into words.'
+  emojize:'This program uses the emoji package. It may not work in every browser.',
+  figlet:'This program uses pyfiglet. Check it in CS50 Codespaces too.',
+  adieu:'This program uses inflect. It may not work in every browser.',
+  bitcoin:'This program gets prices from the web. The link may not work in Python Lab.',
+  pizza:'Get the CSV menu file from the CS50 problem page.',
+  scourgify:'Get the input CSV file from the CS50 problem page.',
+  shirt:'You will need an image and the Pillow package. Get the image from CS50.',
+  shirtificate:'You will need the shirt picture and fpdf2. Get the picture from CS50.',
+  response:'This problem uses the validators package to check an email address.',
+  seasons:'This problem uses inflect to turn numbers into words.'
  };
+ const wordsToKnow=[
+  ['**Input:** Text or numbers that a user types.','**String:** Text saved in a Python program.'],
+  ['**Condition:** A rule your code checks.','**Case:** Whether letters are uppercase or lowercase.'],
+  ['**Loop:** Code that runs more than once.','**Dictionary:** Names paired with values, like foods and prices.'],
+  ['**Error:** A problem your code may need to handle.','**End of input (EOF):** A signal that the user is done typing.'],
+  ['**Library:** Code you can import and use.','**Argument:** Text you type after a program name in a command.'],
+  ['**Test:** Code that checks other code.','**Assert:** A way to check that a result is right.'],
+  ['**CSV:** A text file with rows and commas.','**File path:** The name and place of a file.'],
+  ['**Pattern:** A rule for finding text.','**Regular expression:** A short pattern used to search text.'],
+  ['**Class:** A plan for a kind of object.','**Method:** A function inside a class.']
+ ];
  function build(problem){
   const mainFile=problem.sourceFile||problem.filename;
   const files={};
@@ -1247,21 +1293,34 @@
   }
   const notes=resourceNotes[problem.slug]||'';
   const guide=safeGuide(problem);
-  const hasTests=!!problem.sourceFile||!!problem.testFile;
+  const codeFiles=Object.keys(files).filter(name=>name.endsWith('.py'));
+  const sendList=codeFiles.map(name=>'- `'+name+'`');
   const steps=guide.steps.map((step,i)=>(i+1)+'. '+step);
   const checks=guide.checks.map(test=>'- '+test);
+  const suffix=problem.set===5?'tests/'+problem.slug.replace(/^test_/,''):problem.slug;
+  const cs50Path='cs50/problems/2022/python/'+suffix;
   files['README.md']=[
    '# '+problem.title,
    '',
-   '**CS50P Problem Set '+problem.set+': '+subjects[problem.set]+'**',
+   '**CS50P · Problem Set '+problem.set+'**',
    '',
-   'Folder: '+problem.slug+' / File to open: '+problem.filename,
+   '## What will you make?',
    '',
-   'Official instructions: '+problem.url,
+   guide.mission||problem.goal,
    '',
-   '## Your mission',
+   '## Where are your files?',
    '',
-   problem.goal,
+   'Your folder is `'+problem.slug+'`.',
+   'Your code files are:',
+   ...sendList,
+   '',
+   'This `README.md` file is your help sheet. You do **not** need to send it to CS50.',
+   '',
+   '## Start here',
+   '',
+   '1. Open `'+problem.filename+'` in Python Lab.',
+   '2. Read the official problem page: '+problem.url,
+   '3. Look for `TODO` in your code. Those are spots you need to finish.',
    '',
    '## Step-by-step plan',
    '',
@@ -1270,32 +1329,39 @@
    '## Check your work',
    '',
    ...checks,
+   'Run your code and compare the results with the official problem page.',
    '',
-   '## Using this starter in Python Lab',
+   '## Words to know',
    '',
-   '1. Open '+problem.filename+' and read the numbered planning comments before changing the code.',
-   '2. Complete each TODO in your own words and code. The functions use pass as an empty placeholder.',
-   hasTests?
-    '3. Write meaningful pytest assertions in the test_*.py file; remove each pytest.skip() once you add that test.':
-    '3. Run the program, then compare the behavior with the examples and rules in the official instructions.',
-   '4. Revise your work when it fails a self-check or test case.',
-   '5. Export a ZIP backup when you want to work on another device or submit files through Canvas.',
+   ...wordsToKnow[problem.set],
    '',
-   '## Helpful reminder',
+   '## Move your code to CS50 Codespaces',
    '',
-   'The scaffold includes setup hints and structure, not a completed implementation.',
-   'Always read the full Harvard CS50P problem before coding; it has the authoritative input, output, and edge-case rules.',
-   'This is an original Python Lab teaching aid, NOT an official CS50-distributed starter or solution.',
+   '1. In Python Lab, right-click each code file listed above. Choose **Download File**.',
+   '2. Go to https://cs50.dev and open your Codespace.',
+   '3. Make or open the folder named `'+problem.slug+'`.',
+   '4. Put your downloaded Python file'+(codeFiles.length>1?'s':'')+' inside that folder.',
+   '5. Keep `README.md` in Python Lab. It is **not** one of the files you need to send.',
+   '6. Open a terminal in that folder to check and send your work.',
    '',
-   notes?'## Environment note\n\n'+notes+'\n':'',
-   'Official check50 and submit50 are not part of this browser IDE; use the official CS50 environment when required.',
-   'Follow the CS50 academic-honesty policy and write your own implementation.',
+   'Check your code: `check50 '+cs50Path+'`',
+   '',
+   'Send your code: `submit50 '+cs50Path+'`',
+   '',
+   'Check the official problem page before you send your work.',
+   'Some problems also need a data file or picture from CS50. Follow those rules if needed.',
+   '',
+   notes?'## Need another file or package?\n\n'+notes+'\n':'',
+   '## Remember',
+   '',
+   'Write your own code. The starter is NOT an official CS50 starter or an answer key.',
+   'Python Lab cannot send work to CS50 for you. Use CS50 Codespaces to submit.',
    ''
-  ].filter(x=>x!==null).join('\n');
+  ].join('\n');
   return {
    id:problem.id,
    title:problem.title,
-   description:problem.goal,
+   description:guide.mission||problem.goal,
    set:problem.set,
    subject:subjects[problem.set],
    url:problem.url,
@@ -1311,7 +1377,7 @@
   return p?build(p):null;
  }
  const list=()=>catalog.map(item=>({
-  id:item.id,title:item.title,description:item.goal,
+  id:item.id,title:item.title,description:safeGuide(item).mission||item.goal,
   set:item.set,slug:item.slug,folderName:item.slug,subject:subjects[item.set],filename:item.filename,
   url:item.url,files:Object.keys(build(item).files)
  }));
