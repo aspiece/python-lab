@@ -59,7 +59,41 @@ window.pythonLabTerminalHost={
   return [...new Set(options.filter(v=>v.startsWith(prefix)))].map(v=>before+v).sort();
  }
 };
-function normalize(path,base=cwd){const parts=[];for(const p of (path.startsWith('/')?path:('/'+base+'/'+path)).split('/')){if(!p||p==='.')continue;if(p==='..')parts.pop();else if(/^[\w. -]+$/.test(p))parts.push(p);else throw Error('Invalid path component: '+p);}return parts.join('/');}
+function normalize(path,base=cwd){
+ if(typeof path!=='string')throw Error('A path is required.');
+ // Allow terminal paths printed by pwd and the visible ~/python-lab prompt.
+ let input=path;
+ if(input==='~'||input==='~/python-lab')input='/home/pyodide';
+ else if(input.startsWith('~/python-lab/'))input='/home/pyodide/'+input.slice(13);
+ if(input==='/home/pyodide')input='/';
+ else if(input.startsWith('/home/pyodide/'))input=input.slice('/home/pyodide'.length);
+ const parts=[];
+ for(const p of (input.startsWith('/')?input:('/'+base+'/'+input)).split('/')){
+  if(!p||p==='.')continue;
+  if(p==='..')parts.pop();
+  else if(/^[\w. -]+$/.test(p))parts.push(p);
+  else throw Error('Invalid path component: '+p);
+ }
+ return parts.join('/');
+}
+function shellWords(line){
+ const words=[];let word='',quote='',started=false;
+ for(let i=0;i<line.length;i++){
+  const c=line[i];
+  if(quote){
+   if(c===quote){quote='';continue;}
+   if(c==='\\'&&quote==='"'&&i+1<line.length&&['"','\\'].includes(line[i+1])){word+=line[++i];continue;}
+   word+=c;continue;
+  }
+  if(c==='"'||c==="'"){quote=c;started=true;continue;}
+  if(/\s/.test(c)){if(started){words.push(word);word='';started=false;}continue;}
+  if(c==='\\'&&i+1<line.length&&(/[\s"'\\]/.test(line[i+1]))){word+=line[++i];started=true;continue;}
+  word+=c;started=true;
+ }
+ if(quote)throw Error('Unclosed quote in command.');
+ if(started)words.push(word);
+ return words;
+}
 function parent(path){return path.includes('/')?path.slice(0,path.lastIndexOf('/')):'';}
 function ensureDirs(path){let cur='';for(const p of path.split('/').filter(Boolean)){cur=cur?cur+'/'+p:p;dirs.add(cur);}}
 function displayPath(){return '~/python-lab'+(cwd?'/'+cwd:'');}
@@ -450,7 +484,7 @@ function sendExecution(){
  worker.postMessage({type:'run',...activeRun,stdin:inputHistory.join('\n')});
 }
 function executePython(name,args=[],command=''){
- workspaceSnapshot();name=(name in files)?name:normalize(name);
+ workspaceSnapshot();const relative=normalize(name);name=Object.hasOwn(files,relative)?relative:Object.hasOwn(files,name)?name:relative;
  if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}
  if(!ready||running)return;
  running=true;terminalMode='busy';runStart=performance.now();inputHistory=[];
@@ -515,17 +549,17 @@ function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+
 function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';if(enhancedTerminal){enhancedTerminal.setMode('shell',displayPath()+' $ ');}else $('terminalInput').focus();}
 function shellCommand(line,alreadyEchoed=false){
  try{
-  files[filename]=getCode();const args=line.trim().match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
+  files[filename]=getCode();const args=shellWords(line.trim());
   if(!alreadyEchoed)append(displayPath()+' $ '+line+'\n');
   if(!args.length){showShell();return;}
   const cmd=args[0],rest=args.slice(1);
   if(cmd==='clear'||cmd==='cls'){clearTerminal();}
-  else if(cmd==='help')append('Commands: python FILE.py [args], python -c CODE, python -m pytest, pytest, ls, tree, pwd, cd, mkdir [-p], rmdir, cat, echo, touch, cp, mv, rm, whoami, clear, help\nCS50 Python library loads automatically with Python (no pip command needed). Official submit50/check50 require CS50 Codespaces; this terminal is not authenticated.\n');
+  else if(cmd==='help')append('Browser commands: python/python3 FILE.py [args], python -c CODE, pytest [FILE_OR_DIR], python -m pytest [FILE_OR_DIR], ls/dir, tree, pwd, cd, mkdir [-p], rmdir, cat/type, echo, touch, cp, mv, rm, whoami, clear/cls, help, pip list.\nPaths may be relative to the current directory; quoted names with spaces are supported.\nCS50 Python loads automatically. Official submit50/check50 need an authenticated CS50 Codespace; the terminal is a simulation.\n');
   else if(cmd==='ls'||cmd==='dir'){const target=normalize(rest.find(a=>!a.startsWith('-'))||'.');if(target&&!dirs.has(target))append('No such directory: '+target+'\n','error-line');else append([...dirs].filter(d=>parent(d)===target).map(d=>d.split('/').pop()+'/').concat(Object.keys(files).filter(f=>parent(f)===target).map(f=>f.split('/').pop())).sort().join('    ')+'\n');}
   else if(cmd==='pwd')append('/home/pyodide'+(cwd?'/'+cwd:'')+'\n');
   else if(cmd==='echo')append(rest.join(' ')+'\n');
   else if(cmd==='whoami')append('student (browser simulation)\n');
-  else if(cmd==='python'&&['-V','--version'].includes(rest[0]))append('Python (Pyodide browser runtime)\n');
+  else if((cmd==='python'||cmd==='python3')&&['-V','--version'].includes(rest[0]))append('Python (Pyodide browser runtime)\n');
   else if((cmd==='python'||cmd==='python3')&&rest[0]==='-c'&&rest[1]!==undefined){runWorkerCode(rest.slice(1).join(' '),line,true);return;}
   else if(cmd==='tree'){
     const root=normalize(rest[0]||'.');if(root&&!dirs.has(root)){append('tree: no such directory: '+root+'\n','error-line');}
@@ -592,9 +626,34 @@ function shellCommand(line,alreadyEchoed=false){
       else{dirs.delete(dir);expanded.delete(dir);if(cwd===dir)cwd=parent(dir);renderFiles();persist();}
     }
   }
-  else if(cmd==='touch'){if(!rest[0])append('Usage: touch FILE\n');else{const p=normalize(rest[0]);if(!dirs.has(parent(p))&&parent(p))append('No such directory\n','error-line');else {files[p]??='';renderFiles();persist();}}}
-  else if(cmd==='mkdir'){if(!rest[0])append('Usage: mkdir [-p] DIRECTORY\n');else{const recursive=rest[0]==='-p';const target=normalize(rest[recursive?1:0]||'');if(!target)append('Invalid directory\n','error-line');else if(dirs.has(target))append('Directory already exists\n');else if(!recursive&&parent(target)&&!dirs.has(parent(target)))append('Parent directory does not exist (try mkdir -p)\n','error-line');else{ensureDirs(target);expanded.add(target);renderFiles();persist();}}}
-  else if(cmd==='cd'){const target=rest.length?normalize(rest[0]):'';if(!target||dirs.has(target)){cwd=target;persist();}else append('cd: no such directory: '+rest[0]+'\n','error-line');}
+  else if(cmd==='touch'){
+    if(rest.length!==1)append('Usage: touch FILE\n','error-line');
+    else{
+      const p=normalize(rest[0]);
+      if(!p||dirs.has(p))append('touch: target is a directory\n','error-line');
+      else if(parent(p)&&!dirs.has(parent(p)))append('touch: parent directory does not exist\n','error-line');
+      else{files[p]??='';renderFiles();persist();}
+    }
+  }
+  else if(cmd==='mkdir'){
+    const recursive=rest[0]==='-p',args=recursive?rest.slice(1):rest;
+    if(args.length!==1)append('Usage: mkdir [-p] DIRECTORY\n','error-line');
+    else{
+      const target=normalize(args[0]);
+      const components=target.split('/');const conflict=components.some((_,i)=>Object.hasOwn(files,components.slice(0,i+1).join('/')));
+      if(!target)append('mkdir: invalid directory\n','error-line');
+      else if(conflict)append('mkdir: a file blocks that directory path\n','error-line');
+      else if(dirs.has(target)){if(!recursive)append('mkdir: directory already exists\n','error-line');}
+      else if(!recursive&&parent(target)&&!dirs.has(parent(target)))append('mkdir: parent directory does not exist (try mkdir -p)\n','error-line');
+      else{ensureDirs(target);expanded.add(target);renderFiles();persist();}
+    }
+  }
+  else if(cmd==='cd'){
+    if(rest.length>1)append('Usage: cd [DIRECTORY]\n','error-line');
+    else{const target=rest.length?normalize(rest[0]):'';
+      if(!target||dirs.has(target)){cwd=target;persist();}else append('cd: no such directory: '+rest[0]+'\n','error-line');
+    }
+  }
 else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in the simulated browser shell. Some compatible packages load automatically when imported.\n');
   else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){executeVirtualTest(true);return;}
   else if((cmd==='python'||cmd==='python3')&&rest[0]?.endsWith('.py')){executePython(rest[0],rest.slice(1),line);return;}
