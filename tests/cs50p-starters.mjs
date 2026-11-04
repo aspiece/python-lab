@@ -61,7 +61,7 @@ for(const problem of rows){
  const pythonFiles=Object.keys(p.files).filter(name=>name.endsWith('.py'));
  for(const name of pythonFiles)assert(readme.includes('- `'+name+'`'),'Missing code file '+name+' in README transfer list');
  assert.equal(p.folderName,p.slug,'Folder does not match official problem slug for '+p.id);
- assert(p.files[p.entryFile].includes('Official instructions:')||p.files[p.entryFile].includes('# Assignment:'),
+ assert(p.files[p.entryFile].includes('# Full problem:')||p.files[p.entryFile].includes('Official instructions:')||p.files[p.entryFile].includes('# Assignment:'),
   'Starter missing official instructions link: '+p.id);
  for(const [name,code] of Object.entries(p.files)){
   if(name.endsWith('.py')){
