@@ -13,10 +13,12 @@ for(const id of ['cs50ToolsBtn','cs50SubmissionDialog','cs50AssignmentSelect','c
 }
 class Node{
  constructor(id=''){
-  this.id=id;this.children=[];this.textContent='';this.value='';this.events={};this.disabled=false;
+  this.id=id;this.children=[];this._text='';this.value='';this.events={};this.disabled=false;
   this.style={};this.open=false;
  }
  append(...children){this.children.push(...children);}
+ set textContent(value){this._text=String(value);this.children=[];}
+ get textContent(){return this._text||this.children.map(node=>node.textContent||'').join('');}
  addEventListener(event,handler){this.events[event]=handler;}
  click(){this.onclick?.();this.events.click?.();}
  showModal(){this.open=true;}
