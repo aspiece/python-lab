@@ -160,7 +160,7 @@ data.filename='main.py';data.cwd='';
 data.files={'main.py':'print("unrelated")'};
 elements.cs50AssignmentSelect.events.change();
 assert(elements.cs50PackageStatus.textContent.includes('No Python files found'),'Missing code files should be explained');
-assert(elements.cs50FilesList.textContent.includes('No matching files'));
+assert(elements.cs50FilesList.textContent.includes('No matching Python files found'));
 
 assert(!html.includes('id="cs50InstallLibraryBtn"'),'The obsolete manual install control is still visible');
 assert(!toolSource.includes('installLibrary?.('),'The tools UI must not request manual installation');
