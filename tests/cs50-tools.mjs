@@ -7,7 +7,7 @@ const html=read('index.html'),catalogSource=read('cs50p-starters.js'),toolSource
 new Script(toolSource,{filename:'cs50-tools.js'});
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]);
 for(const id of ['cs50ToolsBtn','cs50SubmissionDialog','cs50AssignmentSelect','cs50CheckCommand','cs50SubmitCommand',
- 'cs50FilesList','cs50PackageBtn','cs50PackageStatus','cs50InstallLibraryBtn','cs50CloseBtn']){
+ 'cs50FilesList','cs50PackageBtn','cs50PackageStatus','cs50LibraryStatus','cs50CloseBtn']){
  assert(ids.includes(id),'Missing CS50 handoff control '+id);
 }
 class Node{
@@ -71,10 +71,11 @@ elements.cs50AssignmentSelect.events.change();
 assert.equal(elements.cs50PackageBtn.disabled,true,'Missing assignment files must not be packaged');
 assert(elements.cs50FilesList.textContent.includes('No matching files'));
 
-let requested=0;
-api.attach({workspace:()=>data,projectName:()=> 'My Python Lab',installLibrary:()=>{requested++;}});
-elements.cs50InstallLibraryBtn.click();
-assert.equal(requested,1,'Library install request was not forwarded');
-api.packageResult({success:false,error:'Unsupported WASM dependency'});
-assert(elements.cs50InstallStatus.textContent.includes('Unsupported WASM dependency'),'Installation failure was hidden');
+assert(!html.includes('id="cs50InstallLibraryBtn"'),'The obsolete manual install control is still visible');
+assert(!toolSource.includes('installLibrary?.('),'The tools UI must not request manual installation');
+api.packageResult({success:true,automatic:true});
+assert(elements.cs50LibraryStatus.textContent.includes('loaded automatically'),'Automatic CS50 preload success is not shown');
+api.packageResult({success:false,automatic:true,error:'Unsupported WASM dependency'});
+assert(elements.cs50LibraryStatus.textContent.includes('Unsupported WASM dependency'),'CS50 preload failure is hidden');
+assert(elements.cs50LibraryStatus.textContent.includes('Regular Python remains available'),'Fallback notice is missing');
 console.log('CS50 submission slug, selection, ZIP isolation, UI, and truthful installation status passed.');
