@@ -574,10 +574,18 @@ function shellCommand(line,alreadyEchoed=false){
       append((root||'.')+'/\n'+(entries.length?entries.join('\n'):'  (empty)')+'\n');
     }
   }
-  else if(cmd==='cat'||cmd==='type')append(files[normalize(rest[0]||'')]===undefined?'File not found\n':files[normalize(rest[0])]+'\n');
+  else if(cmd==='cat'||cmd==='type'){
+    if(!rest.length)append('Usage: cat FILE [FILE ...]\n','error-line');
+    else for(const name of rest){
+      const path=normalize(name);
+      if(!Object.hasOwn(files,path))append('cat: file not found: '+name+'\n','error-line');
+      else append(files[path]+(files[path].endsWith('\n')?'':'\n'));
+    }
+  }
   else if(cmd==='cp'){
     if(rest.length!==2){append('Usage: cp SOURCE DEST\n','error-line');}
-    else{const source=normalize(rest[0]),dest=normalize(rest[1]);
+    else{const source=normalize(rest[0]),requested=normalize(rest[1]);
+      const dest=dirs.has(requested)?requested+'/'+source.split('/').pop():requested;
       if(!Object.hasOwn(files,source))append('cp: source file not found\n','error-line');
       else if(Object.hasOwn(files,dest)||dirs.has(dest))append('cp: destination already exists\n','error-line');
       else if(parent(dest)&&!dirs.has(parent(dest)))append('cp: destination folder not found\n','error-line');
@@ -603,7 +611,8 @@ function shellCommand(line,alreadyEchoed=false){
   else if(cmd==='mv'){
     if(rest.length!==2)append('Usage: mv SOURCE DEST\n','error-line');
     else{
-      const source=normalize(rest[0]),dest=normalize(rest[1]);
+      const source=normalize(rest[0]),requested=normalize(rest[1]);
+      const dest=dirs.has(requested)?requested+'/'+source.split('/').pop():requested;
       if(!Object.hasOwn(files,source))append('mv: source must be a file (move folders in Explorer)\n','error-line');
       else if(Object.hasOwn(files,dest)||dirs.has(dest))append('mv: destination already exists\n','error-line');
       else if(parent(dest)&&!dirs.has(parent(dest)))append('mv: destination folder not found\n','error-line');
@@ -655,8 +664,11 @@ function shellCommand(line,alreadyEchoed=false){
     }
   }
 else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in the simulated browser shell. Some compatible packages load automatically when imported.\n');
-  else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){executeVirtualTest(true);return;}
+  else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){
+    executeVirtualTest(true,cmd==='pytest'?rest:rest.slice(2));return;
+  }
   else if((cmd==='python'||cmd==='python3')&&rest[0]?.endsWith('.py')){executePython(rest[0],rest.slice(1),line);return;}
+  else if(cmd==='python'||cmd==='python3')append('Usage: '+cmd+' FILE.py [args] | -c CODE | -m pytest [FILE_OR_DIR]\n','error-line');
   else if(cmd==='submit50'||cmd==='check50'){
     append('Official '+cmd+' needs GitHub authentication and a real Codespace. This simulated terminal cannot submit or check your code.\n','error-line');
     window.pythonLabCS50Tools?.show();
