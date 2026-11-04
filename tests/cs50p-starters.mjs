@@ -150,7 +150,7 @@ const assetCases=[
 ];
 for(const [id,names] of assetCases){
  const item=api.get(id),readme=item.files['README.md'];
- const found=item.extraFiles.map(file=>file.name);
+ const found=Array.from(item.extraFiles,file=>file.name);
  assert.deepEqual(found,names,'CS50 dependent file list mismatch: '+id);
  for(const entry of item.extraFiles){
   assert(entry.url.startsWith('https://cs50.harvard.edu/python/2022/psets/'),'External asset URL mismatch for '+id);
