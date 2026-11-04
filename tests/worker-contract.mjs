@@ -45,7 +45,7 @@ assert(astSource,'No Python AST parser code was created');
 
 await self.onmessage({data:{
  type:'run',purpose:'tests',filename:'__command__.py',code:'',cwd:'',args:[],stdin:'',
- files:{'main.py':'print(2)','test_main.py':'def test_example():\n    assert False'},dirs:[]
+ files:{'main.py':'print(2)','test_main.py':'def test_example():\n    assert False'},dirs:[],testTargets:['test_main.py']
 }});
 const result=sent.find(m=>m.type==='testResults');
 assert(result,'Worker did not send individual pytest results');
@@ -53,6 +53,8 @@ assert.equal(result.exitCode,1);
 assert.equal(result.tests[0].outcome,'failed');
 assert(sent.some(m=>m.type==='done'&&m.success===false),'Failed tests marked as success');
 assert(sent.some(m=>m.type==='files'),'Workspace synchronization was skipped');
+assert.equal(JSON.parse(globals.get('__lab_test_targets_json')).join(','),'/home/pyodide/test_main.py','Pytest target not sent to Python');
+
 const pytestSource=pythonScripts.find(source=>source.includes('__LabPytestCapture'));
 assert(pytestSource,'No structured pytest runner was created');
 for(const [label,source] of [['Python diagnostic helper',astSource],['Python pytest runner',pytestSource]]){

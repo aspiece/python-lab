@@ -1,3 +1,13 @@
+# File Downloads and Browser Terminal (November 2026)
+
+**Download individual files** from the Explorer: right-click a file and select **Download File**. Files download under their own filenames, not entire folder paths. The context-menu action appears for files only; there are no Project ZIP, Submission ZIP, or CS50 Assignment ZIP download buttons. Existing ZIP archives can still be imported.
+
+**Supported simulated CLI commands:** `help`, `pwd`, `whoami`, `ls`/`dir`, `tree`, `cd`, `mkdir [-p]`, `rmdir`, `touch`, `cat`/`type`, `echo`, `cp`, `mv`, `rm`, `clear`/`cls`, `python`/`python3` (files or `-c`), and `pytest`/`python -m pytest` (optionally with a test file or folder). File paths can be quoted and are resolved relative to the terminal working directory. Pytest is scoped to the working folder or selected test paths, rather than unintentionally running other assignments.
+
+The terminal is **not an unrestricted system shell**: commands such as `pip install`, `submit50`, and `check50` require an appropriate external environment or special handling. `pip list` explains that full package listing is not available, while the official Python `cs50` package is automatically provisioned where browser dependencies allow. Direct CS50 submissions still require the official authenticated Codespace.
+
+---
+
 # CS50 Python Library and Official Submission Handoff
 
 Python Lab now has a **CS50 Submit** handoff panel. It does **not** send files or user credentials to CS50; a submission is not complete until the official `submit50` tool reports success in a real authenticated Codespace.
@@ -5,7 +15,7 @@ Python Lab now has a **CS50 Submit** handoff panel. It does **not** send files o
 1. Open or edit a CS50P problem in the Python Lab editor.
 2. Click **CS50 Submit**, use the new entry in **CS50P Starters**, or open **Prepare Official CS50 Submission** in the Command Palette.
 3. Choose the assignment. The panel displays the official instructions link and the `check50` and `submit50` commands constructed from the course's 2022 CS50P problem slug. **Always double-check the exact slug against the current assignment instructions**, which are authoritative.
-4. Download the **Assignment ZIP**. Unlike a general workspace export, this contains only the selected assignment's files in its assignment-named folder. Multiple local copies such as `indoor/` and `indoor-2/` are kept separate; the currently opened copy is preferred. Downloading files is **not** an official submission.
+4. Right-click each assignment source file in Explorer and select **Download File**. Upload these individual files into the correct folder in your CS50 Codespace. Different versions such as `indoor/` and `indoor-2/` are kept separate in the browser; download the specific files you want to transfer. Downloading is **not** an official submission.
 5. Open **[CS50 Codespaces](https://cs50.dev/)** with your own authorized GitHub account, upload/extract the assignment folder, open its directory, and run the copied commands there. Verify submission at the official terminal/gradebook. Harvard's [submit50 documentation](https://cs50.readthedocs.io/submit50/) explains its authorization and real Git operations.
 
 **CS50 Python loads automatically.** On every new Python Lab browser runtime, Pyodide attempts to preload the official `cs50==9.5.0` Python package using `micropip` and verifies `import cs50` before marking the runtime ready. Students never need to click Install or run a pip command. Browsers cache downloaded packages, although a restarted sandbox still initializes its own Python environment. The CS50 Submit panel reports whether the package loaded. If a WebAssembly-incompatible dependency or network restriction prevents loading, Python Lab reports that limitation and continues to support regular Python. The initial load can take longer because CS50 pulls in additional dependencies; subsequent downloads may benefit from browser caching. This is **automatic provisioning, not an offline-embedded library or a guarantee of full compatibility**. The `cs50` Python library remains distinct from the `submit50` command-line tool; neither direct GitHub OAuth nor automatic official CS50 submissions is implemented.
@@ -97,15 +107,15 @@ Python Lab now supports **multiple named local projects**. Use the project selec
 
 - Python Lab primarily saves projects in **IndexedDB in the current browser profile**. Existing work from the original Python Lab localStorage workspace is migrated into the first project automatically.
 - If IndexedDB is unavailable, the app attempts a limited localStorage fallback. When browser storage is blocked altogether, the app warns that work is temporary.
-- **This is not cloud synchronization or a school-account login.** Work does not automatically transfer between school computers, home computers, phones, private browsing sessions, or different browsers. Students should periodically download a **Project ZIP backup**, especially when using shared school computers.
+- **This is not cloud synchronization or a school-account login.** Work does not automatically transfer between school computers, home computers, phones, private browsing sessions, or different browsers. Students should periodically download their important individual files using **Explorer → right-click file → Download File**, especially on shared school computers.
 - The application does not send student source files or project contents to a Python Lab server. Browser execution may still make network requests if student code does so.
 
 ## Canvas assignment workflow
 
 1. A teacher opens **Templates** and chooses **Copy assignment link** beside an original starter example. The link contains only a starter template identifier and a random classroom-link key, not a student's files or identity. Paste that link into Canvas.
 2. A student opens the link, confirms the new project, and works in Python Lab. Returning through the **same link on the same browser profile** reopens that saved project rather than creating a duplicate.
-3. The student selects **Submission ZIP** (or the equivalent command in the Command Palette) and uploads the downloaded ZIP as a Canvas file submission. Python Lab does **not** directly submit to Canvas and cannot report a submission grade.
-4. The teacher can import the submitted ZIP into Python Lab as a **separate project** without erasing existing work. Imported files are limited to supported text formats.
+3. The student right-clicks each required source file in Explorer, selects **Download File**, and uploads the downloaded files through Canvas. Python Lab does **not** directly submit to Canvas or report a grade.
+4. The teacher can open the downloaded source files individually; **Import ZIP** remains available for older ZIP archives. Imported files are limited to supported text formats.
 
 Project sharing is **starter-only**. Do not use a starter link as a way to collect student answers or distribute private grading data. The original CS50P-style example is not an official Harvard assignment. Use the official CS50 environment for check50 and submit50.
 
@@ -191,9 +201,9 @@ Public site: https://aspiece.github.io/python-lab/
 
 The editor now keeps a separate Monaco model per open file, preserving normal undo history when switching between files, as well as cursor position and view state. Open files appear in closable tabs. Explorer supports nested folders, file and folder creation, and rename/move/delete from the right-click menu. On narrow screens, use the Explorer icon in the left rail to open the file tree.
 
-The bottom terminal panel can be resized by dragging the horizontal divider or collapsed with its arrow control. Use **Project ZIP** to export the workspace and **Import ZIP** (or the Command Palette) to restore a backup. Text files such as .txt, .csv, .json, and .md may be kept alongside Python files.
+The bottom terminal panel can be resized by dragging the horizontal divider or collapsed with its arrow control. Right-click a file in Explorer to download it, and use **Import ZIP** (or the Command Palette) to restore an older ZIP backup. Text files such as .txt, .csv, .json, and .md may be kept alongside Python files.
 
-**Storage note:** Autosave still uses this browser's localStorage. It is not a cloud account or a durable backup. Export your Project ZIP regularly, especially before clearing browser data or changing devices.
+**Storage note:** Autosave still uses this browser's localStorage. It is not a cloud account or a durable backup. Download important files individually from Explorer before clearing browser data or changing devices.
 
 **Runtime note:** The public GitHub Pages site still uses Pyodide and a simulated shell. Python's input() is implemented by replaying the program after each answer; this is not true paused execution and can repeat file writes or other side effects. The local-only terminal backend offers a real shell but must never be exposed as a public student server.
 
@@ -203,7 +213,7 @@ The bottom terminal panel can be resized by dragging the horizontal divider or c
 
 In Explorer, **right-click a file or folder** to **Rename**, **Move** (enter a full project-relative destination path), or **Delete** (requires confirmation). Renaming or moving a folder updates its nested files and directories, including the open editor's path. The destination parent folder must already exist. Deleting a folder removes everything inside it and cannot be undone.
 
-Use **Project ZIP** to export all project files and empty directories as a ZIP backup, and **Import ZIP** to restore a previous backup. **Download File** still exports only the currently open Python source file. ZIP generation requires the JSZip library to load from jsDelivr.
+Use **Explorer → right-click a file → Download File** to save that exact `.py`, `.txt`, `.csv`, `.json` or `.md` file to your computer. There are no longer ZIP export buttons. **Import ZIP** remains available for existing ZIP archives and uses JSZip from jsDelivr.
 
 This workspace lives in the current browser's local storage, so downloading project backups is recommended. The public site still uses a simulated terminal and replay-based input.
 

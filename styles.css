@@ -363,3 +363,7 @@
 .cs50-footer button{border:1px solid #536d8c;}
 @media(max-width:1180px){#cs50ToolsBtn{display:none}}
 @media(max-width:620px){.cs50-submit-dialog{padding:14px 12px;max-height:94dvh}.cs50-command-line{align-items:flex-start;flex-wrap:wrap}.cs50-actions{flex-direction:column;align-items:flex-start}}
+
+/* Context menu download appears only on files, never folders. */
+.file-context-menu button[hidden]{display:none!important}
+.file-context-menu button[data-action=download]{font-weight:650;color:#a7d5ff}

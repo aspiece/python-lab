@@ -69,10 +69,10 @@
   $('cs50FilesList').textContent=names.length?
    names.map(name=>problem.slug+'/'+name).join('\n'):
    'No matching files found. Select a starter or open the assignment files first.';
-  $('cs50PackageBtn').disabled=!fileCount;
+
   $('cs50PackageStatus').textContent=names.length?
-   'Ready to prepare '+names.length+' file(s). Review the official instructions for required files.':
-   'No matching files for this assignment. Nothing will be downloaded.';
+   fileCount+' Python file(s) detected. Right-click each assignment file in Explorer and select Download File.':
+   'No matching files for this assignment. Open an assignment file in Explorer first.';
  }
  function show(){
   const select=$('cs50AssignmentSelect');if(!select)return;
@@ -93,26 +93,6 @@
   }catch{}
   prompt('Copy this command into the official CS50 Codespace terminal:',text);
  }
- async function download(){
-  const problem=getProblem();if(!problem)return;
-  const files=submissionFiles(problem);
-  if(!Object.keys(files).some(name=>name.endsWith('.py'))){alert('No Python files found for this assignment.');return;}
-  if(typeof JSZip==='undefined'){alert('ZIP export is unavailable. Please reload Python Lab.');return;}
-  try{
-   const zip=new JSZip();
-   for(const [name,content] of Object.entries(files)){
-    if(!name||name.startsWith('/')||name.split('/').some(part=>part==='..'||part==='.')||
-        !/^[\w. /-]+$/.test(name))continue;
-    zip.file(problem.slug+'/'+name,content);
-   }
-   const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
-   const url=URL.createObjectURL(blob);
-   const a=document.createElement('a');a.href=url;a.download=problem.slug+'-cs50-transfer.zip';
-   document.body.append(a);a.click();a.remove();
-   setTimeout(()=>URL.revokeObjectURL(url),3000);
-   $('cs50PackageStatus').textContent='ZIP prepared locally. This is not a CS50 submission.';
-  }catch(error){$('cs50PackageStatus').textContent='Unable to export: '+String(error);}
- }
  function attach(config){callbacks=config||{};}
  $('cs50ToolsBtn')?.addEventListener('click',show);
  $('cs50FromTemplatesBtn')?.addEventListener('click',()=>{$('templatesDialog')?.close?.();show();});
@@ -120,7 +100,6 @@
  $('cs50AssignmentSelect')?.addEventListener('change',render);
  $('cs50CopyCheck')?.addEventListener('click',()=>{const problem=getProblem();if(problem)copy(commands(problem).check);});
  $('cs50CopySubmit')?.addEventListener('click',()=>{const problem=getProblem();if(problem)copy(commands(problem).submit);});
- $('cs50PackageBtn')?.addEventListener('click',download);
  function packageResult(result){
   const element=$('cs50LibraryStatus');
   if(!element)return;

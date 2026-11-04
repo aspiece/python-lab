@@ -166,6 +166,9 @@ finally:
     try {
       if(data.purpose==='tests'){
         await pyodide.loadPackage('pytest');
+        const requested=Array.isArray(data.testTargets)?data.testTargets:[];
+        const paths=requested.filter(safePath).map(p=>base+'/'+p);
+        pyodide.globals.set('__lab_test_targets_json',JSON.stringify(paths.length?paths:[base]));
         const pytestScript = "import json, pytest\n"+
         "class __LabPytestCapture:\n"+
         "    def __init__(self): self.tests=[]\n"+
@@ -180,7 +183,7 @@ finally:
         "            location = str(report.nodeid).split('::')[0].replace('/home/pyodide/', '')\n"+
         "            self.tests.append({'name': str(report.nodeid), 'file': location, 'line': 1, 'outcome': 'error', 'details': str(getattr(report, 'longrepr', ''))[:2000]})\n"+
         "__lab_pytest_capture = __LabPytestCapture()\n"+
-        "__lab_test_exit = int(pytest.main(['/home/pyodide','-q','--tb=short'], plugins=[__lab_pytest_capture]))\n"+
+        "__lab_test_exit = int(pytest.main(json.loads(__lab_test_targets_json) + ['-q','--tb=short'], plugins=[__lab_pytest_capture]))\n"+
         "__lab_tests_json = json.dumps({'tests': __lab_pytest_capture.tests, 'exitCode': __lab_test_exit})\n";
         await pyodide.runPythonAsync(pytestScript);
         const results=JSON.parse(pyodide.globals.get('__lab_tests_json'));

@@ -59,7 +59,41 @@ window.pythonLabTerminalHost={
   return [...new Set(options.filter(v=>v.startsWith(prefix)))].map(v=>before+v).sort();
  }
 };
-function normalize(path,base=cwd){const parts=[];for(const p of (path.startsWith('/')?path:('/'+base+'/'+path)).split('/')){if(!p||p==='.')continue;if(p==='..')parts.pop();else if(/^[\w. -]+$/.test(p))parts.push(p);else throw Error('Invalid path component: '+p);}return parts.join('/');}
+function normalize(path,base=cwd){
+ if(typeof path!=='string')throw Error('A path is required.');
+ // Allow terminal paths printed by pwd and the visible ~/python-lab prompt.
+ let input=path;
+ if(input==='~'||input==='~/python-lab')input='/home/pyodide';
+ else if(input.startsWith('~/python-lab/'))input='/home/pyodide/'+input.slice(13);
+ if(input==='/home/pyodide')input='/';
+ else if(input.startsWith('/home/pyodide/'))input=input.slice('/home/pyodide'.length);
+ const parts=[];
+ for(const p of (input.startsWith('/')?input:('/'+base+'/'+input)).split('/')){
+  if(!p||p==='.')continue;
+  if(p==='..')parts.pop();
+  else if(/^[\w. -]+$/.test(p))parts.push(p);
+  else throw Error('Invalid path component: '+p);
+ }
+ return parts.join('/');
+}
+function shellWords(line){
+ const words=[];let word='',quote='',started=false;
+ for(let i=0;i<line.length;i++){
+  const c=line[i];
+  if(quote){
+   if(c===quote){quote='';continue;}
+   if(c==='\\'&&quote==='"'&&i+1<line.length&&['"','\\'].includes(line[i+1])){word+=line[++i];continue;}
+   word+=c;continue;
+  }
+  if(c==='"'||c==="'"){quote=c;started=true;continue;}
+  if(/\s/.test(c)){if(started){words.push(word);word='';started=false;}continue;}
+  if(c==='\\'&&i+1<line.length&&(/[\s"'\\]/.test(line[i+1]))){word+=line[++i];started=true;continue;}
+  word+=c;started=true;
+ }
+ if(quote)throw Error('Unclosed quote in command.');
+ if(started)words.push(word);
+ return words;
+}
 function parent(path){return path.includes('/')?path.slice(0,path.lastIndexOf('/')):'';}
 function ensureDirs(path){let cur='';for(const p of path.split('/').filter(Boolean)){cur=cur?cur+'/'+p:p;dirs.add(cur);}}
 function displayPath(){return '~/python-lab'+(cwd?'/'+cwd:'');}
@@ -172,8 +206,6 @@ function paletteCommands(){
   ['Show Test Results',()=>window.pythonLabSmart?.setView('tests')],
   ['Save Locally',()=>persist(true)],
   ['Download Current File',()=>download()],
-  ['Export Project ZIP',()=>downloadProject()],
-  ['Download Canvas Submission ZIP',()=>downloadProject('submission')],
   ['Manage Saved Projects',()=>openProjectManager()],
   ['Create New Project',()=>createNewProject()],
   ['Import Project ZIP',()=> $('projectInput').click()],
@@ -192,6 +224,10 @@ function renderPalette(){
  if(!host.children.length){const empty=document.createElement('p');empty.textContent='No matches';host.append(empty);}
 }
 function modifyEntry(type,oldPath,action){
+  if(action==='download'){
+    if(type==='file')try{download(oldPath);}catch(err){alert(err.message);}
+    return;
+  }
   if(running){alert('Stop the running program before changing files.');return;}
   workspaceSnapshot();
   if(action==='delete'){
@@ -225,7 +261,7 @@ function modifyEntry(type,oldPath,action){
   if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename]??'';
   renderTabs();renderFiles();persist();
 }
-function entryMenu(event,type,path){event.preventDefault();const menu=$('fileContextMenu');menu.hidden=false;menu.style.left=Math.min(event.clientX,innerWidth-175)+'px';menu.style.top=Math.min(event.clientY,innerHeight-145)+'px';menu.dataset.type=type;menu.dataset.path=path;}
+function entryMenu(event,type,path){event.preventDefault();const menu=$('fileContextMenu');menu.hidden=false;const downloadOption=$('downloadContextBtn');if(downloadOption)downloadOption.hidden=type!=='file';menu.style.left=Math.max(6,Math.min(event.clientX,innerWidth-190))+'px';menu.style.top=Math.max(6,Math.min(event.clientY,innerHeight-180))+'px';menu.dataset.type=type;menu.dataset.path=path;}
 function blankProject(){
  return {filename:'main.py',code:'# New Python Lab project\n\nprint("Hello, Python!")\n',
   files:{'main.py':'# New Python Lab project\n\nprint("Hello, Python!")\n'},
@@ -398,13 +434,6 @@ async function bootstrapProjects(){
  }
 }
 
-async function downloadProject(kind='project'){
-  workspaceSnapshot();
-  if(typeof JSZip==='undefined'){alert('ZIP library unavailable. Check your internet connection.');return;}
-  const zip=new JSZip();for(const dir of dirs)zip.folder(dir);for(const [path,content] of Object.entries(files))zip.file(path,content);
-  try{const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=(activeProjectName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'python-lab')+(kind==='submission'?'-submission':'-backup')+'.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);}
-  catch(err){alert('Unable to download ZIP: '+err.message);}
-}
 const expanded=new Set(Array.isArray(initial.expanded)?initial.expanded:[...dirs]);
 function renderFiles(){
  const host=$('fileList');host.textContent='';
@@ -432,7 +461,7 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=17');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=18');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
   window.pythonLabCS50Tools?.packageResult(data);
   append(data.success?'✓ CS50 Python library loaded automatically.\n':'CS50 library could not load in this browser (regular Python still works): '+String(data.error||'Unknown error')+'\n',data.success?'success-line':'error-line');
 }if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',latestInputPrompt());if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='traceResults'){running=false;updateButtons();setStatus('Python ready','ready');window.pythonLabDebug?.onResult(data);showShell();}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
@@ -455,7 +484,7 @@ function sendExecution(){
  worker.postMessage({type:'run',...activeRun,stdin:inputHistory.join('\n')});
 }
 function executePython(name,args=[],command=''){
- workspaceSnapshot();name=(name in files)?name:normalize(name);
+ workspaceSnapshot();const relative=normalize(name);name=Object.hasOwn(files,relative)?relative:Object.hasOwn(files,name)?name:relative;
  if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}
  if(!ready||running)return;
  running=true;terminalMode='busy';runStart=performance.now();inputHistory=[];
@@ -505,22 +534,32 @@ function installTemplate(project){
 }
 
 function stop(){if(!running)return;window.pythonLabDebug?.abort();terminalMode='shell';activeRun=null;inputHistory=[];replayBaseline='';scriptTranscript='';$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
-function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'text/x-python;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function download(path=filename){
+ workspaceSnapshot();
+ if(!Object.hasOwn(files,path))throw Error('File not found: '+path);
+ const content=files[path];
+ const type=path.endsWith('.py')?'text/x-python;charset=utf-8':'text/plain;charset=utf-8';
+ const url=URL.createObjectURL(new Blob([content],{type}));
+ const a=document.createElement('a');
+ a.href=url;a.download=path.split('/').pop();
+ document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
 function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';if(enhancedTerminal){enhancedTerminal.setMode('shell',displayPath()+' $ ');}else $('terminalInput').focus();}
 function shellCommand(line,alreadyEchoed=false){
  try{
-  files[filename]=getCode();const args=line.trim().match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(x=>x.replace(/^["']|["']$/g,''))||[];
+  files[filename]=getCode();const args=shellWords(line.trim());
   if(!alreadyEchoed)append(displayPath()+' $ '+line+'\n');
   if(!args.length){showShell();return;}
   const cmd=args[0],rest=args.slice(1);
   if(cmd==='clear'||cmd==='cls'){clearTerminal();}
-  else if(cmd==='help')append('Commands: python FILE.py [args], python -c CODE, python -m pytest, pytest, ls, tree, pwd, cd, mkdir [-p], rmdir, cat, echo, touch, cp, mv, rm, whoami, clear, help\nCS50 Python library loads automatically with Python (no pip command needed). Official submit50/check50 require CS50 Codespaces; this terminal is not authenticated.\n');
+  else if(cmd==='help')append('Browser commands: python/python3 FILE.py [args], python -c CODE, pytest [FILE_OR_DIR], python -m pytest [FILE_OR_DIR], ls/dir, tree, pwd, cd, mkdir [-p], rmdir, cat/type, echo, touch, cp, mv, rm, whoami, clear/cls, help, pip list.\nPaths may be relative to the current directory; quoted names with spaces are supported.\nCS50 Python loads automatically. Official submit50/check50 need an authenticated CS50 Codespace; the terminal is a simulation.\n');
   else if(cmd==='ls'||cmd==='dir'){const target=normalize(rest.find(a=>!a.startsWith('-'))||'.');if(target&&!dirs.has(target))append('No such directory: '+target+'\n','error-line');else append([...dirs].filter(d=>parent(d)===target).map(d=>d.split('/').pop()+'/').concat(Object.keys(files).filter(f=>parent(f)===target).map(f=>f.split('/').pop())).sort().join('    ')+'\n');}
   else if(cmd==='pwd')append('/home/pyodide'+(cwd?'/'+cwd:'')+'\n');
   else if(cmd==='echo')append(rest.join(' ')+'\n');
   else if(cmd==='whoami')append('student (browser simulation)\n');
-  else if(cmd==='python'&&['-V','--version'].includes(rest[0]))append('Python (Pyodide browser runtime)\n');
+  else if((cmd==='python'||cmd==='python3')&&['-V','--version'].includes(rest[0]))append('Python (Pyodide browser runtime)\n');
   else if((cmd==='python'||cmd==='python3')&&rest[0]==='-c'&&rest[1]!==undefined){runWorkerCode(rest.slice(1).join(' '),line,true);return;}
   else if(cmd==='tree'){
     const root=normalize(rest[0]||'.');if(root&&!dirs.has(root)){append('tree: no such directory: '+root+'\n','error-line');}
@@ -535,10 +574,18 @@ function shellCommand(line,alreadyEchoed=false){
       append((root||'.')+'/\n'+(entries.length?entries.join('\n'):'  (empty)')+'\n');
     }
   }
-  else if(cmd==='cat'||cmd==='type')append(files[normalize(rest[0]||'')]===undefined?'File not found\n':files[normalize(rest[0])]+'\n');
+  else if(cmd==='cat'||cmd==='type'){
+    if(!rest.length)append('Usage: cat FILE [FILE ...]\n','error-line');
+    else for(const name of rest){
+      const path=normalize(name);
+      if(!Object.hasOwn(files,path))append('cat: file not found: '+name+'\n','error-line');
+      else append(files[path]+(files[path].endsWith('\n')?'':'\n'));
+    }
+  }
   else if(cmd==='cp'){
     if(rest.length!==2){append('Usage: cp SOURCE DEST\n','error-line');}
-    else{const source=normalize(rest[0]),dest=normalize(rest[1]);
+    else{const source=normalize(rest[0]),requested=normalize(rest[1]);
+      const dest=dirs.has(requested)?requested+'/'+source.split('/').pop():requested;
       if(!Object.hasOwn(files,source))append('cp: source file not found\n','error-line');
       else if(Object.hasOwn(files,dest)||dirs.has(dest))append('cp: destination already exists\n','error-line');
       else if(parent(dest)&&!dirs.has(parent(dest)))append('cp: destination folder not found\n','error-line');
@@ -564,7 +611,8 @@ function shellCommand(line,alreadyEchoed=false){
   else if(cmd==='mv'){
     if(rest.length!==2)append('Usage: mv SOURCE DEST\n','error-line');
     else{
-      const source=normalize(rest[0]),dest=normalize(rest[1]);
+      const source=normalize(rest[0]),requested=normalize(rest[1]);
+      const dest=dirs.has(requested)?requested+'/'+source.split('/').pop():requested;
       if(!Object.hasOwn(files,source))append('mv: source must be a file (move folders in Explorer)\n','error-line');
       else if(Object.hasOwn(files,dest)||dirs.has(dest))append('mv: destination already exists\n','error-line');
       else if(parent(dest)&&!dirs.has(parent(dest)))append('mv: destination folder not found\n','error-line');
@@ -587,12 +635,40 @@ function shellCommand(line,alreadyEchoed=false){
       else{dirs.delete(dir);expanded.delete(dir);if(cwd===dir)cwd=parent(dir);renderFiles();persist();}
     }
   }
-  else if(cmd==='touch'){if(!rest[0])append('Usage: touch FILE\n');else{const p=normalize(rest[0]);if(!dirs.has(parent(p))&&parent(p))append('No such directory\n','error-line');else {files[p]??='';renderFiles();persist();}}}
-  else if(cmd==='mkdir'){if(!rest[0])append('Usage: mkdir [-p] DIRECTORY\n');else{const recursive=rest[0]==='-p';const target=normalize(rest[recursive?1:0]||'');if(!target)append('Invalid directory\n','error-line');else if(dirs.has(target))append('Directory already exists\n');else if(!recursive&&parent(target)&&!dirs.has(parent(target)))append('Parent directory does not exist (try mkdir -p)\n','error-line');else{ensureDirs(target);expanded.add(target);renderFiles();persist();}}}
-  else if(cmd==='cd'){const target=rest.length?normalize(rest[0]):'';if(!target||dirs.has(target)){cwd=target;persist();}else append('cd: no such directory: '+rest[0]+'\n','error-line');}
+  else if(cmd==='touch'){
+    if(rest.length!==1)append('Usage: touch FILE\n','error-line');
+    else{
+      const p=normalize(rest[0]);
+      if(!p||dirs.has(p))append('touch: target is a directory\n','error-line');
+      else if(parent(p)&&!dirs.has(parent(p)))append('touch: parent directory does not exist\n','error-line');
+      else{files[p]??='';renderFiles();persist();}
+    }
+  }
+  else if(cmd==='mkdir'){
+    const recursive=rest[0]==='-p',args=recursive?rest.slice(1):rest;
+    if(args.length!==1)append('Usage: mkdir [-p] DIRECTORY\n','error-line');
+    else{
+      const target=normalize(args[0]);
+      const components=target.split('/');const conflict=components.some((_,i)=>Object.hasOwn(files,components.slice(0,i+1).join('/')));
+      if(!target)append('mkdir: invalid directory\n','error-line');
+      else if(conflict)append('mkdir: a file blocks that directory path\n','error-line');
+      else if(dirs.has(target)){if(!recursive)append('mkdir: directory already exists\n','error-line');}
+      else if(!recursive&&parent(target)&&!dirs.has(parent(target)))append('mkdir: parent directory does not exist (try mkdir -p)\n','error-line');
+      else{ensureDirs(target);expanded.add(target);renderFiles();persist();}
+    }
+  }
+  else if(cmd==='cd'){
+    if(rest.length>1)append('Usage: cd [DIRECTORY]\n','error-line');
+    else{const target=rest.length?normalize(rest[0]):'';
+      if(!target||dirs.has(target)){cwd=target;persist();}else append('cd: no such directory: '+rest[0]+'\n','error-line');
+    }
+  }
 else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in the simulated browser shell. Some compatible packages load automatically when imported.\n');
-  else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){executeVirtualTest(true);return;}
+  else if(((cmd==='python'||cmd==='python3')&&rest[0]==='-m'&&rest[1]==='pytest')||cmd==='pytest'){
+    executeVirtualTest(true,cmd==='pytest'?rest:rest.slice(2));return;
+  }
   else if((cmd==='python'||cmd==='python3')&&rest[0]?.endsWith('.py')){executePython(rest[0],rest.slice(1),line);return;}
+  else if(cmd==='python'||cmd==='python3')append('Usage: '+cmd+' FILE.py [args] | -c CODE | -m pytest [FILE_OR_DIR]\n','error-line');
   else if(cmd==='submit50'||cmd==='check50'){
     append('Official '+cmd+' needs GitHub authentication and a real Codespace. This simulated terminal cannot submit or check your code.\n','error-line');
     window.pythonLabCS50Tools?.show();
@@ -605,28 +681,48 @@ else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in
   showShell();
  }catch(err){append('Command error: '+err.message+'\n','error-line');showShell();}
 }
-function runWorkerCode(code,command,alreadyEchoed=false,purpose='script'){
+function runWorkerCode(code,command,alreadyEchoed=false,purpose='script',testTargets=[]){
  if(!ready||running)return;workspaceSnapshot();
  running=true;terminalMode='busy';runStart=performance.now();updateButtons();
- activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command,purpose};
+ activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command,purpose,testTargets};
  inputHistory=[];replayBaseline='';scriptTranscript='';replayWarned=false;
  lastExecutionFiles={...activeRun.files};
  if(command&&!alreadyEchoed){if(enhancedTerminal)enhancedTerminal.echoCommand(command);else append(displayPath()+' $ '+command+'\n');}
  sendExecution();
 }
-function executeVirtualTest(alreadyEchoed=false){
+function executeVirtualTest(alreadyEchoed=false,args=[]){
  if(!ready||running)return;
- files[filename]=getCode();
+ workspaceSnapshot();
  window.pythonLabSmart?.beginTests();
- if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){
-  append('No test_*.py files found\n','error-line');
+ const unsupported=args.find(a=>a.startsWith('-')&&!['-q','-v'].includes(a));
+ if(unsupported){
+  append('pytest: unsupported option '+unsupported+' (supported: -q, -v, FILE or DIRECTORY)\n','error-line');
+  showShell();return;
+ }
+ const tests=Object.keys(files).filter(n=>/(^|\/)test_[^/]*\.py$/.test(n));
+ const selections=args.filter(a=>!a.startsWith('-'));
+ const targets=[];
+ if(selections.length){
+  for(const value of selections){
+   const path=normalize(value);
+   if(Object.hasOwn(files,path)&&path.endsWith('.py'))targets.push(path);
+   else if(dirs.has(path)&&tests.some(n=>n.startsWith(path+'/')))targets.push(path);
+   else{
+    append('pytest: no tests found at '+value+'\n','error-line');
+    showShell();return;
+   }
+  }
+ }else{
+  const scoped=cwd?tests.filter(n=>n.startsWith(cwd+'/')):tests;
+  if(scoped.length)targets.push(...scoped);
+ }
+ if(!targets.length){
+  append('No test_*.py files found'+(cwd?' in '+cwd:'')+'\n','error-line');
   window.pythonLabSmart?.onWorkerMessage({type:'testResults',tests:[],exitCode:5});
   showShell();return;
  }
- runWorkerCode('','python -m pytest -q',alreadyEchoed,'tests');
+ runWorkerCode('','python -m pytest '+[...args].join(' '),alreadyEchoed,'tests',targets);
 }
-$('downloadProjectBtn').addEventListener('click',()=>downloadProject());
-$('downloadSubmissionBtn').addEventListener('click',()=>downloadProject('submission'));
 $('projectManagerBtn').addEventListener('click',openProjectManager);
 $('projectManagerClose').addEventListener('click',()=> $('projectsDialog').close());
 $('createProjectBtn').addEventListener('click',createNewProject);
@@ -664,7 +760,6 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fileContextMenu')
 $('newBtn').addEventListener('click',()=>{const d=$('confirmDialog');if(d.showModal)d.showModal();else if(confirm('Create a new file?'))resetFile();});
 $('confirmDialog').addEventListener('close',()=>{if($('confirmDialog').returnValue==='confirm')resetFile();});
 $('openBtn').addEventListener('click',()=> $('fileInput').click());
-$('saveBtn').addEventListener('click',download);
 $('runBtn').addEventListener('click',run);
 $('stopBtn').addEventListener('click',stop);
 $('clearBtn').addEventListener('click',clearTerminal);
