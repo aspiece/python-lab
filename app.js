@@ -172,8 +172,6 @@ function paletteCommands(){
   ['Show Test Results',()=>window.pythonLabSmart?.setView('tests')],
   ['Save Locally',()=>persist(true)],
   ['Download Current File',()=>download()],
-  ['Export Project ZIP',()=>downloadProject()],
-  ['Download Canvas Submission ZIP',()=>downloadProject('submission')],
   ['Manage Saved Projects',()=>openProjectManager()],
   ['Create New Project',()=>createNewProject()],
   ['Import Project ZIP',()=> $('projectInput').click()],
@@ -192,6 +190,10 @@ function renderPalette(){
  if(!host.children.length){const empty=document.createElement('p');empty.textContent='No matches';host.append(empty);}
 }
 function modifyEntry(type,oldPath,action){
+  if(action==='download'){
+    if(type==='file')try{download(oldPath);}catch(err){alert(err.message);}
+    return;
+  }
   if(running){alert('Stop the running program before changing files.');return;}
   workspaceSnapshot();
   if(action==='delete'){
@@ -225,7 +227,7 @@ function modifyEntry(type,oldPath,action){
   if(editor)editor.setModel(modelFor(filename));else fallback.value=files[filename]??'';
   renderTabs();renderFiles();persist();
 }
-function entryMenu(event,type,path){event.preventDefault();const menu=$('fileContextMenu');menu.hidden=false;menu.style.left=Math.min(event.clientX,innerWidth-175)+'px';menu.style.top=Math.min(event.clientY,innerHeight-145)+'px';menu.dataset.type=type;menu.dataset.path=path;}
+function entryMenu(event,type,path){event.preventDefault();const menu=$('fileContextMenu');menu.hidden=false;const downloadOption=$('downloadContextBtn');if(downloadOption)downloadOption.hidden=type!=='file';menu.style.left=Math.max(6,Math.min(event.clientX,innerWidth-190))+'px';menu.style.top=Math.max(6,Math.min(event.clientY,innerHeight-180))+'px';menu.dataset.type=type;menu.dataset.path=path;}
 function blankProject(){
  return {filename:'main.py',code:'# New Python Lab project\n\nprint("Hello, Python!")\n',
   files:{'main.py':'# New Python Lab project\n\nprint("Hello, Python!")\n'},
@@ -398,13 +400,6 @@ async function bootstrapProjects(){
  }
 }
 
-async function downloadProject(kind='project'){
-  workspaceSnapshot();
-  if(typeof JSZip==='undefined'){alert('ZIP library unavailable. Check your internet connection.');return;}
-  const zip=new JSZip();for(const dir of dirs)zip.folder(dir);for(const [path,content] of Object.entries(files))zip.file(path,content);
-  try{const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=(activeProjectName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'python-lab')+(kind==='submission'?'-submission':'-backup')+'.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);}
-  catch(err){alert('Unable to download ZIP: '+err.message);}
-}
 const expanded=new Set(Array.isArray(initial.expanded)?initial.expanded:[...dirs]);
 function renderFiles(){
  const host=$('fileList');host.textContent='';
@@ -505,7 +500,17 @@ function installTemplate(project){
 }
 
 function stop(){if(!running)return;window.pythonLabDebug?.abort();terminalMode='shell';activeRun=null;inputHistory=[];replayBaseline='';scriptTranscript='';$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
-function download(){const url=URL.createObjectURL(new Blob([getCode()],{type:'text/x-python;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function download(path=filename){
+ workspaceSnapshot();
+ if(!Object.hasOwn(files,path))throw Error('File not found: '+path);
+ const content=files[path];
+ const type=path.endsWith('.py')?'text/x-python;charset=utf-8':'text/plain;charset=utf-8';
+ const url=URL.createObjectURL(new Blob([content],{type}));
+ const a=document.createElement('a');
+ a.href=url;a.download=path.split('/').pop();
+ document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
 function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';if(enhancedTerminal){enhancedTerminal.setMode('shell',displayPath()+' $ ');}else $('terminalInput').focus();}
 function shellCommand(line,alreadyEchoed=false){
@@ -625,8 +630,6 @@ function executeVirtualTest(alreadyEchoed=false){
  }
  runWorkerCode('','python -m pytest -q',alreadyEchoed,'tests');
 }
-$('downloadProjectBtn').addEventListener('click',()=>downloadProject());
-$('downloadSubmissionBtn').addEventListener('click',()=>downloadProject('submission'));
 $('projectManagerBtn').addEventListener('click',openProjectManager);
 $('projectManagerClose').addEventListener('click',()=> $('projectsDialog').close());
 $('createProjectBtn').addEventListener('click',createNewProject);
@@ -664,7 +667,6 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fileContextMenu')
 $('newBtn').addEventListener('click',()=>{const d=$('confirmDialog');if(d.showModal)d.showModal();else if(confirm('Create a new file?'))resetFile();});
 $('confirmDialog').addEventListener('close',()=>{if($('confirmDialog').returnValue==='confirm')resetFile();});
 $('openBtn').addEventListener('click',()=> $('fileInput').click());
-$('saveBtn').addEventListener('click',download);
 $('runBtn').addEventListener('click',run);
 $('stopBtn').addEventListener('click',stop);
 $('clearBtn').addEventListener('click',clearTerminal);
