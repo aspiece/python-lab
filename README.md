@@ -1,3 +1,18 @@
+# Guided Move to CS50 Codespaces
+
+Python Lab now has a **Move to Codespaces** guide in the top bar (or the command menu on smaller screens). Students start in Python Lab, then switch to the official Codespace for their final testing and submission. This is a **one-time handoff**, not two synchronized workspaces.
+
+The guide has four steps:
+
+1. **Read** the assignment README and official Harvard problem page.
+2. **Move files.** Download each Python or other supported text file directly from its assignment folder, or copy its contents and paste them into a matching file in Codespaces. Review links to any CS50-provided CSV or image files and place required dependencies in the same folder. The Python Lab README is a help sheet and not a submission file.
+3. **Continue in Codespaces.** The guide shows the folder name, links to [cs50.dev](https://cs50.dev/), and the exact check50/submit50 commands. Codespaces is the main place to keep editing after the move.
+4. **Mark your progress.** Students can check that they moved their files, ran and checked the code, and saw a successful submit50 response. The checklist is **self-reported** and saved only in the current browser, separately for each saved project, assignment, and copy of the assignment folder. It does not verify CS50 submission or sync to Harvard or Canvas.
+
+The guide never uploads student files or credentials. It cannot authenticate or submit to Harvard. The download actions use the exact selected assignment file, including duplicate folders such as `indoor-2`. If the clipboard is not available, students can download instead. Additional data/image files must be obtained from their official source when not already in the workspace. On phone screens, students can open the guide through the Command Palette or the CS50P starter gallery.
+
+---
+
 # CS50P: Bring Files Your Code Needs
 
 Every CS50P `README.md` now reminds students to bring any other files their code reads into the matching folder in CS50 Codespaces. These can include an input CSV, a picture, another Python module, or a file they made themselves. Keep the original file names so the code can find them.
@@ -36,7 +51,7 @@ The terminal is **not an unrestricted system shell**: commands such as `pip inst
 
 # CS50 Python Library and Official Submission Handoff
 
-Python Lab now has a **CS50 Submit** handoff panel. It does **not** send files or user credentials to CS50; a submission is not complete until the official `submit50` tool reports success in a real authenticated Codespace.
+Python Lab now has a **Move to Codespaces** guide. It does **not** send files or user credentials to CS50; a submission is not complete until the official `submit50` tool reports success in a real authenticated Codespace.
 
 1. Open or edit a CS50P problem in the Python Lab editor.
 2. Click **CS50 Submit**, use the new entry in **CS50P Starters**, or open **Prepare Official CS50 Submission** in the Command Palette.
