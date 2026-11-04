@@ -38,7 +38,7 @@ const source={
 };
 const localStorage={getItem:()=>JSON.stringify(source),setItem(){}};
 let downloadBlob=null;
-const URL={createObjectURL:blob=>{downloadBlob=blob;return 'blob:mock';},revokeObjectURL(){}};
+const urlAPI={createObjectURL:blob=>{downloadBlob=blob;return 'blob:mock';},revokeObjectURL(){}};
 class Worker{
  static current;
  constructor(){this.sent=[];Worker.current=this;}
@@ -47,7 +47,7 @@ class Worker{
  terminate(){}
 }
 let clock=0;
-runInNewContext(app,{window,document,localStorage,Worker,URL,Blob,performance:{now:()=>++clock*100},
+runInNewContext(app,{window,document,localStorage,Worker,URL:urlAPI,Blob,performance:{now:()=>++clock*100},
  setTimeout:()=>123,clearTimeout(){},console,alert:msg=>{throw Error('Alert: '+msg);},prompt:()=>null,confirm:()=>true,innerWidth:1200,innerHeight:800});
 const host=window.pythonLabTerminalHost;
 const shell=command=>{assert.equal(host.state().mode,'shell','Shell unavailable before '+command);host.submit(command);};
