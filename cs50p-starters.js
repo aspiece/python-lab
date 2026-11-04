@@ -1293,21 +1293,34 @@
   }
   const notes=resourceNotes[problem.slug]||'';
   const guide=safeGuide(problem);
-  const hasTests=!!problem.sourceFile||!!problem.testFile;
+  const codeFiles=Object.keys(files).filter(name=>name.endsWith('.py'));
+  const sendList=codeFiles.map(name=>'- `'+name+'`');
   const steps=guide.steps.map((step,i)=>(i+1)+'. '+step);
   const checks=guide.checks.map(test=>'- '+test);
+  const suffix=problem.set===5?'tests/'+problem.slug.replace(/^test_/,''):problem.slug;
+  const cs50Path='cs50/problems/2022/python/'+suffix;
   files['README.md']=[
    '# '+problem.title,
    '',
-   '**CS50P Problem Set '+problem.set+': '+subjects[problem.set]+'**',
+   '**CS50P · Problem Set '+problem.set+'**',
    '',
-   'Folder: '+problem.slug+' / File to open: '+problem.filename,
+   '## What will you make?',
    '',
-   'Official instructions: '+problem.url,
+   guide.mission||problem.goal,
    '',
-   '## Your mission',
+   '## Where are your files?',
    '',
-   problem.goal,
+   'Your folder is `'+problem.slug+'`.',
+   'Your code files are:',
+   ...sendList,
+   '',
+   'This `README.md` file is your help sheet. You do **not** need to send it to CS50.',
+   '',
+   '## Start here',
+   '',
+   '1. Open `'+problem.filename+'` in Python Lab.',
+   '2. Read the official problem page: '+problem.url,
+   '3. Look for `TODO` in your code. Those are spots you need to finish.',
    '',
    '## Step-by-step plan',
    '',
@@ -1316,28 +1329,35 @@
    '## Check your work',
    '',
    ...checks,
+   'Run your code and compare the results with the official problem page.',
    '',
-   '## Using this starter in Python Lab',
+   '## Words to know',
    '',
-   '1. Open '+problem.filename+' and read the numbered planning comments before changing the code.',
-   '2. Complete each TODO in your own words and code. The functions use pass as an empty placeholder.',
-   hasTests?
-    '3. Write meaningful pytest assertions in the test_*.py file; remove each pytest.skip() once you add that test.':
-    '3. Run the program, then compare the behavior with the examples and rules in the official instructions.',
-   '4. Revise your work when it fails a self-check or test case.',
-   '5. Export a ZIP backup when you want to work on another device or submit files through Canvas.',
+   ...wordsToKnow[problem.set],
    '',
-   '## Helpful reminder',
+   '## Move your code to CS50 Codespaces',
    '',
-   'The scaffold includes setup hints and structure, not a completed implementation.',
-   'Always read the full Harvard CS50P problem before coding; it has the authoritative input, output, and edge-case rules.',
-   'This is an original Python Lab teaching aid, NOT an official CS50-distributed starter or solution.',
+   '1. In Python Lab, right-click each code file listed above. Choose **Download File**.',
+   '2. Go to https://cs50.dev and open your Codespace.',
+   '3. Make or open the folder named `'+problem.slug+'`.',
+   '4. Put your downloaded Python file'+(codeFiles.length>1?'s':'')+' inside that folder.',
+   '5. Keep `README.md` in Python Lab. It is **not** one of the files you need to send.',
+   '6. Open a terminal in that folder to check and send your work.',
    '',
-   notes?'## Environment note\n\n'+notes+'\n':'',
-   'Official check50 and submit50 are not part of this browser IDE; use the official CS50 environment when required.',
-   'Follow the CS50 academic-honesty policy and write your own implementation.',
+   'Check your code: `check50 '+cs50Path+'`',
+   '',
+   'Send your code: `submit50 '+cs50Path+'`',
+   '',
+   'Check the official problem page before you send your work.',
+   'Some problems also need a data file or picture from CS50. Follow those rules if needed.',
+   '',
+   notes?'## Need another file or package?\n\n'+notes+'\n':'',
+   '## Remember',
+   '',
+   'Write your own code. The starter is NOT an official CS50 starter or an answer key.',
+   'Python Lab cannot send work to CS50 for you. Use CS50 Codespaces to submit.',
    ''
-  ].filter(x=>x!==null).join('\n');
+  ].join('\n');
   return {
    id:problem.id,
    title:problem.title,
