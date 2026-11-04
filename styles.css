@@ -396,3 +396,10 @@
  .cs50-transfer-file-actions{width:100%}
  .cs50-transfer-file-actions button{flex:1}
 }
+
+/* Keep the transfer action easy to find on classroom laptop screens. */
+#cs50ToolsBtn{background:#263d58;border:1px solid #4a6b91;font-weight:650;white-space:nowrap}
+@media(max-width:1180px){#cs50ToolsBtn{display:inline-flex}#importProjectBtn{display:none}}
+@media(max-width:980px){#startTraceBtn{display:none}#testBtn{display:none}}
+@media(max-width:760px){#newBtn,#openBtn{display:none}}
+@media(max-width:560px){#cs50ToolsBtn{display:none}} /* Available from command palette and starter gallery. */
