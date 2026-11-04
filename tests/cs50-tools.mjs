@@ -49,6 +49,7 @@ api.attach({workspace:()=>data,projectName:()=> 'My Python Lab',installLibrary:(
 const indoor=find('cs50p-0-indoor');
 const files=api.submissionFiles(indoor);
 assert.equal(files['indoor.py'],'print("newer attempt")','Submission picked wrong duplicate project folder');
+assert(!Object.hasOwn(files,'README.md'),'The Python Lab guide must not be in the CS50 file list');
 assert(!Object.values(files).some(s=>s.includes('private other homework')||s.includes('older attempt')),
  'Submission leaked work from another folder');
 
@@ -56,10 +57,11 @@ api.show();
 assert(elements.cs50SubmissionDialog.open,'Handoff dialog was not opened');
 assert.equal(elements.cs50AssignmentSelect.children.length,41,'Not all assignments are available');
 assert.equal(elements.cs50AssignmentSelect.value,'cs50p-0-indoor','Selected wrong active problem');
-assert(elements.cs50PackageStatus.textContent.includes('Right-click each assignment file'),'CS50 panel should explain single-file transfer');
+assert(elements.cs50PackageStatus.textContent.includes('Do not send README.md'),'CS50 panel should tell students to keep README');
 assert(!html.includes('cs50PackageBtn'),'CS50 ZIP button should be removed');
 assert(elements.cs50FilesList.textContent.includes('indoor/indoor.py'));
 assert(!elements.cs50FilesList.textContent.includes('other/task.py'));
+assert(!elements.cs50FilesList.textContent.includes('README.md'),'README must never appear among transfer files');
 assert.equal(elements.cs50InstructionsLink.href,'https://cs50.harvard.edu/python/psets/0/indoor/');
 assert(elements.cs50SubmitCommand.textContent.includes('submit50 cs50/problems/2022/python/indoor'));
 assert(!toolSource.includes('JSZip'),'CS50 ZIP exports should no longer be offered');
@@ -67,10 +69,27 @@ assert(!toolSource.includes('fetch('),'The handoff must not upload student files
 assert(!toolSource.includes('new WebSocket'),'The handoff must not open a WebSocket');
 assert(!toolSource.includes('github.com/me50/'),'The handoff must not forge a GitHub submission');
 
+// Testing problems may need two Python files, but never the help sheet.
+data.filename='test_fuel/test_fuel.py';data.cwd='test_fuel';
+data.files={
+ 'test_fuel/fuel.py':'def convert(fraction): pass',
+ 'test_fuel/test_fuel.py':'def test_convert(): pass',
+ 'test_fuel/README.md':'# Help sheet'
+};
+const testingFiles=api.submissionFiles(find('cs50p-5-test_fuel'));
+assert.equal(Object.keys(testingFiles).length,2,'Refueling should list only its two Python files');
+assert(Object.hasOwn(testingFiles,'fuel.py')&&Object.hasOwn(testingFiles,'test_fuel.py'));
+assert(!Object.hasOwn(testingFiles,'README.md'));
+elements.cs50AssignmentSelect.value='cs50p-5-test_fuel';
+elements.cs50AssignmentSelect.events.change();
+assert(elements.cs50FilesList.textContent.includes('test_fuel/fuel.py'));
+assert(elements.cs50FilesList.textContent.includes('test_fuel/test_fuel.py'));
+assert(!elements.cs50FilesList.textContent.includes('README.md'));
+
 data.filename='main.py';data.cwd='';
 data.files={'main.py':'print("unrelated")'};
 elements.cs50AssignmentSelect.events.change();
-assert(elements.cs50PackageStatus.textContent.includes('No matching files'),'Missing assignment files should be explained');
+assert(elements.cs50PackageStatus.textContent.includes('No Python files found'),'Missing code files should be explained');
 assert(elements.cs50FilesList.textContent.includes('No matching files'));
 
 assert(!html.includes('id="cs50InstallLibraryBtn"'),'The obsolete manual install control is still visible');
@@ -80,4 +99,4 @@ assert(elements.cs50LibraryStatus.textContent.includes('loaded automatically'),'
 api.packageResult({success:false,automatic:true,error:'Unsupported WASM dependency'});
 assert(elements.cs50LibraryStatus.textContent.includes('Unsupported WASM dependency'),'CS50 preload failure is hidden');
 assert(elements.cs50LibraryStatus.textContent.includes('Regular Python remains available'),'Fallback notice is missing');
-console.log('CS50 submission slug, selection, ZIP isolation, UI, and truthful installation status passed.');
+console.log('CS50 handoff lists only the Python files needed, not README, and keeps a clear status.');
