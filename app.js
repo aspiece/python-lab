@@ -10,7 +10,7 @@ let openTabs=[...new Set((Array.isArray(initial.openTabs)?initial.openTabs:[file
 if(!openTabs.includes(filename))openTabs.push(filename);
 const models=new Map(),viewStates=new Map();
 let panelCollapsed=false;
-let cs50Installing=false;
+
 let activeProjectId=null,activeProjectName='My Python Lab',projectReady=false,projectBusy=false;
 let enhancedTerminal=null,replayBaseline='',scriptTranscript='',replayWarned=false,lastExecutionFiles={};
 function clearTerminal(){
@@ -107,7 +107,7 @@ function persist(immediate=false){
 }
 function setStatus(s,kind=''){$('runtimeStatus').textContent=s;$('runtimeStatus').className='status '+kind;$('footerStatus').textContent=s;}
 function append(value,cls=''){const out=$('output');if(out.querySelector('.muted'))out.textContent='';const el=document.createElement('span');el.className=cls;el.textContent=value;out.append(el);out.parentElement.scrollTop=out.parentElement.scrollHeight;enhancedTerminal?.write(value,cls);}
-function updateButtons(){$('runBtn').disabled=!ready||running||cs50Installing;$('stopBtn').disabled=!running;}
+function updateButtons(){$('runBtn').disabled=!ready||running;$('stopBtn').disabled=!running;}
 function updateStatusBar(){
  const node=$('cursorStatus');if(!node)return;
  if(editor){const p=editor.getPosition();node.textContent=p?'Ln '+p.lineNumber+', Col '+p.column:'Ln 1, Col 1';}
@@ -168,7 +168,6 @@ function paletteCommands(){
   ['Record Debug Trace',()=>window.pythonLabDebug?.begin()],
   ['Browse CS50P Problem Starters',()=>window.pythonLabTemplates?.show()],
   ['Prepare Official CS50 Submission',()=>window.pythonLabCS50Tools?.show()],
-  ['Install CS50 Python Library in Browser',()=>installCs50Browser()],
   ['Show Problems',()=>window.pythonLabSmart?.setView('problems')],
   ['Show Test Results',()=>window.pythonLabSmart?.setView('tests')],
   ['Save Locally',()=>persist(true)],
@@ -433,21 +432,9 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function installCs50Browser(){
- if(!worker||!ready||running||cs50Installing){
-  const error='Python runtime is not ready or is running another program.';
-  append(error+'\n','error-line');
-  window.pythonLabCS50Tools?.packageResult({name:'cs50',success:false,error});
-  return;
- }
- cs50Installing=true;updateButtons();
- append('Attempting to install the cs50 Python library (not submit50) in the browser runtime…\n');
- worker.postMessage({type:'installPackage',name:'cs50'});
-}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;cs50Installing=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=16');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'){
-  cs50Installing=false;updateButtons();
+function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=17');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
   window.pythonLabCS50Tools?.packageResult(data);
-  append(data.success?'✓ cs50 library is ready to import in this browser.\n':'CS50 package install unavailable: '+String(data.error||'Unknown error')+'\n',data.success?'success-line':'error-line');
+  append(data.success?'✓ CS50 Python library loaded automatically.\n':'CS50 library could not load in this browser (regular Python still works): '+String(data.error||'Unknown error')+'\n',data.success?'success-line':'error-line');
 }if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',latestInputPrompt());if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='traceResults'){running=false;updateButtons();setStatus('Python ready','ready');window.pythonLabDebug?.onResult(data);showShell();}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
   workspaceSnapshot();
   for(const [path,content] of Object.entries(data.files||{})){
@@ -528,7 +515,7 @@ function shellCommand(line,alreadyEchoed=false){
   if(!args.length){showShell();return;}
   const cmd=args[0],rest=args.slice(1);
   if(cmd==='clear'||cmd==='cls'){clearTerminal();}
-  else if(cmd==='help')append('Commands: python FILE.py [args], python -c CODE, python -m pytest, pytest, ls, tree, pwd, cd, mkdir [-p], rmdir, cat, echo, touch, cp, mv, rm, whoami, clear, help\nOptional: pip install cs50 attempts a compatible package install in this browser. For official submit50/check50, use CS50 Submit to transfer files to cs50.dev; this terminal is not authenticated.\n');
+  else if(cmd==='help')append('Commands: python FILE.py [args], python -c CODE, python -m pytest, pytest, ls, tree, pwd, cd, mkdir [-p], rmdir, cat, echo, touch, cp, mv, rm, whoami, clear, help\nCS50 Python library loads automatically with Python (no pip command needed). Official submit50/check50 require CS50 Codespaces; this terminal is not authenticated.\n');
   else if(cmd==='ls'||cmd==='dir'){const target=normalize(rest.find(a=>!a.startsWith('-'))||'.');if(target&&!dirs.has(target))append('No such directory: '+target+'\n','error-line');else append([...dirs].filter(d=>parent(d)===target).map(d=>d.split('/').pop()+'/').concat(Object.keys(files).filter(f=>parent(f)===target).map(f=>f.split('/').pop())).sort().join('    ')+'\n');}
   else if(cmd==='pwd')append('/home/pyodide'+(cwd?'/'+cwd:'')+'\n');
   else if(cmd==='echo')append(rest.join(' ')+'\n');
@@ -610,8 +597,10 @@ else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in
     append('Official '+cmd+' needs GitHub authentication and a real Codespace. This simulated terminal cannot submit or check your code.\n','error-line');
     window.pythonLabCS50Tools?.show();
   }
-  else if(cmd==='pip'&&rest[0]==='install'&&rest[1]==='cs50'){installCs50Browser();}
-  else if(cmd==='pip'&&rest[0]==='install'&&rest[1]){append('This is a simulated terminal. Only cs50 can be requested here; submit50 and check50 require an authenticated CS50 Codespace.\n','error-line');}
+  else if(cmd==='pip'&&rest[0]==='install'&&rest[1]==='cs50'){
+    append('CS50 Python library loads automatically when Python Lab starts. No pip command needed.\n');
+  }
+  else if(cmd==='pip'&&rest[0]==='install'&&rest[1]){append('This is a simulated terminal; package installation commands are not supported. CS50 Python loads automatically.\n','error-line');}
   else append(cmd+': command not supported in the browser terminal\n','error-line');
   showShell();
  }catch(err){append('Command error: '+err.message+'\n','error-line');showShell();}
@@ -732,7 +721,7 @@ window.addEventListener('keydown',e=>{
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
 setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);
-window.pythonLabCS50Tools?.attach({workspace:()=>window.pythonLabWorkspace?.(),projectName:()=>activeProjectName,installLibrary:installCs50Browser});
+window.pythonLabCS50Tools?.attach({workspace:()=>window.pythonLabWorkspace?.(),projectName:()=>activeProjectName});
 if(window.pythonLabProjects){bootstrapProjects().then(()=>{if(!worker)createWorker();});}
 else createWorker();
 function attachDebugEditor(){
