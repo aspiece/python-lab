@@ -81,10 +81,9 @@ assert.equal(elements.cs50TransferFiles.children[0].children[0].textContent,'ind
 elements.cs50TransferFiles.children[0].children[1].children[0].click();
 assert.equal(downloads.at(-1),'indoor-2/indoor.py','Download must use selected duplicate assignment, not another copy');
 elements.cs50TransferFiles.children[0].children[1].children[1].click();
-await Promise.resolve();
-await Promise.resolve();
+await new Promise(resolve=>setTimeout(resolve,0));
 assert.equal(copied,'print("newer attempt")','Copy code should use selected Python file contents');
-assert(elements.cs50PackageStatus.textContent.includes('Copied indoor.py'),'Copy must confirm that it copied, not pasted');
+assert(elements.cs50PackageStatus.textContent.includes('Copied indoor.py'),'Copy must confirm that it copied, not pasted: '+elements.cs50PackageStatus.textContent);
 
 const indoorKey=api.progressKey(indoor);
 assert.equal(elements.cs50StepFiles.checked,false,'Checklist should start empty');
