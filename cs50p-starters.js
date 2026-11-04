@@ -1361,7 +1361,7 @@
   return {
    id:problem.id,
    title:problem.title,
-   description:problem.goal,
+   description:guide.mission||problem.goal,
    set:problem.set,
    subject:subjects[problem.set],
    url:problem.url,
@@ -1377,7 +1377,7 @@
   return p?build(p):null;
  }
  const list=()=>catalog.map(item=>({
-  id:item.id,title:item.title,description:item.goal,
+  id:item.id,title:item.title,description:safeGuide(item).mission||item.goal,
   set:item.set,slug:item.slug,folderName:item.slug,subject:subjects[item.set],filename:item.filename,
   url:item.url,files:Object.keys(build(item).files)
  }));
