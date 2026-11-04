@@ -681,25 +681,47 @@ else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in
   showShell();
  }catch(err){append('Command error: '+err.message+'\n','error-line');showShell();}
 }
-function runWorkerCode(code,command,alreadyEchoed=false,purpose='script'){
+function runWorkerCode(code,command,alreadyEchoed=false,purpose='script',testTargets=[]){
  if(!ready||running)return;workspaceSnapshot();
  running=true;terminalMode='busy';runStart=performance.now();updateButtons();
- activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command,purpose};
+ activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command,purpose,testTargets};
  inputHistory=[];replayBaseline='';scriptTranscript='';replayWarned=false;
  lastExecutionFiles={...activeRun.files};
  if(command&&!alreadyEchoed){if(enhancedTerminal)enhancedTerminal.echoCommand(command);else append(displayPath()+' $ '+command+'\n');}
  sendExecution();
 }
-function executeVirtualTest(alreadyEchoed=false){
+function executeVirtualTest(alreadyEchoed=false,args=[]){
  if(!ready||running)return;
- files[filename]=getCode();
+ workspaceSnapshot();
  window.pythonLabSmart?.beginTests();
- if(!Object.keys(files).some(n=>/(^|\/)test_[^/]*\.py$/.test(n))){
-  append('No test_*.py files found\n','error-line');
+ const unsupported=args.find(a=>a.startsWith('-')&&!['-q','-v'].includes(a));
+ if(unsupported){
+  append('pytest: unsupported option '+unsupported+' (supported: -q, -v, FILE or DIRECTORY)\n','error-line');
+  showShell();return;
+ }
+ const tests=Object.keys(files).filter(n=>/(^|\/)test_[^/]*\.py$/.test(n));
+ const selections=args.filter(a=>!a.startsWith('-'));
+ const targets=[];
+ if(selections.length){
+  for(const value of selections){
+   const path=normalize(value);
+   if(Object.hasOwn(files,path)&&path.endsWith('.py'))targets.push(path);
+   else if(dirs.has(path)&&tests.some(n=>n.startsWith(path+'/')))targets.push(path);
+   else{
+    append('pytest: no tests found at '+value+'\n','error-line');
+    showShell();return;
+   }
+  }
+ }else{
+  const scoped=cwd?tests.filter(n=>n.startsWith(cwd+'/')):tests;
+  if(scoped.length)targets.push(...scoped);
+ }
+ if(!targets.length){
+  append('No test_*.py files found'+(cwd?' in '+cwd:'')+'\n','error-line');
   window.pythonLabSmart?.onWorkerMessage({type:'testResults',tests:[],exitCode:5});
   showShell();return;
  }
- runWorkerCode('','python -m pytest -q',alreadyEchoed,'tests');
+ runWorkerCode('','python -m pytest '+[...args].join(' '),alreadyEchoed,'tests',targets);
 }
 $('projectManagerBtn').addEventListener('click',openProjectManager);
 $('projectManagerClose').addEventListener('click',()=> $('projectsDialog').close());
