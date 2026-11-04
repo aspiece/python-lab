@@ -1,8 +1,10 @@
 /* Python Lab worker: isolated Python runtime, visible errors, package discovery. */
 const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/';
+const CS50_PYPI_VERSION = 'cs50==9.5.0'; // Official CS50 Python library, not submit50.
 let pyodide, initialized=false, initializing;
 let lastWorkspaceFiles=new Set(),lastWorkspaceDirs=new Set();
 let runningProgram=false;
+let cs50Ready=false;
 function message(type, extra={}) { self.postMessage({type,...extra}); }
 async function init() {
   if(initialized)return;
@@ -14,6 +16,21 @@ async function init() {
       pyodide=await loadPyodide({indexURL:PYODIDE_BASE});
       pyodide.setStdout({batched:s=>message('output',{text:s})});
       pyodide.setStderr({batched:s=>message('output',{text:s,stream:'stderr'})});
+      // Preload the official Python library once for every sandbox runtime.
+      // Its dependencies are downloaded by micropip and cached by the browser.
+      // If a WebAssembly-incompatible dependency fails, normal Python stays usable.
+      try {
+        await pyodide.loadPackage('micropip');
+        const mp=pyodide.pyimport('micropip');
+        try{await mp.install(CS50_PYPI_VERSION);}
+        finally{mp.destroy?.();}
+        pyodide.runPython('import cs50');
+        cs50Ready=true;
+        message('packageStatus',{name:'cs50',success:true,automatic:true});
+      }catch(err){
+        cs50Ready=false;
+        message('packageStatus',{name:'cs50',success:false,automatic:true,error:String(err)});
+      }
       initialized=true;
       message('ready');
     } catch(err) {
@@ -53,23 +70,6 @@ self.onmessage=async ({data})=>{
       }finally{
         runningProgram=false;
       }
-      return;
-    }
-    if(data.type==='installPackage'){
-      if(data.name!=='cs50'){message('packageStatus',{name:data.name,success:false,error:'Only the cs50 Python library is supported by this installer.'});return;}
-      if(runningProgram){message('packageStatus',{name:'cs50',success:false,error:'Stop the running Python program first.'});return;}
-      runningProgram=true;
-      try{
-        await init();
-        await pyodide.loadPackage('micropip');
-        const mp=pyodide.pyimport('micropip');
-        try{await mp.install('cs50');}
-        finally{mp.destroy?.();}
-        pyodide.runPython('import cs50');
-        message('packageStatus',{name:'cs50',success:true});
-      }catch(err){
-        message('packageStatus',{name:'cs50',success:false,error:String(err)});
-      }finally{runningProgram=false;}
       return;
     }
     if(data.type!=='run')return;
@@ -122,9 +122,15 @@ self.onmessage=async ({data})=>{
       await pyodide.loadPackage('micropip');
       const mp=pyodide.pyimport('micropip');
       for(const name of [...new Set(names)]){
+        if(name==='cs50'&&cs50Ready)continue;
         const pkg=name==='PIL'?'pillow':name;
         message('output',{text:'Checking package: '+pkg+'\n'});
-        try{await mp.install(pkg);if(pkg==='cs50')pyodide.runPython('import cs50');}catch(err){message('output',{text:'Package install failed ('+pkg+'): '+String(err)+'\n',stream:'stderr'});}
+        try{await mp.install(pkg);if(pkg==='cs50'){
+          pyodide.runPython('import cs50');cs50Ready=true;
+          message('packageStatus',{name:'cs50',success:true,automatic:true});
+        }}catch(err){message('output',{text:'Package install failed ('+pkg+'): '+String(err)+'\n',stream:'stderr'});
+          if(pkg==='cs50')message('packageStatus',{name:'cs50',success:false,automatic:true,error:String(err)});
+        }
       }
       mp.destroy?.();
     }

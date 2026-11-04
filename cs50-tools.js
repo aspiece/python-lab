@@ -121,14 +121,12 @@
  $('cs50CopyCheck')?.addEventListener('click',()=>{const problem=getProblem();if(problem)copy(commands(problem).check);});
  $('cs50CopySubmit')?.addEventListener('click',()=>{const problem=getProblem();if(problem)copy(commands(problem).submit);});
  $('cs50PackageBtn')?.addEventListener('click',download);
- $('cs50InstallLibraryBtn')?.addEventListener('click',()=>{
-  $('cs50InstallStatus').textContent='Requesting cs50 package installation in the browser…';
-  callbacks.installLibrary?.();
- });
  function packageResult(result){
-  $('cs50InstallStatus').textContent=result.success?
-   'cs50 library is available in this Python Lab runtime.':
-   'Could not load the cs50 library in the browser: '+String(result.error||'Package unsupported');
+  const element=$('cs50LibraryStatus');
+  if(!element)return;
+  element.textContent=result.success?
+   'CS50 Python library loaded automatically and is ready to import.':
+   'CS50 Python library unavailable in this browser: '+String(result.error||'Unsupported dependency').slice(0,230)+'. Regular Python remains available.';
  }
  window.pythonLabCS50Tools={show,attach,packageResult,submissionFiles,submissionSlug,commands};
 })();
