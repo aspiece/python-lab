@@ -1271,6 +1271,89 @@
   response:'This problem uses the validators package to check an email address.',
   seasons:'This problem uses inflect to turn numbers into words.'
  };
+ // Files supplied by CS50 or made by students for testing.
+ // A file needed to run the code is not always a file required for submission.
+ const dependencies={
+ "6/lines": {
+  "files": [],
+  "steps": [
+   "Make a second `.py` file or use one you already have to test `lines.py`.",
+   "Put your sample Python file beside `lines.py` in Codespaces.",
+   "The sample file is for testing. Follow the CS50 page for what to submit."
+  ]
+ },
+ "6/pizza": {
+  "files": [
+   {
+    "name": "sicilian.csv",
+    "url": "https://cs50.harvard.edu/python/2022/psets/6/pizza/sicilian.csv",
+    "kind": "Sample menu"
+   },
+   {
+    "name": "regular.csv",
+    "url": "https://cs50.harvard.edu/python/2022/psets/6/pizza/regular.csv",
+    "kind": "Sample menu"
+   }
+  ],
+  "steps": [
+   "Get `sicilian.csv` and `regular.csv` from the CS50 page.",
+   "Put both menu files beside `pizza.py` in the `pizza` folder.",
+   "Run `python pizza.py regular.csv` to test one menu.",
+   "The CSV files help you test. Submit extra files only if CS50 asks."
+  ]
+ },
+ "6/scourgify": {
+  "files": [
+   {
+    "name": "before.csv",
+    "url": "https://cs50.harvard.edu/python/2022/psets/6/scourgify/before.csv",
+    "kind": "Sample input"
+   }
+  ],
+  "steps": [
+   "Get `before.csv` from the CS50 page.",
+   "Put `before.csv` beside `scourgify.py` in the `scourgify` folder.",
+   "Run `python scourgify.py before.csv after.csv` to make an output file.",
+   "`after.csv` is made by your code. Check the CS50 page before you submit extra files."
+  ]
+ },
+ "6/shirt": {
+  "files": [
+   {
+    "name": "shirt.png",
+    "url": "https://cs50.harvard.edu/python/2022/psets/6/shirt/shirt.png",
+    "kind": "Needed shirt image"
+   },
+   {
+    "name": "muppets.zip",
+    "url": "https://cs50.harvard.edu/python/2022/psets/6/shirt/muppets.zip",
+    "kind": "Optional sample photos"
+   }
+  ],
+  "steps": [
+   "Get `shirt.png` from CS50. Your code needs this picture to run.",
+   "CS50 also has `muppets.zip` with sample photos for testing.",
+   "Put `shirt.png` and a test photo beside `shirt.py` in Codespaces.",
+   "You can unzip the sample photos in Codespaces. You do not need to submit your photos."
+  ]
+ },
+ "8/shirtificate": {
+  "files": [
+   {
+    "name": "shirtificate.png",
+    "url": "https://cs50.harvard.edu/python/2022/psets/8/shirtificate/shirtificate.png",
+    "kind": "Needed shirt image"
+   }
+  ],
+  "steps": [
+   "Get `shirtificate.png` from the CS50 page.",
+   "Put it beside `shirtificate.py` in the `shirtificate` folder.",
+   "Run your code to make `shirtificate.pdf`.",
+   "CS50 says you do not need to submit the PDF."
+  ]
+ }
+};
+
  const wordsToKnow=[
   ['**Input:** Text or numbers that a user types.','**String:** Text saved in a Python program.'],
   ['**Condition:** A rule your code checks.','**Case:** Whether letters are uppercase or lowercase.'],
@@ -1291,6 +1374,7 @@
   }else if(problem.testFile){
    files[problem.testFile]=buildTest(problem.testFile,mainFile,problem);
   }
+  const extras=dependencies[problem.set+'/'+problem.slug]||null;
   const notes=resourceNotes[problem.slug]||'';
   const guide=safeGuide(problem);
   const codeFiles=Object.keys(files).filter(name=>name.endsWith('.py'));
@@ -1335,14 +1419,35 @@
    '',
    ...wordsToKnow[problem.set],
    '',
+   '## Files your program may need',
+   '',
+   'Move any files your code reads, such as a CSV, photo, or another Python file.',
+   'Put each file in the folder your code uses. Keep its name the same.',
+   'Do not mix up files needed to **run** your code with files CS50 asks you to **submit**.',
+   'Only send extra files if the official CS50 problem tells you to.',
+   '',
+   ...(extras?[
+    '**For this problem:**',
+    '',
+    ...extras.steps.map((step,i)=>(i+1)+'. '+step),
+    '',
+    ...extras.files.map(file=>'- Get `'+file.name+'` ('+file.kind+'): '+file.url),
+    ''
+   ]:[
+    'This problem does not list any extra starter files from CS50.',
+    'If you use your own data or extra Python files, bring them to Codespaces too.',
+    ''
+   ]),
    '## Move your code to CS50 Codespaces',
    '',
    '1. In Python Lab, right-click each code file listed above. Choose **Download File**.',
    '2. Go to https://cs50.dev and open your Codespace.',
    '3. Make or open the folder named `'+problem.slug+'`.',
    '4. Put your downloaded Python file'+(codeFiles.length>1?'s':'')+' inside that folder.',
-   '5. Keep `README.md` in Python Lab. It is **not** one of the files you need to send.',
-   '6. Open a terminal in that folder to check and send your work.',
+   '5. Add any data or image files your code needs to run. Get sample files from the CS50 problem page.',
+   '6. Keep `README.md` in Python Lab. It is **not** one of the files you need to send.',
+   '7. Only submit extra files when the official CS50 page asks for them.',
+   '8. Open a terminal in that folder to check and send your work.',
    '',
    'Check your code: `check50 '+cs50Path+'`',
    '',
@@ -1369,6 +1474,8 @@
    folderName:problem.slug,
    entryFile:problem.filename,
    sourceFile:mainFile,
+   extraFiles:extras?extras.files:[],
+   extraFileSteps:extras?extras.steps:[],
    files
   };
  }
