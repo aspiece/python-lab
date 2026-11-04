@@ -48,12 +48,27 @@ for(const problem of rows){
  assert(p.files['README.md'].includes('NOT an official'),'Unsolved/original notice missing for '+p.id);
  assert(p.files['README.md'].includes('## Step-by-step plan'),'No student plan in '+p.id);
  assert(p.files['README.md'].includes('## Check your work'),'No self-check tasks in '+p.id);
+ assert(p.files['README.md'].includes('## Words to know'),'Missing easy-to-read word help in '+p.id);
+ assert(p.files['README.md'].includes('## Move your code to CS50 Codespaces'),'Missing code transfer steps in '+p.id);
+ assert(p.files['README.md'].includes('You do **not** need to send it to CS50.'),'README submission note missing in '+p.id);
+ assert(p.files['README.md'].includes('## What will you make?'),'No plain-language learning goal in '+p.id);
+ const readme=p.files['README.md'];
+ const lines=readme.split('\n');
+ const start=lines.indexOf('## Step-by-step plan'),stop=lines.indexOf('## Check your work');
+ const numbered=lines.slice(start+1,stop).filter(line=>/^\d+\. /.test(line));
+ assert(numbered.length>=3,'Expected full problem steps in the README for '+p.id);
+ for(const line of numbered)assert(line.split(/\s+/).length<=20,'Student plan sentence is too long in '+p.id+': '+line);
+ const pythonFiles=Object.keys(p.files).filter(name=>name.endsWith('.py'));
+ for(const name of pythonFiles)assert(readme.includes('- `'+name+'`'),'Missing code file '+name+' in README transfer list');
  assert.equal(p.folderName,p.slug,'Folder does not match official problem slug for '+p.id);
  assert(p.files[p.entryFile].includes('Official instructions:')||p.files[p.entryFile].includes('# Assignment:'),
   'Starter missing official instructions link: '+p.id);
  for(const [name,code] of Object.entries(p.files)){
   if(name.endsWith('.py')){
    assert(code.includes('TODO'),'Starter lacks actionable TODOs: '+p.id+'/'+name);
+   assert(code.includes('README.md'),'Python source does not point students to the guide: '+p.id+'/'+name);
+   assert(!code.includes('# PLAN YOUR CODE')&&!code.includes('# CHECK YOUR WORK'),'Detailed plan should be in README, not Python source: '+p.id+'/'+name);
+   assert(!code.includes('# YOUR MISSION'),'Goal instructions should not take space in source: '+p.id+'/'+name);
    assert(!code.includes('raise NotImplementedError'),'Starter must not raise NotImplementedError: '+p.id+'/'+name);
    assert(!code.includes('Write your own script here'),'Old exception prompt remains: '+p.id+'/'+name);
    files[p.id+'/'+name]=code;
@@ -119,8 +134,13 @@ const indoor=api.get('cs50p-0-indoor');
 assert.equal(indoor.folderName,'indoor');
 assert.equal(indoor.entryFile,'indoor.py');
 assert(indoor.files['indoor.py'].includes('speech = input('),'Indoor should have a useful input starter');
-assert(indoor.files['indoor.py'].includes('# PLAN YOUR CODE'),'Indoor missing plan');
-assert(indoor.files['indoor.py'].includes('# CHECK YOUR WORK'),'Indoor missing self-checks');
+assert(indoor.files['README.md'].includes('## Step-by-step plan'),'Indoor README missing plan');
+assert(indoor.files['README.md'].includes('## Check your work'),'Indoor README missing self-checks');
+assert(!indoor.files['indoor.py'].includes('# PLAN YOUR CODE'),'Indoor Python file still has long plan');
+assert(indoor.files['indoor.py'].split('\n').length<=9,'Indoor Python file has too many comments');
+const fuelReadme=api.get('cs50p-5-test_fuel').files['README.md'];
+assert(fuelReadme.includes('`fuel.py`')&&fuelReadme.includes('`test_fuel.py`'),'Problem Set 5 needs both Python files');
+assert(fuelReadme.includes('NOT an official'),'Need honest student guidance');
 const fuelTests=api.get('cs50p-5-test_fuel').files['test_fuel.py'];
 assert(fuelTests.includes('import pytest'),'Tests should explicitly import pytest');
 assert(fuelTests.includes('pytest.skip('),'Unfinished tests should skip rather than appear to pass');
