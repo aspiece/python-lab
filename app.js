@@ -201,7 +201,7 @@ function paletteCommands(){
   ['Run Tests',()=>executeVirtualTest()],
   ['Record Debug Trace',()=>window.pythonLabDebug?.begin()],
   ['Browse CS50P Problem Starters',()=>window.pythonLabTemplates?.show()],
-  ['Prepare Official CS50 Submission',()=>window.pythonLabCS50Tools?.show()],
+  ['Move to CS50 Codespaces',()=>window.pythonLabCS50Tools?.show()],
   ['Show Problems',()=>window.pythonLabSmart?.setView('problems')],
   ['Show Test Results',()=>window.pythonLabSmart?.setView('tests')],
   ['Save Locally',()=>persist(true)],
@@ -816,7 +816,7 @@ window.addEventListener('keydown',e=>{
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
 setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);
-window.pythonLabCS50Tools?.attach({workspace:()=>window.pythonLabWorkspace?.(),projectName:()=>activeProjectName});
+window.pythonLabCS50Tools?.attach({workspace:()=>window.pythonLabWorkspace?.(),projectName:()=>activeProjectName,projectId:()=>activeProjectId,openFile:switchToFile,downloadFile:download});
 if(window.pythonLabProjects){bootstrapProjects().then(()=>{if(!worker)createWorker();});}
 else createWorker();
 function attachDebugEditor(){
