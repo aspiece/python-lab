@@ -1,3 +1,13 @@
+# Student Guides: Read the README First
+
+The **41 CS50P starter problems** now keep the full writing steps, self-check questions, word help, and CS50 Codespaces instructions in each assignment's `README.md`. The `.py` files stay short, with only a few TODO notes and any starter code needed to begin. The student directions use short sentences and common words for a **7th–8th grade reading level**.
+
+**CS50 Codespaces transfer:** Move only the Python code file or files needed for the problem into its matching folder. For example, `indoor/indoor.py` needs only `indoor.py`, while `test_fuel/` needs both `fuel.py` and `test_fuel.py`. The Python Lab `README.md` is a **help sheet**, not a file students need to send to CS50. If the official problem asks for an image, CSV file, or another input file, follow those instructions as well. The **CS50 Submit** panel lists only Python files.
+
+Each student's README includes a link to the full CS50 task, plain-language steps, short definitions, ideas for testing, and links/commands for Codespaces. The official CS50 instructions remain the final source for submission rules.
+
+---
+
 # File Downloads and Browser Terminal (November 2026)
 
 **Download individual files** from the Explorer: right-click a file and select **Download File**. Files download under their own filenames, not entire folder paths. The context-menu action appears for files only; there are no Project ZIP, Submission ZIP, or CS50 Assignment ZIP download buttons. Existing ZIP archives can still be imported.
@@ -26,7 +36,7 @@ Do not enter personal GitHub access tokens, passwords, or authentication codes i
 
 # CS50P starters: guided, exception-free, assignment-named folders
 
-All 41 **CS50P Starters** now provide original, student-friendly planning comments, optional input/variable setup, actionable TODOs, and assignment-specific self-check ideas. Every project's README includes a detailed checklist and the official Harvard assignment URL.
+All 41 **CS50P Starters** now put their full plan and test tips in `README.md`. The Python files keep short TODO comments and starter code. The student README uses brief steps, plain-language definitions, and a link to the official CS50 problem.
 
 Select **Indoor Voice** to create `indoor/indoor.py` (plus `indoor/README.md`). Choosing the same assignment again creates `indoor-2/indoor.py` without overwriting the first. Other assignments follow their official problem slugs, for example `test_fuel/test_fuel.py`, with the related `fuel.py` in the same folder.
 
@@ -71,7 +81,7 @@ The gallery is grouped by problem set, with search and a dropdown filter:
 
 ### Starter creation
 
-Select **CS50P Starters**, choose a problem, and click its card. The workspace creates a **separate folder named for the official assignment slug**, with its expected Python filename (for example, `indoor/indoor.py` or `test_fuel/test_fuel.py`), guided TODO blocks, and a README linking to the official assignment.
+Select **CS50P Starters**, choose a problem, and click its card. The workspace creates a **separate folder named for the official assignment slug**, with its expected Python file (such as `indoor/indoor.py`), short TODO hints, and a README with the full steps.
 
 Problem Set 5 includes both the student's implementation module (for example, fuel.py) and its test_fuel.py file, which opens automatically. Later assignments that require testing include matching unsolved test-file scaffolds. Students must complete the TODOs and create their own test assertions. Function stubs use `pass`, and uncompleted pytest stubs are explicitly skipped. This library does **not** include completed solutions or answer keys.
 
