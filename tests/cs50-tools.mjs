@@ -7,7 +7,7 @@ const html=read('index.html'),catalogSource=read('cs50p-starters.js'),toolSource
 new Script(toolSource,{filename:'cs50-tools.js'});
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]);
 for(const id of ['cs50ToolsBtn','cs50SubmissionDialog','cs50AssignmentSelect','cs50CheckCommand','cs50SubmitCommand',
- 'cs50FilesList','cs50PackageStatus','cs50LibraryStatus','cs50CloseBtn']){
+ 'cs50FilesList','cs50ExtraFilesList','cs50PackageStatus','cs50LibraryStatus','cs50CloseBtn']){
  assert(ids.includes(id),'Missing CS50 handoff control '+id);
 }
 class Node{
@@ -62,6 +62,8 @@ assert(!html.includes('cs50PackageBtn'),'CS50 ZIP button should be removed');
 assert(elements.cs50FilesList.textContent.includes('indoor/indoor.py'));
 assert(!elements.cs50FilesList.textContent.includes('other/task.py'));
 assert(!elements.cs50FilesList.textContent.includes('README.md'),'README must never appear among transfer files');
+assert(elements.cs50ExtraFilesList.textContent.includes('No extra CS50 sample files'),'Indoor should have no listed CS50 sample files');
+assert(!elements.cs50ExtraFilesList.textContent.includes('README.md'),'Help file must not appear among dependent assets');
 assert.equal(elements.cs50InstructionsLink.href,'https://cs50.harvard.edu/python/psets/0/indoor/');
 assert(elements.cs50SubmitCommand.textContent.includes('submit50 cs50/problems/2022/python/indoor'));
 assert(!toolSource.includes('JSZip'),'CS50 ZIP exports should no longer be offered');
@@ -80,6 +82,20 @@ const testingFiles=api.submissionFiles(find('cs50p-5-test_fuel'));
 assert.equal(Object.keys(testingFiles).length,2,'Refueling should list only its two Python files');
 assert(Object.hasOwn(testingFiles,'fuel.py')&&Object.hasOwn(testingFiles,'test_fuel.py'));
 assert(!Object.hasOwn(testingFiles,'README.md'));
+// Show verified CS50 asset names for problems that need extra files to run.
+elements.cs50AssignmentSelect.value='cs50p-6-pizza';
+elements.cs50AssignmentSelect.events.change();
+assert(elements.cs50ExtraFilesList.textContent.includes('sicilian.csv'),'Pizza must warn about the menu CSV');
+assert(elements.cs50ExtraFilesList.textContent.includes('regular.csv'),'Pizza must warn about the other menu CSV');
+assert(elements.cs50ExtraFilesList.textContent.includes('Only submit them if CS50 asks'),'Testing files are not always required submissions');
+elements.cs50AssignmentSelect.value='cs50p-6-shirt';
+elements.cs50AssignmentSelect.events.change();
+assert(elements.cs50ExtraFilesList.textContent.includes('shirt.png'),'P-Shirt must warn about its required image');
+assert(elements.cs50ExtraFilesList.textContent.includes('muppets.zip'),'P-Shirt must note the sample photos');
+elements.cs50AssignmentSelect.value='cs50p-8-shirtificate';
+elements.cs50AssignmentSelect.events.change();
+assert(elements.cs50ExtraFilesList.textContent.includes('shirtificate.png'),'Shirtificate must note the shirt image');
+
 elements.cs50AssignmentSelect.value='cs50p-5-test_fuel';
 elements.cs50AssignmentSelect.events.change();
 assert(elements.cs50FilesList.textContent.includes('test_fuel/fuel.py'));

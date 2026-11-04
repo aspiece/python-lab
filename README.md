@@ -1,8 +1,24 @@
+# CS50P: Bring Files Your Code Needs
+
+Every CS50P `README.md` now reminds students to bring any other files their code reads into the matching folder in CS50 Codespaces. These can include an input CSV, a picture, another Python module, or a file they made themselves. Keep the original file names so the code can find them.
+
+Some problems now have a list of CS50 sample files and direct links to get them:
+
+- **Pizza Py:** `sicilian.csv` and `regular.csv` (sample menus).
+- **Scourgify:** `before.csv` (sample input; the code makes `after.csv`).
+- **CS50 P-Shirt:** `shirt.png` (shirt picture), plus sample photos from `muppets.zip` when testing.
+- **CS50 Shirtificate:** `shirtificate.png` (shirt picture; the generated PDF does not need to be submitted).
+- **Lines of Code:** A second Python file the student chooses to count.
+
+The **CS50 Submit** panel shows these supporting files in a separate section. **Files needed to run or test a program are not always files that CS50 expects students to submit.** Students should follow the official task page for the final file list. Keep the Python Lab `README.md` as a local help sheet.
+
+---
+
 # Student Guides: Read the README First
 
 The **41 CS50P starter problems** now keep the full writing steps, self-check questions, word help, and CS50 Codespaces instructions in each assignment's `README.md`. The `.py` files stay short, with only a few TODO notes and any starter code needed to begin. The student directions use short sentences and common words for a **7th–8th grade reading level**.
 
-**CS50 Codespaces transfer:** Move only the Python code file or files needed for the problem into its matching folder. For example, `indoor/indoor.py` needs only `indoor.py`, while `test_fuel/` needs both `fuel.py` and `test_fuel.py`. The Python Lab `README.md` is a **help sheet**, not a file students need to send to CS50. If the official problem asks for an image, CSV file, or another input file, follow those instructions as well. The **CS50 Submit** panel lists only Python files.
+**CS50 Codespaces transfer:** Move only the Python code file or files needed for the problem into its matching folder. For example, `indoor/indoor.py` needs only `indoor.py`, while `test_fuel/` needs both `fuel.py` and `test_fuel.py`. The Python Lab `README.md` is a **help sheet**, not a file students need to send to CS50. Also copy any data, images, or other Python files your program needs to run. The starter README now lists known CS50 sample files and where to get them. Do not send extra files unless the official problem asks for them. The **CS50 Submit** panel lists only Python files.
 
 Each student's README includes a link to the full CS50 task, plain-language steps, short definitions, ideas for testing, and links/commands for Codespaces. The official CS50 instructions remain the final source for submission rules.
 

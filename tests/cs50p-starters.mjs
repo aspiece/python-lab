@@ -50,6 +50,10 @@ for(const problem of rows){
  assert(p.files['README.md'].includes('## Check your work'),'No self-check tasks in '+p.id);
  assert(p.files['README.md'].includes('## Words to know'),'Missing easy-to-read word help in '+p.id);
  assert(p.files['README.md'].includes('## Move your code to CS50 Codespaces'),'Missing code transfer steps in '+p.id);
+ assert(p.files['README.md'].includes('## Files your program may need'),'Missing extra-file instructions in '+p.id);
+ assert(p.files['README.md'].includes('Only send extra files if the official CS50 problem tells you to.'),'Missing submit-only-when-asked rule in '+p.id);
+ assert(p.files['README.md'].includes('Add any data or image files your code needs to run.'),'Missing dependent-file transfer step in '+p.id);
+ assert(p.files['README.md'].includes('Keep `README.md` in Python Lab.'),'README should stay out of submission for '+p.id);
  assert(p.files['README.md'].includes('You do **not** need to send it to CS50.'),'README submission note missing in '+p.id);
  assert(p.files['README.md'].includes('## What will you make?'),'No plain-language learning goal in '+p.id);
  const readme=p.files['README.md'];
@@ -138,6 +142,25 @@ assert(indoor.files['README.md'].includes('## Step-by-step plan'),'Indoor README
 assert(indoor.files['README.md'].includes('## Check your work'),'Indoor README missing self-checks');
 assert(!indoor.files['indoor.py'].includes('# PLAN YOUR CODE'),'Indoor Python file still has long plan');
 assert(indoor.files['indoor.py'].split('\n').length<=9,'Indoor Python file has too many comments');
+const assetCases=[
+ ['cs50p-6-pizza',['sicilian.csv','regular.csv']],
+ ['cs50p-6-scourgify',['before.csv']],
+ ['cs50p-6-shirt',['shirt.png','muppets.zip']],
+ ['cs50p-8-shirtificate',['shirtificate.png']]
+];
+for(const [id,names] of assetCases){
+ const item=api.get(id),readme=item.files['README.md'];
+ const found=Array.from(item.extraFiles,file=>file.name);
+ assert.deepEqual(found,names,'CS50 dependent file list mismatch: '+id);
+ for(const entry of item.extraFiles){
+  assert(entry.url.startsWith('https://cs50.harvard.edu/python/2022/psets/'),'External asset URL mismatch for '+id);
+  assert(readme.includes(entry.url)&&readme.includes('`'+entry.name+'`'),'Official asset is missing in the student README: '+id+'/'+entry.name);
+ }
+ assert(readme.includes('Only send extra files'),'Do not encourage submitting all assets in '+id);
+}
+assert(api.get('cs50p-6-lines').files['README.md'].includes('second `.py` file'),'Lines should tell students to include sample scripts for testing');
+assert(api.get('cs50p-6-shirt').files['README.md'].includes('do not need to submit your photos'),'CS50 explicitly exempts test photos');
+assert(api.get('cs50p-8-shirtificate').files['README.md'].includes('do not need to submit the PDF'),'CS50 explicitly exempts generated PDFs');
 const fuelReadme=api.get('cs50p-5-test_fuel').files['README.md'];
 assert(fuelReadme.includes('`fuel.py`')&&fuelReadme.includes('`test_fuel.py`'),'Problem Set 5 needs both Python files');
 assert(fuelReadme.includes('NOT an official'),'Need honest student guidance');

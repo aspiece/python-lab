@@ -66,12 +66,17 @@
   const selected=submissionFiles(problem);
   const names=Object.keys(selected).sort();
   const fileCount=names.length;
+  const extras=Array.isArray(problem.extraFiles)?problem.extraFiles:[];
+  $('cs50ExtraFilesList').textContent=extras.length?
+    extras.map(item=>item.name+' — '+item.kind+' (get it from the full CS50 page)').join('\n')+
+    '\n\nKeep these files in the problem folder for testing. Only submit them if CS50 asks.':
+    'No extra CS50 sample files listed for this problem. If your code reads another file, bring it too.';
   $('cs50FilesList').textContent=names.length?
    names.map(name=>problem.slug+'/'+name).join('\n'):
    'No matching files found. Select a starter or open the assignment files first.';
 
   $('cs50PackageStatus').textContent=names.length?
-   'Download '+(fileCount===1?'this Python file':'these '+fileCount+' Python files')+' from Explorer. Do not send README.md.':
+   'Download '+(fileCount===1?'this Python file':'these '+fileCount+' Python files')+' from Explorer. Check the extra files above. Do not send README.md.':
    'No Python files found for this problem. Open your code in Explorer first.';
  }
  function show(){
