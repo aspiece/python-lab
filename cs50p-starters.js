@@ -1173,60 +1173,51 @@
  const indentedHint=(text,level=1)=>'    '.repeat(level)+'# TODO: '+text+'\n';
  const safeGuide=problem=>learnerGuide[problem.set+'/'+problem.slug]||{steps:[problem.goal],checks:['Compare your output with the official examples.']};
  function header(problem){
-  const guide=safeGuide(problem);
-  const lines=[
-   '# CS50P | Problem Set '+problem.set+' | '+problem.title,
-   '# Official instructions: '+problem.url,
-   '# Original UNSOLVED starter - write the missing code yourself.',
-   '#',
-   '# YOUR MISSION',
-   '# '+problem.goal,
-   '#',
-   '# PLAN YOUR CODE'
-  ];
-  guide.steps.forEach((step,i)=>lines.push('# '+(i+1)+'. '+step));
-  lines.push('#','# CHECK YOUR WORK');
-  guide.checks.forEach(check=>lines.push('# - '+check));
-  return lines.join('\n')+'\n\n';
+  return [
+   '# CS50P | Set '+problem.set+' | '+problem.title,
+   '# Read README.md for steps, tips, and ways to check your work.',
+   '# Full problem: '+problem.url,
+   ''
+  ].join('\n')+'\n';
  }
  function functionBlock(signature,problem){
   const funcName=signature.split('(')[0];
-  const guide=safeGuide(problem);
-  const focus=funcName==='main'?'Gather inputs, call helpers, and print the required result.':
-   'Decide what '+funcName+' should return or change; consult the official requirements.';
   const initial=funcName==='main'?(mainInputs[problem.set+'/'+problem.slug]||[]):[];
-  const body=[
+  const todo=funcName==='main'?
+   'Use your functions and print the answer.':
+   'Finish '+funcName+' using the steps in README.md.';
+  return [
    'def '+signature+':',
    ...initial.map(line=>'    '+line),
-   '    # TODO: '+focus,
-   '    # Hint: '+guide.steps[Math.min(1,guide.steps.length-1)],
+   '    # TODO: '+todo,
    '    pass',
+   '',
    ''
-  ];
-  return body.join('\n')+'\n';
+  ].join('\n');
  }
  function buildPython(problem){
   const outline=shape(problem),signatures=outline.functions||problem.functions;
   const guide=safeGuide(problem);
   let body=(outline.imports||[]).join('\n');
-  if(body)body+='\n\n\n';
+  if(body)body+='\n\n';
   if(signatures.includes('Jar')){
    body+='class Jar:\n';
-   for(const signature of ['__init__(self, capacity=12)','__str__(self)','deposit(self, cookies)','withdraw(self, cookies)']){
-    const task=signature.startsWith('__init__')?'Set up the cookie count and validate the initial capacity.':
-     signature.startsWith('__str__')?'Return the required cookie display.':
-     signature.startsWith('deposit')?'Check the deposit amount and update the jar safely.':
-     'Check the withdrawal amount before updating the jar.';
+   for(const [signature,task] of [
+    ['__init__(self, capacity=12)','Save the limit and start with an empty jar.'],
+    ['__str__(self)','Show the cookies as text.'],
+    ['deposit(self, cookies)','Add cookies if there is room.'],
+    ['withdraw(self, cookies)','Take cookies out if there are enough.']
+   ]){
     body+='    def '+signature+':\n'+indentedHint(task,2)+'        pass\n\n';
    }
    for(const signature of ['capacity(self)','size(self)']){
-    body+='    @property\n    def '+signature+':\n'+indentedHint('Return the corresponding jar value.',2)+'        pass\n\n';
+    body+='    @property\n    def '+signature+':\n'+indentedHint('Return this value.',2)+'        pass\n\n';
    }
    return header(problem)+body;
   }
   if(problem.slug==='shirtificate'){
    body+='class PDF(FPDF):\n    def header(self):\n'+
-    indentedHint('Use the PDF library to place the header; check the official layout.',2)+
+    indentedHint('Add the top part of the PDF page.',2)+
     '        pass\n\n\n';
   }
   const wantMain=!!outline.main;
@@ -1238,8 +1229,7 @@
   if(wantMain)body+='\nif __name__ == "__main__":\n    main()\n';
   if(!wantMain&&signatures.filter(x=>x!=='PDF.header(self)').length===0){
    if(guide.setup)body+=guide.setup+'\n\n';
-   body+='# TODO: '+(guide.setup?'Use the starter variable(s) above to complete the remaining steps.':(topLevelHint[problem.set+'/'+problem.slug]||problem.goal))+'\n';
-   body+='# TODO: Check your work using the scenarios above.\n';
+   body+='# TODO: '+guide.steps[Math.min(1,guide.steps.length-1)]+'\n';
   }
   return header(problem)+body;
  }
@@ -1252,32 +1242,46 @@
   else imported='import '+source.replace(/\.py$/,'');
   const imports=[...new Set(['import pytest',...(outline.testImports||[]),imported])];
   const names=outline.testNames||['test_your_first_case'];
-  const guide=safeGuide(problem);
-  const stubs=names.map((name,i)=>[
+  const stubs=names.map(name=>[
    'def '+name+'():',
-   '    # TODO: Test one specific rule or boundary from the official instructions.',
-   '    # Suggestion: '+guide.checks[i%guide.checks.length],
-   '    # Replace this skip with one or more real assert statements.',
-   '    pytest.skip("Add your own assertions before running this test")',
+   '    # TODO: Add your own test. See README.md.',
+   '    pytest.skip("Add an assert test, then remove this line.")',
    ''
   ].join('\n')).join('\n');
-  return '# CS50P | '+problem.title+' | Student-written tests\n'+
-   '# Official instructions: '+problem.url+'\n'+
-   '# No answer keys are included. Replace each skip with your own assertions.\n\n'+
-   imports.join('\n')+'\n\n\n'+stubs;
+  return [
+   '# CS50P | '+problem.title+' | Student tests',
+   '# Read README.md for steps and ideas for tests.',
+   '# Full problem: '+problem.url,
+   '',
+   ...imports,
+   '',
+   '',
+   ...stubs.split('\n')
+  ].join('\n');
  }
  const resourceNotes={
-  emojize:'Requires the emoji package; package availability on GitHub Pages may vary.',
-  figlet:'Requires pyfiglet. Compare behavior with the official CS50 development environment.',
-  adieu:'Requires inflect. Browser packages may not behave like a full local Python environment.',
-  bitcoin:'Uses requests and a live API; network access and API response can vary.',
-  pizza:'Use the original CSV resource from the official assignment; it is not bundled here.',
-  scourgify:'Download the original before.csv from the official assignment; it is not bundled here.',
-  shirt:'Requires Pillow and input images; original binary images are not included in this browser template.',
-  shirtificate:'Requires fpdf2 and the official shirtificate.png image; binary image and PDF preview features may not work in Python Lab.',
-  response:'Requires an email-validation package as directed by the official assignment.',
-  seasons:'May require inflect and other packages for converting numbers into words.'
+  emojize:'This program uses the emoji package. It may not work in every browser.',
+  figlet:'This program uses pyfiglet. Check it in CS50 Codespaces too.',
+  adieu:'This program uses inflect. It may not work in every browser.',
+  bitcoin:'This program gets prices from the web. The link may not work in Python Lab.',
+  pizza:'Get the CSV menu file from the CS50 problem page.',
+  scourgify:'Get the input CSV file from the CS50 problem page.',
+  shirt:'You will need an image and the Pillow package. Get the image from CS50.',
+  shirtificate:'You will need the shirt picture and fpdf2. Get the picture from CS50.',
+  response:'This problem uses the validators package to check an email address.',
+  seasons:'This problem uses inflect to turn numbers into words.'
  };
+ const wordsToKnow=[
+  ['**Input:** Text or numbers that a user types.','**String:** Text saved in a Python program.'],
+  ['**Condition:** A rule your code checks.','**Case:** Whether letters are uppercase or lowercase.'],
+  ['**Loop:** Code that runs more than once.','**Dictionary:** Names paired with values, like foods and prices.'],
+  ['**Error:** A problem your code may need to handle.','**End of input (EOF):** A signal that the user is done typing.'],
+  ['**Library:** Code you can import and use.','**Argument:** Text you type after a program name in a command.'],
+  ['**Test:** Code that checks other code.','**Assert:** A way to check that a result is right.'],
+  ['**CSV:** A text file with rows and commas.','**File path:** The name and place of a file.'],
+  ['**Pattern:** A rule for finding text.','**Regular expression:** A short pattern used to search text.'],
+  ['**Class:** A plan for a kind of object.','**Method:** A function inside a class.']
+ ];
  function build(problem){
   const mainFile=problem.sourceFile||problem.filename;
   const files={};
