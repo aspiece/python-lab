@@ -31,6 +31,46 @@
   }
 };
  const tracing={
+  'practice-points-goal': {
+   title:"Points Toward a Goal",
+   folderName:"practice-points-goal",
+   description:"Update the total only for accepted input.",
+   code:"goal = 10\ntotal = 0\nwhile total < goal:\n    points = int(input(\"Points (2 or 4): \"))\n    if points in (2, 4):\n        total += points\n    print(\"Total:\", total)\nprint(\"Points past goal:\", total - goal)\n",
+   task:"Trace the inputs 4, 3, 4, 2. For each pass record the input, whether it is accepted, and the total after the pass.",
+   challenge:"Run the trace sequence. Then test 4, 4, 4. Change the goal to 12 and make a new test. Explain why 3 leaves the total alone."
+  },
+  'practice-mark-capitals': {
+   title:"Mark the Capitals",
+   folderName:"practice-mark-capitals",
+   description:"Build a string one character at a time.",
+   code:"message = \"Go Team!\"\nresult = \"\"\nfor char in message:\n    if char.isupper():\n        result += \"[\" + char.lower() + \"]\"\n    else:\n        result += char\nprint(result)\n",
+   task:"Trace the first four characters: G, o, a space, and T. Record the character, the piece added, and the result so far.",
+   challenge:"Run the example. Try Hi, Sam! and a message with zero capital letters. Change brackets to parentheses and predict the new output before running."
+  },
+  'practice-filter-message': {
+   title:"Filter a Message",
+   folderName:"practice-filter-message",
+   description:"Skip characters while keeping the original text.",
+   code:"message = \"X-ray x2!\"\nskip = \"xy\"\nresult = \"\"\nfor char in message:\n    if char.lower() in skip:\n        continue\n    result += char\nprint(result)\n",
+   task:"Trace X, the dash, and r. Record the original character, the lowercase version, and whether the pass adds anything.",
+   challenge:"Run the example. Try MIX, then try an empty message. Rewrite the loop with not in and no continue. Check that the output stays the same."
+  },
+  'practice-club-code': {
+   title:"Validating Input",
+   folderName:"practice-club-code",
+   description:"Check several rules in a Boolean function.",
+   code:"def is_club_code(code):\n    if not 3 <= len(code) <= 6 or code[:1] != \"@\":\n        return False\n    seen_digit = False\n    for char in code[1:]:\n        if char.isdigit():\n            if seen_digit:\n                return False\n            seen_digit = True\n        elif not char.isalpha():\n            return False\n    return True\n\nprint(is_club_code(input(\"Club code: \")))\n",
+   task:"Trace @a2b and @a22. Start with the length and prefix checks, then track each character and seen_digit.",
+   challenge:"Test @ab, @a2b, @a22, @a!, @a, @abcdef, and ab2. Then change the rule so a digit is required and retest @ab and @a2b."
+  },
+  'practice-supply-lookup': {
+   title:"Dictionary Lookups",
+   folderName:"practice-supply-lookup",
+   description:"Look up a value by its key.",
+   code:"supplies = {\"pencil\": 12, \"marker\": 5, \"ruler\": 3}\nitem = input(\"Supply: \").lower()\nif item in supplies:\n    print(\"In stock:\", supplies[item])\nelse:\n    print(\"Item not found\")\n",
+   task:"Trace MARKER and glue. Record the normalized key, whether it exists, and what prints.",
+   challenge:"Test pencil, MARKER, and glue. Add eraser with a count of 0. Explain why eraser should report 0 and an unknown item should report Item not found."
+  },
   'trace-while-loops': {
    title:'Trace a While Loop',
    folderName:'trace-while-loops',
@@ -129,7 +169,7 @@
   const {title,folderName,description,code,task,challenge}=tracing[id];
   const directions=[
    '# '+title,
-   '![Loop steps for '+title+'](assets/loop-guides/'+id+'.png)',
+   ...(id.startsWith('trace-')?['![Loop steps for '+title+'](assets/loop-guides/'+id+'.png)']:[]),
    'Predict the output in your student notes before you run the code.',
    task,
    'Select main.py and click Run to see the output.',
