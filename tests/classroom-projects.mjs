@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext,Script} from 'node:vm';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const html=read('index.html'),app=read('app.js'),storeSource=read('project-store.js'),templates=read('classroom-templates.js'),cs50=read('cs50p-starters.js');
-for(const [name,source] of [['app.js',app],['project-store.js',storeSource],['classroom-templates.js',templates],['cs50p-starters.js',cs50]])new Script(source,{filename:name});
+const html=read('index.html'),app=read('app.js'),storeSource=read('project-store.js'),templates=read('classroom-templates.js');
+for(const [name,source] of [['app.js',app],['project-store.js',storeSource],['classroom-templates.js',templates]])new Script(source,{filename:name});
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 const backing=new Map();
 const localStorage={
@@ -51,7 +51,6 @@ function createBrowser(search=''){
  };
  const storeContext={window,localStorage,Date,Math,JSON,Promise,console};
  runInNewContext(storeSource,storeContext);
- runInNewContext(cs50,{window});
  runInNewContext(templates,{window,document,URL,Math,JSON,prompt:()=>null,console});
  class Worker{
   constructor(){this.calls=[];Worker.current=this;}
@@ -95,45 +94,51 @@ await settle();
 assert.equal(first.document.title.includes('My Python Lab'),true);
 assert.equal(first.nodes.fallbackEditor.value,legacy,'Switch did not restore original content');
 
-// Manual starter selection creates its own folder and switches to the correct filename.
+// Generic templates still work without CS50P labs and do not overwrite other files.
 const starterCards=first.nodes.templateGallery.children.filter(item=>item.className==='template-option');
-const indoorCard=starterCards.find(item=>item.children[0].children[0].textContent==='Indoor Voice');
-assert(indoorCard,'Indoor Voice starter not found in classroom gallery');
-indoorCard.children[0].click();
+const helloCard=starterCards.find(item=>item.children[0].children[0].textContent==='Hello, Python!');
+assert(helloCard,'General Python template missing');
+assert.equal(first.window.pythonLabTemplates.catalog().length,7);
+assert(first.window.pythonLabTemplates.catalog().every(t=>!t.id.startsWith('cs50p-')),
+ 'CS50 problem-set lab leaked into general starter gallery');
+helloCard.children[0].click();
 const afterStarter=first.window.pythonLabWorkspace();
-assert.equal(afterStarter.filename,'indoor/indoor.py','Starter did not open the expected indoor/indoor.py filename');
-assert(afterStarter.files['indoor/indoor.py'],'Starter was not added to the assignment-named folder');
-assert.equal(afterStarter.files['main.py'],legacy,'Starter selection overwrote original student work');
-indoorCard.children[0].click();
+assert.equal(afterStarter.filename,'hello-world/main.py');
+assert(afterStarter.files['hello-world/main.py']);
+assert.equal(afterStarter.files['main.py'],legacy,'Template overwritten the original student code');
+helloCard.children[0].click();
 const afterDuplicate=first.window.pythonLabWorkspace();
-assert.equal(afterDuplicate.filename,'indoor-2/indoor.py','Repeat starter should use a safe -2 folder suffix');
-assert(afterDuplicate.files['indoor/indoor.py'],'First starter lost when installing a duplicate');
-assert.equal(afterDuplicate.files['main.py'],legacy,'Repeat starter overwrote student work');
+assert.equal(afterDuplicate.filename,'hello-world-2/main.py','Repeat template should use a safe -2 folder');
+assert(afterDuplicate.files['hello-world/main.py'],'First template lost');
+assert.equal(afterDuplicate.files['main.py'],legacy,'Repeat template overwrote student work');
 
-// The prior four starter IDs remain usable by already-shared Canvas URLs.
+// Shared Canvas links for general templates remain useful.
 assert(first.window.pythonLabTemplates.get('functions-tests')?.files['test_main.py']);
-assert(!first.window.pythonLabTemplates.catalog().some(p=>p.id==='functions-tests'),
- 'Old generic examples should not appear in the CS50P-only gallery');
+assert(first.window.pythonLabTemplates.get('trace-for-loops')?.files['README.md']);
+assert.equal(first.window.pythonLabTemplates.get('cs50p-0-indoor'),null,
+ 'Removed CS50P starter should not create a new lab');
 
-// Assignment starter URL creates a separate project and deduplicates return visits.
-const assignment='?starter=cs50p-5-test_fuel&assignment=courseunit42';
+const assignment='?starter=trace-for-loops&assignment=courseunit42';
 const second=createBrowser(assignment);
 await settle();
 const assignmentRecords=await second.window.pythonLabProjects.list();
 const assigned=assignmentRecords.find(p=>p.assignmentKey==='courseunit42');
-assert(assigned,'Assignment starter was not created');
+assert(assigned,'General tracing assignment starter was not created');
 const assignedProject=await second.window.pythonLabProjects.get(assigned.id);
-assert(assignedProject.snapshot.files['test_fuel.py'],'Assignment tests missing');
-assert(assignedProject.snapshot.files['fuel.py'],'Assignment starter code missing');
-assert.equal(assignedProject.snapshot.filename,'test_fuel.py');
-assert.equal(assigned.name,'test_fuel','Canvas starter project should be named by assignment folder');
+assert(assignedProject.snapshot.files['main.py'],'Tracing starter code missing');
+assert(assignedProject.snapshot.files['README.md'],'Tracing guide missing');
+assert.equal(assignedProject.snapshot.filename,'main.py');
+assert.equal(assigned.name,'trace-for-loops','Canvas tracing project name mismatch');
 const third=createBrowser(assignment);
 await settle();
-assert.equal((await third.window.pythonLabProjects.list()).length,3,'Reopening assignment created a duplicate');
-const share=third.window.pythonLabTemplates.assignmentUrl('cs50p-2-coke');
+assert.equal((await third.window.pythonLabProjects.list()).length,3,
+ 'Reopening an existing assignment created a duplicate');
+const share=third.window.pythonLabTemplates.assignmentUrl('functions-tests');
 const parsed=new URL(share);
-assert.equal(parsed.searchParams.get('starter'),'cs50p-2-coke');
-assert(parsed.searchParams.get('assignment')?.length>=6,'Assignment link lacks unique key');
-assert(!share.includes('print('),'Student source code should never be encoded in a share link');
+assert.equal(parsed.searchParams.get('starter'),'functions-tests');
+assert(parsed.searchParams.get('assignment')?.length>=6);
+assert(!share.includes('print('),'Student source code should never be encoded in a link');
+assert(!html.includes('cs50p-starters.js')&&!html.includes('cs50SubmissionDialog'),
+ 'The HTML must not load the removed labs or handoff dialog');
 
-console.log('Project manager, migration, switching, assignment links and revisit checks passed.');
+console.log('General templates, saved project migration, file preservation and classroom links passed.');
