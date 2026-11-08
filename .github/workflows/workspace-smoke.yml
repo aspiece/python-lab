@@ -35,7 +35,5 @@ jobs:
         run: node tests/project-store.mjs
       - name: Validate classroom project switching and assignment links
         run: node tests/classroom-projects.mjs
-      - name: Verify 41 CS50P scaffold files and searchable template gallery
-        run: node tests/cs50p-starters.mjs
-      - name: Test CS50 official submission handoff and browser-only safeguards
-        run: node tests/cs50-tools.mjs
+      - name: Verify general Python templates and no CS50 lab catalog
+        run: node tests/classroom-templates.mjs
