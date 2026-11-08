@@ -3,8 +3,8 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext,Script} from 'node:vm';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const html=read('index.html'), debug=read('debugger.js'), templates=read('classroom-templates.js'), cs50=read('cs50p-starters.js'), tracer=read('python-tracer.js');
-for(const [path,src] of [['debugger.js',debug],['classroom-templates.js',templates],['cs50p-starters.js',cs50],['python-tracer.js',tracer]])new Script(src,{filename:path});
+const html=read('index.html'), debug=read('debugger.js'), templates=read('classroom-templates.js'), tracer=read('python-tracer.js');
+for(const [path,src] of [['debugger.js',debug],['classroom-templates.js',templates],['python-tracer.js',tracer]])new Script(src,{filename:path});
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 for(const source of [debug,templates])for(const match of source.matchAll(/\$\('([^']+)'\)/g)){
  assert(ids.includes(match[1]),'Missing interface element: '+match[1]);
