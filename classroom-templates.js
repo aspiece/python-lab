@@ -42,6 +42,49 @@
     }
   }
 };
+ // Guided tracing projects are available through their classroom links.
+ const tracing={
+  'trace-while-loops': {
+   title:'Trace a While Loop',
+   folderName:'trace-while-loops',
+   description:'Track the condition, output, and next value in a countdown.',
+   code:'number = 3\nwhile number > 0:\n    print(number)\n    number -= 1\n',
+   task:'Record the number, whether the condition is true, what prints, and the next number. Include the final check.'
+  },
+  'trace-for-loops': {
+   title:'Trace a For Loop',
+   folderName:'trace-for-loops',
+   description:'Watch the loop variable and running total change.',
+   code:'total = 0\nfor number in range(1, 6, 2):\n    total = total + number\nprint(total)\n',
+   task:'Write down the values from range(). Record the total before and after each addition.'
+  },
+  'trace-break-continue': {
+   title:'Trace Break and Continue',
+   folderName:'trace-break-continue',
+   description:'Compare skipping a pass with stopping a loop.',
+   code:'for i in range(5):\n    if i == 2:\n        continue\n    print(i)\nprint("Done")\n',
+   task:'Trace continue first. Then change continue to break, predict what will print, and record a new trace.'
+  },
+  'trace-nested-loops': {
+   title:'Trace Nested Loops',
+   folderName:'trace-nested-loops',
+   description:'Track each row and column in the order they print.',
+   code:'for row in range(2):\n    for column in range(3):\n        print(row, column)\n',
+   task:'Record the pairs in print order. Watch when column starts over.'
+  }
+ };
+ function tracingStarter(id){
+  if(!Object.hasOwn(tracing,id))return null;
+  const {title,folderName,description,code,task}=tracing[id];
+  const directions=[
+   '# '+title,
+   'Predict the output in your student notes before you run the code.',
+   task,
+   'With main.py open, choose Debug, then Record Trace. Use Next to step through the code. Check Variables and Output as you go.',
+   'Compare the trace with your prediction. Record the actual output in your notes.'
+  ].join('\n\n');
+  return {id,title,folderName,description,entryFile:'main.py',files:{'main.py':code,'README.md':directions+'\n'}};
+ }
  function show(){
   const dialog=$('templatesDialog');
   render();
@@ -50,6 +93,8 @@
  function get(id){
   const official=source()?.get(id);
   if(official)return official;
+  const trace=tracingStarter(id);
+  if(trace)return trace;
   const old=legacy[id];
   return old?{id,entryFile:'main.py',...JSON.parse(JSON.stringify(old))}:null;
  }
