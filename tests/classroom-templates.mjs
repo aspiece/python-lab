@@ -16,7 +16,9 @@ for(const id of ['templateBtn','templatesDialog','templateSearch','templateGalle
  assert(ids.includes(id),'Missing template UI '+id);
 
 class Element{
- constructor(id){this.id=id;this.textContent='';this.children=[];this.value='';this.events={};this.className='';this.hidden=false;}
+ constructor(id){this.id=id;this.children=[];this._text='';this.value='';this.events={};this.className='';this.hidden=false;}
+ set textContent(value){this._text=String(value);this.children=[];}
+ get textContent(){return this._text;}
  addEventListener(name,fn){this.events[name]=fn;}
  append(...children){this.children.push(...children);}
  showModal(){this.open=true;}
