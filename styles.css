@@ -211,195 +211,36 @@
 }
 
 
-/* CS50P problem set gallery */
-.cs50p-dialog{width:min(810px,96vw);max-width:810px;max-height:min(88vh,880px);display:none;flex-direction:column;padding:18px 20px;overflow:hidden}
-.cs50p-dialog[open]{display:flex}
-.template-dialog-heading{display:flex;gap:7px 14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.template-dialog-heading h3{margin:0}
+/* General Python templates and tracing activity gallery. */
+.classroom-dialog{width:min(800px,calc(100vw - 26px));max-height:88dvh;display:none;flex-direction:column;gap:10px;padding:20px;overflow:hidden}
+.classroom-dialog[open]{display:flex}
+.template-dialog-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.template-dialog-heading h3{margin:0;font-size:18px}
 .template-unofficial{font-size:11px;color:#a9bad0}
-.cs50p-dialog > p{margin:8px 0 14px}
-.template-filters{display:grid;grid-template-columns:1fr 1.3fr;gap:12px;margin:0 0 10px}
-.template-filters label{display:flex;flex-direction:column;gap:5px;margin:0;color:#a7bfd8;font-size:11px}
-.template-filters select,.template-filters input{
- width:100%;min-width:0;border-radius:6px;border:1px solid #55708a;
- background:#121c29;color:#e9f2fd;padding:10px;font:12px Inter,system-ui,sans-serif;
-}
-.template-filters select:focus-visible,.template-filters input:focus-visible{outline:2px solid #70b4ff;outline-offset:1px}
-.template-gallery-caption{color:#a7b9d1;font-size:11px;margin:0 0 5px}
-.cs50p-dialog .template-gallery{display:flex;flex-direction:column;min-height:0;max-height:none;overflow:auto;gap:8px;margin:0;padding:0 3px 14px 0;scrollbar-width:thin}
-.template-set-heading{font-size:12px;letter-spacing:.4px;color:#a9d0f7;border-bottom:1px solid #3a4d60;padding:10px 4px 7px;margin:8px 0 1px}
-.cs50p-dialog .template-option{
- display:flex;align-items:center;gap:9px;min-height:0;background:#172538;
- border:1px solid #3e536c;border-radius:7px;padding:4px
-}
-.cs50p-dialog .template-choice{flex:1;min-width:0;background:transparent;border:0;padding:9px 11px;gap:5px}
-.cs50p-dialog .template-choice:hover{background:#294059}
-.cs50p-dialog .template-choice strong{font-size:13px}
-.cs50p-dialog .template-choice span{font-size:11px;line-height:1.35;color:#aabed5}
-.cs50p-dialog .template-filename{color:#84c0f9!important;font-family:Consolas,monospace;font-size:11px!important}
-.template-card-actions{display:flex;flex-direction:column;align-items:stretch;gap:7px;flex:none;padding:5px 7px}
-.template-official-link{font-size:11px;color:#9ccaff;text-decoration:underline;text-underline-offset:2px;padding:4px;text-align:center}
-.template-official-link:hover{color:white}
-.cs50p-dialog .template-link{max-width:158px;font-size:11px;padding:8px;background:#263a53;border:1px solid #466587;border-radius:5px}
-.template-dialog-footer{display:flex;align-items:center;justify-content:space-between;gap:15px;border-top:1px solid #3a4d60;padding-top:10px;color:#9cadc6;font-size:10px}
-.template-dialog-footer button{border:1px solid #425775;flex:none}
-@media(max-width:650px){
- .cs50p-dialog{padding:13px 12px;max-height:90vh}
- .template-filters{grid-template-columns:1fr;gap:8px}
- .cs50p-dialog .template-option{flex-direction:column;align-items:stretch}
- .template-card-actions{flex-direction:row;justify-content:space-between;align-items:center;flex-wrap:wrap}
- .cs50p-dialog .template-link{max-width:none}
- .template-dialog-footer{align-items:start}
-}
-
-
-/* CS50P template spacing refresh: balanced cards and consistent rhythm. */
-.cs50p-dialog{
- width:min(920px,calc(100vw - 32px));
- max-width:920px;
- max-height:min(88dvh,930px);
- padding:22px 24px 18px;
- gap:0;
-}
-.cs50p-dialog .template-dialog-heading{gap:8px 16px;align-items:baseline}
-.cs50p-dialog .template-dialog-heading h3{font-size:19px;line-height:1.3;margin:0}
-.cs50p-dialog .template-unofficial{font-size:11px;line-height:1.5}
-.cs50p-dialog > p{margin:10px 0 18px;font-size:12px;line-height:1.6;max-width:75ch}
-.cs50p-dialog .template-filters{grid-template-columns:minmax(220px,1fr) minmax(0,1.45fr);gap:16px;margin:0 0 12px}
-.cs50p-dialog .template-filters label{gap:7px;font-weight:600;line-height:1.3;margin:0}
-.cs50p-dialog .template-filters input,.cs50p-dialog .template-filters select{
- height:39px;line-height:1.4;padding:9px 12px;border-radius:6px;
-}
-.cs50p-dialog .template-gallery-caption{margin:1px 0 9px;line-height:1.5}
-.cs50p-dialog #templateGallery{
- display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
- align-content:start;align-items:stretch;
- gap:12px 14px;margin:0;
- padding:0 6px 18px 0;overflow:auto;min-height:0;
-}
-.cs50p-dialog .template-set-heading{
- grid-column:1/-1;margin:11px 0 0;padding:10px 3px 7px;
- font-size:12px;line-height:1.4;border-bottom:1px solid #455972;
-}
-.cs50p-dialog .template-set-heading:first-child{margin-top:0}
-.cs50p-dialog .template-option{
- display:flex;flex-direction:column;align-items:stretch;
- gap:0;min-width:0;min-height:148px;
- padding:0;border-radius:8px;
- background:#19283a;border:1px solid #40556b;overflow:hidden;
-}
-.cs50p-dialog .template-choice{
- display:flex;flex:1;flex-direction:column;align-items:flex-start;
- gap:6px;width:100%;min-width:0;padding:13px 14px 11px;
- background:transparent;border:0;border-radius:0;text-align:left;
-}
-.cs50p-dialog .template-choice strong{font-size:13px;line-height:1.4;overflow-wrap:anywhere}
-.cs50p-dialog .template-choice .template-filename{font-size:11px!important;line-height:1.4}
-.cs50p-dialog .template-choice span:not(.template-filename){
- font-size:11px;line-height:1.45;color:#b5c7dc;
-}
-.cs50p-dialog .template-card-actions{
- display:flex;flex-direction:row;align-items:center;
- justify-content:space-between;gap:8px;
- min-width:0;margin:0;padding:9px 12px;
- border-top:1px solid #33485e;background:#152233;
-}
-.cs50p-dialog .template-official-link{
- display:inline-flex;align-items:center;text-align:left;
- white-space:nowrap;font-size:11px;line-height:1.35;padding:5px 2px;
-}
-.cs50p-dialog .template-link{
- display:inline-flex;align-items:center;justify-content:center;
- width:auto;max-width:none;min-width:124px;min-height:30px;
- padding:6px 9px;font-size:10.5px;line-height:1.3;
- border-radius:5px;white-space:nowrap;
-}
-.cs50p-dialog .template-dialog-footer{
- margin-top:0;padding-top:12px;line-height:1.45;
-}
-@media(max-width:720px){
- .cs50p-dialog{width:min(560px,calc(100vw - 20px));max-height:90dvh;padding:16px 16px 12px}
- .cs50p-dialog .template-dialog-heading{align-items:flex-start}
- .cs50p-dialog > p{margin:8px 0 13px}
- .cs50p-dialog #templateGallery{grid-template-columns:minmax(0,1fr);gap:10px;padding-right:3px}
- .cs50p-dialog .template-set-heading{margin-top:7px}
- .cs50p-dialog .template-option{min-height:130px}
- .cs50p-dialog .template-card-actions{flex-direction:row;align-items:center}
-}
-@media(max-width:480px){
- .cs50p-dialog{padding:13px 12px 10px}
- .cs50p-dialog .template-filters{grid-template-columns:minmax(0,1fr);gap:10px}
- .cs50p-dialog .template-card-actions{flex-wrap:wrap}
- .cs50p-dialog .template-link{min-width:0}
- .cs50p-dialog .template-dialog-footer{gap:8px}
-}
-
-
-/* Official CS50 handoff: no direct submission, no account credentials. */
-.cs50-submit-dialog{width:min(680px,96vw);max-width:680px;max-height:90dvh;overflow:auto;padding:20px 23px;}
-.cs50-submit-dialog h3{margin:0 0 9px;font-size:18px;}
-.cs50-submit-dialog p{line-height:1.55;}
-.cs50-submit-dialog label{margin:13px 0 5px;}
-.cs50-submit-dialog select{display:block;width:100%;min-height:37px;padding:8px 10px;color:#eaf2ff;background:#131e2d;border:1px solid #60738a;border-radius:6px;}
-.cs50-problem-title{font-weight:650;color:#c7e4ff!important;font-size:12px;margin:12px 0!important;}
-.cs50-command-block{background:#121c2a;border:1px solid #3c526b;border-radius:7px;margin:10px 0;padding:10px 12px;}
-.cs50-command-block>span{display:block;font-size:11px;color:#b5cbe2;font-weight:600;margin-bottom:8px;}
-.cs50-command-block code,.cs50-files-list{font:12px/1.65 Consolas,Menlo,monospace;color:#e2eefc;}
-.cs50-command-line{display:flex;align-items:center;gap:8px;min-width:0;justify-content:space-between;}
-.cs50-command-line code{overflow-wrap:anywhere;min-width:0;}
-.cs50-command-line button{border:1px solid #496888;flex:none;padding:6px 10px;}
-.cs50-files-list{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:105px;overflow:auto;}
-.cs50-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0;}
-.cs50-actions a{color:#a4ceff;font-size:12px;text-decoration:underline;text-underline-offset:2px;padding:7px 0;}
-.cs50-actions button{font-size:12px;}
-.cs50-status{display:block;min-height:14px;font-size:11px!important;color:#b5c6dc!important;}
-.cs50-disclaimer{font-size:11px!important;color:#a1b4ca!important;}
-.cs50-library-panel{border-top:1px solid #43536a;margin-top:15px;padding-top:14px;}
-.cs50-library-panel strong{font-size:12px;color:#d9e9ff;}
-.cs50-library-panel p{font-size:11px;margin:8px 0;}
-.cs50-library-panel button{border:1px solid #59758f;}
-.cs50-library-panel .cs50-status{margin-top:8px;}
-.cs50-footer{display:flex;justify-content:flex-end;border-top:1px solid #364960;margin-top:12px;padding-top:11px;}
-.cs50-footer button{border:1px solid #536d8c;}
-@media(max-width:1180px){#cs50ToolsBtn{display:none}}
-@media(max-width:620px){.cs50-submit-dialog{padding:14px 12px;max-height:94dvh}.cs50-command-line{align-items:flex-start;flex-wrap:wrap}.cs50-actions{flex-direction:column;align-items:flex-start}}
+.classroom-dialog>p{margin:0 0 5px;font-size:12px;line-height:1.55}
+.classroom-dialog>label{font-size:12px;font-weight:650;color:#bed0e4}
+.classroom-dialog #templateSearch{width:100%;padding:10px 12px;min-width:0;color:#f0f7ff;background:#121c29;border:1px solid #55708a;border-radius:6px}
+.classroom-dialog #templateSearch:focus-visible{outline:2px solid #70b4ff;outline-offset:2px}
+.template-gallery-caption{color:#a7b9d1;font-size:11px}
+.classroom-dialog #templateGallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:10px;overflow:auto;min-height:0;padding:3px 5px 12px 0}
+.classroom-dialog .template-option{display:flex;flex-direction:column;min-width:0;border:1px solid #40556b;border-radius:8px;background:#19283a;overflow:hidden}
+.classroom-dialog .template-choice{display:flex;flex:1;flex-direction:column;align-items:start;gap:6px;padding:13px;background:transparent;border:0;text-align:left;color:#eaf4ff}
+.classroom-dialog .template-choice:hover{background:#294059}
+.classroom-dialog .template-choice strong{font-size:13px;overflow-wrap:anywhere}
+.classroom-dialog .template-choice span{font-size:11px;line-height:1.4;color:#b5c7dc}
+.classroom-dialog .template-choice .template-filename{color:#84c0f9;font-family:Consolas,monospace}
+.template-card-actions{display:flex;justify-content:flex-end;border-top:1px solid #33485e;padding:8px 11px}
+.classroom-dialog .template-link{padding:7px 10px;color:#ddecfd;background:#263a53;border:1px solid #466587;border-radius:5px;font-size:11px}
+.template-dialog-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid #3a4d60;padding-top:11px;color:#9cadc6;font-size:11px}
+.template-dialog-footer button{border:1px solid #425775}
+@media(max-width:650px){.classroom-dialog{max-height:90dvh;padding:14px}.classroom-dialog #templateGallery{grid-template-columns:1fr}.template-dialog-footer{align-items:flex-start}}
 
 /* Context menu download appears only on files, never folders. */
 .file-context-menu button[hidden]{display:none!important}
 .file-context-menu button[data-action=download]{font-weight:650;color:#a7d5ff}
 
-/* Student-friendly CS50 Codespaces handoff */
-.cs50-transfer-guide{width:min(720px,96vw);max-width:720px}
-.cs50-guide-header{padding-bottom:10px;border-bottom:1px solid #45566d}
-.cs50-guide-header p{margin:3px 0 0!important;font-size:13px;color:#bed0e3}
-.cs50-guide-step{background:#172436;border:1px solid #3d5169;border-radius:10px;padding:14px 15px;margin:14px 0}
-.cs50-guide-step h4{display:flex;gap:10px;align-items:center;font-size:14px;margin:0 0 7px;color:#eef6ff}
-.cs50-guide-step p{margin:7px 0 11px;font-size:12px;line-height:1.65}
-.cs50-step-number{display:grid;place-items:center;border-radius:50%;width:27px;height:27px;flex:none;background:#2a6fad;color:#fff;font-size:13px;font-weight:800}
-.cs50-guide-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.cs50-guide-actions button,.cs50-transfer-files button{border:1px solid #5a799d;background:#223952;color:#ddecfd}
-.cs50-guide-actions a,.cs50-guide-step a,.cs50-asset-links a{color:#a8d1ff;text-decoration:underline;text-underline-offset:2px}
-.cs50-transfer-files{display:flex;flex-direction:column;gap:8px}
-.cs50-transfer-file{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#101b2a;border:1px solid #40566e;border-radius:7px;padding:10px 11px}
-.cs50-transfer-file-name{font:12px/1.4 Consolas,Menlo,monospace;color:#e5f2ff;overflow-wrap:anywhere;min-width:0}
-.cs50-transfer-file-actions{display:flex;flex-wrap:wrap;gap:6px;flex:none}
-.cs50-transfer-file-actions button{padding:6px 9px;white-space:nowrap}
-.cs50-asset-links{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:10px}
-.cs50-asset-links a{font-size:12px;overflow-wrap:anywhere}
-.cs50-guide-check{display:flex!important;align-items:flex-start;gap:10px;font-size:12px!important;line-height:1.5;margin:11px 0!important;color:#dae7f7!important;cursor:pointer}
-.cs50-guide-check input{width:17px;height:17px;margin:1px 0 0;flex:none;accent-color:#79b8ff}
-.cs50-guide-step code{overflow-wrap:anywhere}
-.cs50-checklist-complete{color:#8bdfaa!important;font-weight:650}
-@media(max-width:520px){
- .cs50-guide-step{padding:12px 10px}
- .cs50-transfer-file{align-items:flex-start;flex-direction:column}
- .cs50-transfer-file-actions{width:100%}
- .cs50-transfer-file-actions button{flex:1}
-}
 
-/* Keep the transfer action easy to find on classroom laptop screens. */
-#cs50ToolsBtn{background:#263d58;border:1px solid #4a6b91;font-weight:650;white-space:nowrap}
-@media(max-width:1180px){#cs50ToolsBtn{display:inline-flex}#importProjectBtn{display:none}}
+/* Keep the IDE usable on classroom laptops and phones. */
+@media(max-width:1180px){#importProjectBtn{display:none}}
 @media(max-width:980px){#startTraceBtn{display:none}#testBtn{display:none}}
 @media(max-width:760px){#newBtn,#openBtn{display:none}}
-@media(max-width:560px){#cs50ToolsBtn{display:none}} /* Available from command palette and starter gallery. */
