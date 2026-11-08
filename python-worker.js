@@ -14,8 +14,17 @@ async function init() {
       importScripts(PYODIDE_BASE+'pyodide.js');
       if(typeof loadPyodide!=='function')throw Error('Pyodide loader was unavailable');
       pyodide=await loadPyodide({indexURL:PYODIDE_BASE});
-      pyodide.setStdout({batched:s=>message('output',{text:s})});
-      pyodide.setStderr({batched:s=>message('output',{text:s,stream:'stderr'})});
+      // Keep newlines and flushed prompts intact so the terminal can match replayed output.
+      const outputWriter = (stream) => {
+        const decoder = new TextDecoder();
+        return (bytes) => {
+          const text = decoder.decode(bytes, {stream:true});
+          if(text)message('output',{text,stream});
+          return bytes.length;
+        };
+      };
+      pyodide.setStdout({write:outputWriter('stdout')});
+      pyodide.setStderr({write:outputWriter('stderr')});
       // Preload the official Python library once for every sandbox runtime.
       // Its dependencies are downloaded by micropip and cached by the browser.
       // If a WebAssembly-incompatible dependency fails, normal Python stays usable.
@@ -76,7 +85,9 @@ self.onmessage=async ({data})=>{
     if(runningProgram)return;
     runningProgram=true;
     await init();
-    let inputs=data.stdin?data.stdin.replace(/\r\n/g,'\n').split('\n'):[];
+    const inputs=Array.isArray(data.stdin)
+      ? data.stdin
+      : data.stdin?data.stdin.replace(/\r\n/g,'\n').split('\n'):[];
     const userFiles=data.files||{};
     const safePath=p=>typeof p==='string'&&p.split('/').every(x=>x&&!['.','..'].includes(x)&&/^[\w. -]+$/.test(x));
     const base='/home/pyodide';
