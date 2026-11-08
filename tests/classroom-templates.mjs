@@ -32,17 +32,24 @@ runInNewContext(code,context);
 const templates=window.pythonLabTemplates;
 assert(templates,'Classroom gallery unavailable');
 const all=templates.catalog();
-assert.equal(all.length,7,'Expected three general examples and four tracing examples');
+assert.equal(all.length,15,'Expected three general examples and twelve tracing examples');
 assert(all.every(a=>!a.id.startsWith('cs50p-')));
 assert.equal(templates.get('cs50p-0-indoor'),null,'CS50 lab should not be offered');
 assert(templates.get('hello-world').files['main.py']);
 assert(templates.get('functions-tests').files['test_main.py']);
 assert(templates.get('trace-for-loops').files['README.md']);
+for(const slug of ['boss-battle','track-countdown','xp-tracker','beat-counter','loot-scanner','playlist-preview','enemy-waves','drum-machine']){
+ const id='trace-'+slug;
+ const starter=templates.get(id);
+ assert.equal(starter.folderName,id);
+ assert.match(starter.files['README.md'],/Change and test/);
+ assert.equal(new URL(templates.assignmentUrl(id)).searchParams.get('starter'),id);
+}
 assert.equal(templates.get('cs50p-style'),null,'Old CS50-themed sample should not appear');
 
 let selected=null;
 templates.attach(item=>{selected=item;return true;});
-assert.equal(elements.templateGallery.children.length,7);
+assert.equal(elements.templateGallery.children.length,15);
 const card=elements.templateGallery.children[0];
 card.children[0].onclick();
 assert.equal(selected.id,'hello-world');
@@ -55,7 +62,7 @@ assert((link.searchParams.get('assignment')||'').length>=6);
 elements.templateSearch.value='trace';
 elements.templateSearch.events.input();
 assert.equal(elements.templateGallery.children.length,4,'Trace search did not filter gallery');
-assert.match(elements.templateCount.textContent,/4 of 7/);
+assert.match(elements.templateCount.textContent,/4 of 15/);
 
 elements.templateSearch.value='cs50p';
 elements.templateSearch.events.input();

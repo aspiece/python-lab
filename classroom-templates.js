@@ -58,17 +58,82 @@
    description:'Track each row and column in the order they print.',
    code:'for row in range(2):\n    for column in range(3):\n        print(row, column)\n',
    task:'Record the pairs in print order. Watch when column starts over.'
+  },
+  "trace-boss-battle": {
+   title:"Boss Battle",
+   folderName:"trace-boss-battle",
+   description:"How many hits will the boss take? What is its final health?",
+   code:"health = 10\nwhile health > 0:\n    health -= 3\n    print(health)\n",
+   task:"How many hits will the boss take? What is its final health?",
+   challenge:"Change the damage from 3 to 4. Predict and test how many hits it takes."
+  },
+  "trace-track-countdown": {
+   title:"Track Countdown",
+   folderName:"trace-track-countdown",
+   description:"Which countdown values will print?",
+   code:"seconds = 12\nwhile seconds > 0:\n    print(seconds)\n    seconds -= 3\n",
+   task:"Which countdown values will print?",
+   challenge:"Change the loop so it also prints 0. Predict and test what happens when seconds starts at 0."
+  },
+  "trace-xp-tracker": {
+   title:"XP Tracker",
+   folderName:"trace-xp-tracker",
+   description:"Predict the running XP total after each round.",
+   code:"total_xp = 0\nfor xp in range(10, 41, 10):\n    total_xp += xp\n    print(total_xp)\n",
+   task:"Predict the running XP total after each round.",
+   challenge:"Change the range so there is a fifth round worth 50 XP. Predict and test the new final total."
+  },
+  "trace-beat-counter": {
+   title:"Beat Counter",
+   folderName:"trace-beat-counter",
+   description:"Which beat numbers will print?",
+   code:"for beat in range(1, 9):\n    print(beat)\n",
+   task:"Which beat numbers will print?",
+   challenge:"Change the range so it prints only beats 2, 4, 6, and 8."
+  },
+  "trace-loot-scanner": {
+   title:"Loot Scanner",
+   folderName:"trace-loot-scanner",
+   description:"Which items are collected? What is skipped, and what ends the search?",
+   code:"loot = [\"coins\", \"broken sword\", \"potion\", \"legendary shield\", \"gem\"]\nfor item in loot:\n    if item == \"broken sword\":\n        continue\n    if item == \"legendary shield\":\n        break\n    print(\"Collected:\", item)\n",
+   task:"Which items are collected? What is skipped, and what ends the search?",
+   challenge:"Move the legendary shield before the potion. Predict and test which items are collected now."
+  },
+  "trace-playlist-preview": {
+   title:"Playlist Preview",
+   folderName:"trace-playlist-preview",
+   description:"Which tracks play? Where does the preview stop?",
+   code:"playlist = [\"Opening Beat\", \"skip\", \"Bass Drop\", \"end\", \"Encore\"]\nfor track in playlist:\n    if track == \"skip\":\n        continue\n    if track == \"end\":\n        break\n    print(\"Playing:\", track)\n",
+   task:"Which tracks play? Where does the preview stop?",
+   challenge:"Move end to the last spot. Predict and test which tracks play now."
+  },
+  "trace-enemy-waves": {
+   title:"Enemy Waves",
+   folderName:"trace-enemy-waves",
+   description:"How many enemies spawn? When does the enemy number restart?",
+   code:"for wave in range(1, 3):\n    for enemy in range(1, 4):\n        print(\"Wave\", wave, \"Enemy\", enemy)\n",
+   task:"How many enemies spawn? When does the enemy number restart?",
+   challenge:"Change the inner loop to spawn four enemies per wave. Predict and test the new total."
+  },
+  "trace-drum-machine": {
+   title:"Drum Machine",
+   folderName:"trace-drum-machine",
+   description:"How many beats print? When does the beat number restart?",
+   code:"for measure in range(1, 3):\n    for beat in range(1, 5):\n        print(\"Measure\", measure, \"Beat\", beat)\n",
+   task:"How many beats print? When does the beat number restart?",
+   challenge:"Change the inner loop to print three beats per measure. Predict and test the new total."
   }
  };
  function tracingStarter(id){
   if(!Object.hasOwn(tracing,id))return null;
-  const {title,folderName,description,code,task}=tracing[id];
+  const {title,folderName,description,code,task,challenge}=tracing[id];
   const directions=[
    '# '+title,
    'Predict the output in your student notes before you run the code.',
    task,
    'With main.py open, choose Debug, then Record Trace. Use Next to step through the code. Check Variables and Output as you go.',
-   'Compare the trace with your prediction. Record the actual output in your notes.'
+   'Compare the trace with your prediction. Record the actual output in your notes.',
+   ...(challenge?['Change and test: '+challenge]:[])
   ].join('\n\n');
   return {id,title,folderName,description,entryFile:'main.py',files:{'main.py':code,'README.md':directions+'\n'}};
  }
