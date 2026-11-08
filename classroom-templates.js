@@ -1,11 +1,8 @@
-/* Python Lab CS50P problem set gallery. No answer keys or solved exercises. */
+/* Python Lab classroom templates; no CS50 problem-set starter catalog. */
 (() => {
  'use strict';
  const $=id=>document.getElementById(id);
  let install=null;
- const source=()=>window.pythonLabCS50P;
- // Keep previously shared classroom URLs working, but do not show these
- // older examples in the new CS50P-only gallery.
  const legacy={
   "hello-world": {
     "title": "Hello, Python!",
@@ -31,18 +28,8 @@
       "test_main.py": "from main import square, is_even\n\n\ndef test_square():\n    assert square(4) == 16\n    assert square(-3) == 9\n\n\ndef test_is_even():\n    assert is_even(8)\n    assert not is_even(7)\n",
       "README.md": "# Functions and Tests\nRun main.py, then choose Tests to run test_main.py. Change a function deliberately and look at the failed test.\n"
     }
-  },
-  "cs50p-style": {
-    "title": "CS50P-Style Practice",
-    "description": "A small beginner problem with a clean main() pattern.",
-    "files": {
-      "main.py": "def main():\n    answer = input(\"What is the answer? \").strip().lower()\n    print(check_answer(answer))\n\n\ndef check_answer(answer):\n    if answer in (\"42\", \"forty-two\", \"forty two\"):\n        return \"Yes\"\n    return \"No\"\n\n\nif __name__ == \"__main__\":\n    main()\n",
-      "test_main.py": "from main import check_answer\n\n\ndef test_valid_answers():\n    assert check_answer(\"42\") == \"Yes\"\n    assert check_answer(\"forty-two\") == \"Yes\"\n\n\ndef test_invalid_answers():\n    assert check_answer(\"41\") == \"No\"\n",
-      "README.md": "# CS50P-Style Practice\nPractice string normalization, writing main(), and testing functions.\nThis is an original practice activity, not an official Harvard assignment or grading environment.\nUse the official CS50 environment for check50 and submit50.\n"
-    }
   }
 };
- // Guided tracing projects are available through their classroom links.
  const tracing={
   'trace-while-loops': {
    title:'Trace a While Loop',
@@ -85,18 +72,28 @@
   ].join('\n\n');
   return {id,title,folderName,description,entryFile:'main.py',files:{'main.py':code,'README.md':directions+'\n'}};
  }
- function show(){
-  const dialog=$('templatesDialog');
-  render();
-  if(dialog?.showModal&&!dialog.open)dialog.showModal();
+
+ function catalog(){
+  const originals=Object.keys(legacy).map(id=>({
+   id,title:legacy[id].title,description:legacy[id].description,
+   filename:'main.py',folderName:id,entryFile:'main.py'
+  }));
+  const traces=Object.keys(tracing).map(id=>({
+   id,title:tracing[id].title,description:tracing[id].description,
+   filename:'main.py',folderName:id,entryFile:'main.py'
+  }));
+  return [...originals,...traces];
  }
  function get(id){
-  const official=source()?.get(id);
-  if(official)return official;
   const trace=tracingStarter(id);
   if(trace)return trace;
-  const old=legacy[id];
-  return old?{id,entryFile:'main.py',...JSON.parse(JSON.stringify(old))}:null;
+  const item=legacy[id];
+  return item?{id,folderName:id,entryFile:'main.py',...JSON.parse(JSON.stringify(item))}:null;
+ }
+ function show(){
+  render();
+  const dialog=$('templatesDialog');
+  if(dialog?.showModal&&!dialog.open)dialog.showModal();
  }
  function assignmentUrl(id){
   if(!get(id))throw Error('Unknown starter project');
@@ -106,8 +103,8 @@
   url.searchParams.set('assignment',Math.random().toString(36).slice(2,12));
   return url.toString();
  }
- async function copyLink(problem,button){
-  const link=assignmentUrl(problem.id);
+ async function copyLink(item,button){
+  const link=assignmentUrl(item.id);
   try{
    if(typeof navigator!=='undefined'&&navigator.clipboard?.writeText){
     await navigator.clipboard.writeText(link);
@@ -115,81 +112,48 @@
     return;
    }
   }catch{}
-  const fallback=prompt('Copy this starter link into Canvas:',link);
-  if(fallback!==null)button.textContent='Link available';
+  const result=prompt('Copy this starter link into Canvas:',link);
+  if(result!==null)button.textContent='Link available';
  }
  function render(){
   const host=$('templateGallery');if(!host)return;
   host.textContent='';
-  const library=source();
-  if(!library){
-   const info=document.createElement('p');
-   info.textContent='CS50P starter library is unavailable. Reload the page and try again.';
-   host.append(info);return;
-  }
-  const selected=String($('templateSetFilter')?.value||'all');
-  const query=String($('templateSearch')?.value||'').trim().toLowerCase();
-  const matches=library.catalog().filter(problem=>
-   (selected==='all'||String(problem.set)===selected) &&
-   (!query||[problem.title,problem.description,problem.filename,'pset '+problem.set].some(text=>text.toLowerCase().includes(query)))
-  );
+  const q=String($('templateSearch')?.value||'').trim().toLowerCase();
+  const all=catalog();
+  const found=all.filter(item=>!q||
+   [item.title,item.description,item.filename].some(value=>value.toLowerCase().includes(q)));
   const count=$('templateCount');
-  if(count)count.textContent=matches.length+' of '+library.catalog().length+' CS50P problems';
-  if(!matches.length){
-   const message=document.createElement('p');message.className='analysis-empty';
-   message.textContent='No matching problems. Try a different set or search term.';
-   host.append(message);return;
+  if(count)count.textContent=found.length+' of '+all.length+' general Python templates';
+  if(!found.length){
+   const p=document.createElement('p');
+   p.className='analysis-empty';
+   p.textContent='No matching templates. Try a different search.';
+   host.append(p);return;
   }
-  let currentSet=null;
-  for(const problem of matches){
-   if(currentSet!==problem.set){
-    currentSet=problem.set;
-    const heading=document.createElement('h4');heading.className='template-set-heading';
-    heading.textContent='Problem Set '+problem.set+' · '+problem.subject;
-    host.append(heading);
-   }
+  for(const item of found){
    const card=document.createElement('div');card.className='template-option';
    const start=document.createElement('button');start.className='template-choice';
-   const label=document.createElement('strong');label.textContent=problem.title;
-   const metadata=document.createElement('span');metadata.className='template-filename';
-   metadata.textContent=(problem.folderName||problem.slug||problem.id)+'/'+problem.filename;
-   const description=document.createElement('span');description.textContent=problem.description;
-   start.append(label,metadata,description);
-   start.title='Create '+problem.title+' as a new project folder';
+   const label=document.createElement('strong');label.textContent=item.title;
+   const filename=document.createElement('span');filename.className='template-filename';
+   filename.textContent=item.folderName+'/main.py';
+   const description=document.createElement('span');description.textContent=item.description;
+   start.append(label,filename,description);
+   start.title='Create '+item.title+' in a separate folder';
    start.onclick=()=>{
-    const result=install?.(get(problem.id));
-    if(result)$('templatesDialog')?.close?.();
+    if(install?.(get(item.id)))$('templatesDialog')?.close?.();
    };
    const actions=document.createElement('div');actions.className='template-card-actions';
-   const link=document.createElement('a');link.className='template-official-link';
-   link.textContent='Official instructions';
-   link.href=problem.url;link.target='_blank';link.rel='noopener noreferrer';
    const share=document.createElement('button');share.className='template-link';
-   share.textContent='Copy assignment link';
-   share.title='Share this unsolved starter in Canvas';
-   share.onclick=()=>copyLink(problem,share);
-   actions.append(link,share);
+   share.textContent='Copy starter link';
+   share.title='Share this starter project in Canvas';
+   share.onclick=()=>copyLink(item,share);
+   actions.append(share);
    card.append(start,actions);host.append(card);
   }
  }
- function populateFilters(){
-  const select=$('templateSetFilter');if(!select)return;
-  select.textContent='';
-  const library=source();
-  const options=[['all','All problem sets'],...(library?.subjects||[]).map((subject,i)=>[String(i),'Set '+i+' · '+subject])];
-  for(const [value,label] of options){
-   const option=document.createElement('option');option.value=value;option.textContent=label;
-   select.append(option);
-  }
-  select.value='all';
- }
+ function attach(callback){install=callback;render();}
  $('templateBtn')?.addEventListener('click',show);
- $('templateClose')?.addEventListener('click',()=> $('templatesDialog')?.close?.());
+ $('templateClose')?.addEventListener('click',()=>$('templatesDialog')?.close?.());
  $('templateSearch')?.addEventListener('input',render);
- $('templateSetFilter')?.addEventListener('change',render);
- function attach(callback){install=callback;populateFilters();render();}
- window.pythonLabTemplates={
-  attach,show,get,assignmentUrl,render,
-  catalog:()=>source()?.catalog()||[]
- };
+ window.pythonLabTemplates={attach,show,get,assignmentUrl,render,catalog};
 })();
