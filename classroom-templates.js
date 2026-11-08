@@ -31,6 +31,13 @@
   }
 };
  const tracing={
+  'practice-route-tag': {
+   title:'Validate a Route Tag',
+   folderName:'practice-route-tag',
+   description:'Use a Boolean flag to enforce what can follow the first digit.',
+   code:"def is_route_tag(tag):\n    if len(tag) < 2 or tag[0] != \"@\" or not tag[1].isalpha():\n        return False\n\n    seen_digit = False\n    for char in tag[2:]:\n        if char.isdigit():\n            # Before updating seen_digit, check for a first digit of 0.\n            seen_digit = True\n        elif char.isalpha():\n            # Use seen_digit to decide whether a letter can still appear.\n            pass\n        else:\n            return False\n\n    return True\n\nprint(is_route_tag(input(\"Route tag: \")))\n",
+   task:"A route tag starts with @ and a letter, then can switch from letters to digits. Once digits start, letters may no longer appear. The first digit cannot be 0. Add these two checks to the starter. Predict and test @ab4, @ab40, @ab4c, @ab04, and @ab. Explain why a later zero can pass."
+  },
   'practice-points-goal': {
    title:"Points Toward a Goal",
    folderName:"practice-points-goal",
