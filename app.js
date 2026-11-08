@@ -200,8 +200,8 @@ function paletteCommands(){
   ['Run Python File',()=>run()],
   ['Run Tests',()=>executeVirtualTest()],
   ['Record Debug Trace',()=>window.pythonLabDebug?.begin()],
-  ['Browse CS50P Problem Starters',()=>window.pythonLabTemplates?.show()],
-  ['Move to CS50 Codespaces',()=>window.pythonLabCS50Tools?.show()],
+  ['Browse Python Starter Templates',()=>window.pythonLabTemplates?.show()],
+
   ['Show Problems',()=>window.pythonLabSmart?.setView('problems')],
   ['Show Test Results',()=>window.pythonLabSmart?.setView('tests')],
   ['Save Locally',()=>persist(true)],
@@ -462,7 +462,7 @@ function renderFiles(){
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
 function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=18');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
-  window.pythonLabCS50Tools?.packageResult(data);
+
   append(data.success?'✓ CS50 Python library loaded automatically.\n':'CS50 library could not load in this browser (regular Python still works): '+String(data.error||'Unknown error')+'\n',data.success?'success-line':'error-line');
 }if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',latestInputPrompt());if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='traceResults'){running=false;updateButtons();setStatus('Python ready','ready');window.pythonLabDebug?.onResult(data);showShell();}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');append('\n'+(data.success?'✓ Finished':'✕ Finished with errors')+' in '+((performance.now()-runStart)/1000).toFixed(2)+'s\n',data.success?'success-line':'error-line');showShell();}if(data.type==='files'){
   workspaceSnapshot();
@@ -671,7 +671,7 @@ else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in
   else if(cmd==='python'||cmd==='python3')append('Usage: '+cmd+' FILE.py [args] | -c CODE | -m pytest [FILE_OR_DIR]\n','error-line');
   else if(cmd==='submit50'||cmd==='check50'){
     append('Official '+cmd+' needs GitHub authentication and a real Codespace. This simulated terminal cannot submit or check your code.\n','error-line');
-    window.pythonLabCS50Tools?.show();
+
   }
   else if(cmd==='pip'&&rest[0]==='install'&&rest[1]==='cs50'){
     append('CS50 Python library loads automatically when Python Lab starts. No pip command needed.\n');
@@ -816,7 +816,7 @@ window.addEventListener('keydown',e=>{
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
 setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);
-window.pythonLabCS50Tools?.attach({workspace:()=>window.pythonLabWorkspace?.(),projectName:()=>activeProjectName,projectId:()=>activeProjectId,openFile:switchToFile,downloadFile:download});
+
 if(window.pythonLabProjects){bootstrapProjects().then(()=>{if(!worker)createWorker();});}
 else createWorker();
 function attachDebugEditor(){
