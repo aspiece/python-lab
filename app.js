@@ -148,6 +148,29 @@ function updateStatusBar(){
  else{const pos=fallback.selectionStart||0,parts=fallback.value.slice(0,pos).split('\n');node.textContent='Ln '+parts.length+', Col '+(parts[parts.length-1].length+1);}
  const lang=$('languageStatus');if(lang)lang.textContent=languageFor(filename)==='python'?'Python':languageFor(filename).toUpperCase();
 }
+function starterGuideParts(source){
+ const match=source?.match(/^!\[([^\]\n]+)\]\((assets\/loop-guides\/trace-[a-z-]+\.png)\)$/m);
+ if(!match)return null;
+ return {alt:match[1],image:match[2],text:source.replace(match[0],'').trim()};
+}
+function renderStarterGuide(){
+ const panel=$('starterGuide');if(!panel)return;
+ const folder=parent(filename),readme=folder?folder+'/README.md':'README.md';
+ const guide=openTabs.includes(readme)?starterGuideParts(files[readme]):null;
+ panel.hidden=!guide;
+ panel.textContent='';
+ if(!guide)return;
+ const heading=document.createElement('h2');heading.textContent='README.md';
+ const image=document.createElement('img');image.src=guide.image;image.alt=guide.alt;
+ const body=document.createElement('div');body.className='starter-guide-text';
+ for(const block of guide.text.split(/\n\s*\n/)){
+  const title=block.startsWith('# ');
+  const part=document.createElement(title?'h3':'p');
+  part.textContent=title?block.slice(2):block;
+  body.append(part);
+ }
+ panel.append(heading,image,body);
+}
 function renderTabs(){
  const host=$('openTabs');if(!host)return;
  host.textContent='';openTabs=openTabs.filter(path=>Object.hasOwn(files,path));
@@ -158,7 +181,7 @@ function renderTabs(){
   const close=document.createElement('button');close.className='tab-close';close.textContent='×';close.title='Close '+path;close.setAttribute('aria-label','Close '+path);close.onclick=()=>closeTab(path);
   tab.append(action,close);host.append(tab);
  }
- updateStatusBar();window.pythonLabSmart?.onOpened();window.pythonLabDebug?.onOpened();
+ renderStarterGuide();updateStatusBar();window.pythonLabSmart?.onOpened();window.pythonLabDebug?.onOpened();
 }
 function setFilename(value){filename=normalize(value||'main.py','');if(!/\.[^/]+$/.test(filename))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);if(!openTabs.includes(filename))openTabs.push(filename);renderTabs();updateStatusBar();persist();}
 function switchToFile(next){
@@ -391,6 +414,22 @@ async function createProjectFromSnapshot(name,snapshot,assignmentKey=''){
  await selectProject(created.id);
  return created;
 }
+function openSavedStarterGuide(template){
+ const path='README.md',entry=template.entryFile,source=template.files[path];
+ const guide=starterGuideParts(source);
+ if(!guide||!Object.hasOwn(files,entry))return;
+ workspaceSnapshot();
+ if(!Object.hasOwn(files,path))files[path]=source;
+ else if(!starterGuideParts(files[path])){
+  files[path]+='\n\n!['+guide.alt+']('+guide.image+')\n';
+  if(editor&&models.has(path))models.get(path).setValue(files[path]);
+  else if(filename===path)fallback.value=files[path];
+ }
+ if(!openTabs.includes(path))openTabs.push(path);
+ switchToFile(entry);
+ renderFiles();
+ persist(true);
+}
 async function handleAssignmentLink(){
  const search=window.location?.search||'';
  if(!search||!projectReady||!window.pythonLabTemplates?.get)return;
@@ -401,18 +440,20 @@ async function handleAssignmentLink(){
  if(!template)return;
  const existing=(await window.pythonLabProjects.list()).find(p=>p.assignmentKey===key);
  if(existing){
-  if(existing.id===activeProjectId)return;
+  if(existing.id===activeProjectId){openSavedStarterGuide(template);return;}
   if(confirm('Continue your saved "'+existing.name+'" assignment on this device?')){
    await selectProject(existing.id);
+   openSavedStarterGuide(template);
   }
   return;
  }
  if(!confirm('Create a new project for "'+template.title+'"? Your existing projects will stay saved separately.'))return;
  const entry=template.entryFile&&Object.hasOwn(template.files,template.entryFile)?template.entryFile:Object.keys(template.files).find(name=>name.endsWith('.py'));
  if(!entry)return;
+ const readme=starterGuideParts(template.files['README.md'])?'README.md':null;
  const workspace={
   filename:entry,code:template.files[entry],
-  files:{...template.files},dirs:[],cwd:'',expanded:[],openTabs:[entry],
+  files:{...template.files},dirs:[],cwd:'',expanded:[],openTabs:readme?[readme,entry]:[entry],
   stdin:'',args:'',debugBreakpoints:{}
  };
  await createProjectFromSnapshot(template.folderName||template.slug||template.title,workspace,key);
@@ -527,6 +568,8 @@ function installTemplate(project){
  const preferred=project.entryFile&&Object.hasOwn(project.files,project.entryFile)?project.entryFile:
   Object.keys(project.files).find(name=>name.endsWith('.py'));
  const entry=preferred?root+'/'+preferred:'';
+ const readme=root+'/README.md';
+ if(starterGuideParts(files[readme]))openTabs.push(readme);
  if(entry&&Object.hasOwn(files,entry))switchToFile(entry);
  else renderFiles();
  persist(true);

@@ -129,9 +129,11 @@
   const {title,folderName,description,code,task,challenge}=tracing[id];
   const directions=[
    '# '+title,
+   '![Loop steps for '+title+'](assets/loop-guides/'+id+'.png)',
    'Predict the output in your student notes before you run the code.',
    task,
-   'With main.py open, choose Debug, then Record Trace. Use Next to step through the code. Check Variables and Output as you go.',
+   'Select main.py and click Run to see the output.',
+   'To trace, choose Debug → Record Trace, then use Next to step through the code.',
    'Compare the trace with your prediction. Record the actual output in your notes.',
    ...(challenge?['Change and test: '+challenge]:[])
   ].join('\n\n');
