@@ -2,7 +2,7 @@
 
 A free browser-based Python workspace for students to write, run, debug, and test Python without a local installation.
 
-**Open Python Lab:** https://aspiece.github.io/python-lab/
+**Open Python Lab:** https://ide.geneseelearninglab.com/
 
 **Classification:** K–12 Educational Resource — Computer Science / Programming Instruction  
 **Educational purpose and network-admin information:** https://aspiece.github.io/python-lab/about.html
@@ -35,7 +35,7 @@ Classroom allowlisting must be approved by the district. Students should not att
 
 ## Current starter templates
 
-The gallery contains seven general-purpose activities:
+The gallery groups the available student activities into four categories: **Getting Started**, **Python Skills**, **Loops & Tracing**, and **Practice Challenges**. Use the category dropdown or search to find a starter. Some examples include:
 
 1. Hello, Python!
 2. Loops and Lists
@@ -71,7 +71,7 @@ Main files:
 
 - `index.html` — editor, menus, projects, templates, and debug panels
 - `app.js` — workspace and editor interactions
-- `classroom-templates.js` — seven general student starter activities
+- `classroom-templates.js` — organized student starter activities
 - `project-store.js` — local project persistence and migration
 - `python-worker.js` — browser Python runtime
 - `browser-terminal.js` — terminal interactions
