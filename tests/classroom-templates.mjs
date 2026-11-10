@@ -12,7 +12,7 @@ assert(!html.includes('cs50ToolsBtn'));
 assert(!app.includes('pythonLabCS50Tools'));
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 assert.equal(ids.length,new Set(ids).size,'Duplicate HTML element IDs');
-for(const id of ['templateBtn','templatesDialog','templateSearch','templateGallery','templateCount','templateClose'])
+for(const id of ['templateBtn','templatesDialog','templateSearch','templateCategory','templateGallery','templateCount','templateClose'])
  assert(ids.includes(id),'Missing template UI '+id);
 
 class Element{
@@ -32,7 +32,9 @@ runInNewContext(code,context);
 const templates=window.pythonLabTemplates;
 assert(templates,'Classroom gallery unavailable');
 const all=templates.catalog();
-assert.equal(all.length,15,'Expected three general examples and twelve tracing examples');
+assert(all.length>=15,'Expected general examples and tracing activities');
+assert(all.every(item=>['start','skills','loops','challenges'].includes(item.category)));
+assert.equal(templates.catalog().find(x=>x.id==='hello-world').category,'start');
 assert(all.every(a=>!a.id.startsWith('cs50p-')));
 assert.equal(templates.get('cs50p-0-indoor'),null,'CS50 lab should not be offered');
 assert(templates.get('hello-world').files['main.py']);
@@ -49,8 +51,8 @@ assert.equal(templates.get('cs50p-style'),null,'Old CS50-themed sample should no
 
 let selected=null;
 templates.attach(item=>{selected=item;return true;});
-assert.equal(elements.templateGallery.children.length,15);
-const card=elements.templateGallery.children[0];
+assert.equal(elements.templateGallery.children.length,all.length+4);
+const card=elements.templateGallery.children[1];
 card.children[0].onclick();
 assert.equal(selected.id,'hello-world');
 assert.equal(selected.entryFile,'main.py');
@@ -61,9 +63,13 @@ assert((link.searchParams.get('assignment')||'').length>=6);
 
 elements.templateSearch.value='trace';
 elements.templateSearch.events.input();
-assert.equal(elements.templateGallery.children.length,4,'Trace search did not filter gallery');
-assert.match(elements.templateCount.textContent,/4 of 15/);
+assert.equal(elements.templateGallery.children.filter(x=>x.className==='template-option').length,4,'Trace search did not filter gallery');
+assert.match(elements.templateCount.textContent,/Showing 4 of/);
 
+elements.templateSearch.value='';
+elements.templateCategory.value='start';elements.templateCategory.events.change();
+assert.equal(elements.templateGallery.children.filter(x=>x.className==='template-option').length,1);
+elements.templateCategory.value='all';
 elements.templateSearch.value='cs50p';
 elements.templateSearch.events.input();
 assert.equal(elements.templateGallery.children.length,1,'Missing no-results notice');
