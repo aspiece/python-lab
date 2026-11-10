@@ -91,3 +91,7 @@ The **Help & Backup** toolbar action provides a short searchable Python referenc
 The connection check tests the site's own worker and CDN assets used for Monaco and JSZip. An error points to a possible network/filter issue but does not diagnose the district policy itself. Never use this tool to bypass filtering.
 
 Template entries now distinguish examples, tracing exercises, and challenges by difficulty while preserving existing starter IDs and links.
+
+## Student interface
+
+Less-used file actions are grouped in the **Project** menu. Run stays visible. Debug Trace now prompts students to predict the next change before stepping through the recorded execution.
