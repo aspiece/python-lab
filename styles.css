@@ -278,3 +278,20 @@
 .classroom-dialog #templateGallery .template-option{display:flex;flex:none;flex-direction:column;height:auto;min-height:130px;width:100%;overflow:visible;}
 .classroom-dialog #templateGallery .template-choice{display:flex;flex:none;flex-direction:column;width:100%;height:auto;min-height:80px;gap:6px;white-space:normal;}
 .classroom-dialog #templateGallery .template-card-actions{flex:none;min-height:42px;}
+
+/* Student tools and classroom-friendly toolbar */
+.student-tools-dialog{width:min(660px,95vw);max-width:none;max-height:88dvh;overflow:auto}
+.student-tools-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.student-tools-tabs button{border:1px solid #536884;border-radius:6px;padding:9px 11px;background:#182639}
+.student-tools-tabs button[aria-pressed="true"]{background:#2d5475;border-color:#83bfff;color:white}
+.student-tools-dialog section[hidden]{display:none!important}
+.student-tools-dialog section{max-height:53vh;overflow-y:auto;padding:3px}
+.student-tools-dialog input{width:100%;padding:10px;color:#eff7ff;background:#111b29;border:1px solid #506782;border-radius:6px}
+.python-reference-entry{border:1px solid #3b526b;border-radius:7px;padding:12px;margin:9px 0;background:#192739}
+.python-reference-entry h4{margin:0 0 7px;font-size:13px}
+.python-reference-entry p{margin:0 0 7px;font-size:12px}
+.python-reference-entry pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0d1724;padding:10px;border-radius:5px;font:12px/1.6 Consolas,monospace}
+.network-check-result{padding:9px 0;border-bottom:1px solid #3b526b;font-size:12px}
+.classroom-dialog .template-choice .template-level{color:#bed8f1;font-size:10px;font-weight:650}
+@media(max-width:1050px){#studentToolsBtn{font-size:11px;padding:7px 8px}}
+@media(max-width:760px){#studentToolsBtn{display:none}}
