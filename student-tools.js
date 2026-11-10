@@ -60,7 +60,8 @@
   const assets=[
    ['Python worker','python-worker.js?v=19'],
    ['Monaco editor','https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js'],
-   ['ZIP export library','https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js']
+   ['ZIP export library','https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'],
+   ['Python runtime loader','https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js']
   ];
   const results=await Promise.all(assets.map(async ([name,url])=>{
    try{const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),8000);
