@@ -32,6 +32,7 @@ runInNewContext(code,context);
 const templates=window.pythonLabTemplates;
 assert(templates,'Classroom gallery unavailable');
 const all=templates.catalog();
+assert(all.every(item=>item.difficulty),'Template difficulty label missing');
 assert(all.length>=15,'Expected general examples and tracing activities');
 assert(all.every(item=>['start','skills','loops','challenges'].includes(item.category)));
 assert.equal(templates.catalog().find(x=>x.id==='hello-world').category,'start');
