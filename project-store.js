@@ -58,7 +58,6 @@
  async function putRecord(record){
   if(mode==='indexeddb')return idb('put',copy(record));
   memory[record.id]=copy(record);fallbackWrite();
-  if(mode==='memory')throw Error('Persistent browser storage unavailable; export a backup');
  }
  async function deleteRecord(id){
   if(mode==='indexeddb')return idb('delete',id);
