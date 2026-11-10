@@ -187,13 +187,20 @@
   return {id,title,folderName,description,entryFile:'main.py',files:{'main.py':code,'README.md':directions+'\n'}};
  }
 
+ const groups=[{id:"start",title:"Getting Started"},{id:"skills",title:"Python Skills"},{id:"loops",title:"Loops & Tracing"},{id:"challenges",title:"Practice Challenges"}];
+ function categoryFor(id){
+  if(id==="hello-world")return "start";
+  if(["loops-lists","functions-tests","practice-mark-capitals","practice-filter-message","practice-supply-lookup"].includes(id))return "skills";
+  if(id.startsWith("trace-"))return "loops";
+  return "challenges";
+ }
  function catalog(){
   const originals=Object.keys(legacy).map(id=>({
-   id,title:legacy[id].title,description:legacy[id].description,
+   id,title:legacy[id].title,description:legacy[id].description,category:categoryFor(id),
    filename:'main.py',folderName:id,entryFile:'main.py'
   }));
   const traces=Object.keys(tracing).map(id=>({
-   id,title:tracing[id].title,description:tracing[id].description,
+   id,title:tracing[id].title,description:tracing[id].description,category:categoryFor(id),
    filename:'main.py',folderName:id,entryFile:'main.py'
   }));
   return [...originals,...traces];
@@ -234,17 +241,25 @@
   host.textContent='';
   const q=String($('templateSearch')?.value||'').trim().toLowerCase();
   const all=catalog();
-  const found=all.filter(item=>!q||
-   [item.title,item.description,item.filename].some(value=>value.toLowerCase().includes(q)));
+  const category=$('templateCategory')?.value||'all';
+  const found=all.filter(item=>(category==='all'||item.category===category)&&(!q||
+   [item.title,item.description,item.filename,groups.find(g=>g.id===item.category)?.title||''].some(value=>value.toLowerCase().includes(q))));
   const count=$('templateCount');
-  if(count)count.textContent=found.length+' of '+all.length+' general Python templates';
+  if(count)count.textContent='Showing '+found.length+' of '+all.length+' templates';
   if(!found.length){
    const p=document.createElement('p');
    p.className='analysis-empty';
    p.textContent='No matching templates. Try a different search.';
    host.append(p);return;
   }
-  for(const item of found){
+  let previousCategory='';
+  const ordered=groups.flatMap(group=>found.filter(item=>item.category===group.id));
+  for(const item of ordered){
+   if(item.category!==previousCategory){
+    const heading=document.createElement('h4');heading.className='template-group-heading';
+    heading.textContent=groups.find(group=>group.id===item.category)?.title||'More Templates';
+    host.append(heading);previousCategory=item.category;
+   }
    const card=document.createElement('div');card.className='template-option';
    const start=document.createElement('button');start.className='template-choice';
    const label=document.createElement('strong');label.textContent=item.title;
@@ -269,5 +284,6 @@
  $('templateBtn')?.addEventListener('click',show);
  $('templateClose')?.addEventListener('click',()=>$('templatesDialog')?.close?.());
  $('templateSearch')?.addEventListener('input',render);
+ $('templateCategory')?.addEventListener('change',render);
  window.pythonLabTemplates={attach,show,get,assignmentUrl,render,catalog};
 })();
