@@ -265,3 +265,9 @@
 .template-filters select{flex:1;min-width:0;padding:9px 12px;border:1px solid #55708a;border-radius:6px;color:#f0f7ff;background:#121c29}
 .template-filters select:focus-visible{outline:2px solid #70b4ff;outline-offset:2px}
 .classroom-dialog #templateGallery .template-group-heading{grid-column:1/-1;margin:9px 0 0;color:#d7e8fa;font-size:13px;border-bottom:1px solid #40556b;padding:4px 0 8px}
+
+/* Prevent long template lists from compressing cards into clipped rows. */
+.classroom-dialog #templateGallery{grid-auto-rows:max-content;align-content:start;overflow-y:auto;overflow-x:hidden;min-height:180px;flex:1 1 auto}
+.classroom-dialog #templateGallery .template-option{height:auto;min-height:125px;align-self:start}
+.classroom-dialog #templateGallery .template-choice{flex:0 0 auto;min-height:76px}
+.classroom-dialog #templateGallery .template-group-heading{align-self:start}
