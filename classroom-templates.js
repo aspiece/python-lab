@@ -187,6 +187,7 @@
   return {id,title,folderName,description,entryFile:'main.py',files:{'main.py':code,'README.md':directions+'\n'}};
  }
 
+ const difficultyFor=id=>id==='hello-world'?'Beginner':id.startsWith('practice-')?'Challenge':id.includes('nested')||id.includes('break')?'Intermediate':'Beginner';
  const groups=[{id:"start",title:"Getting Started"},{id:"skills",title:"Python Skills"},{id:"loops",title:"Loops & Tracing"},{id:"challenges",title:"Practice Challenges"}];
  function categoryFor(id){
   if(id==="hello-world")return "start";
@@ -196,11 +197,11 @@
  }
  function catalog(){
   const originals=Object.keys(legacy).map(id=>({
-   id,title:legacy[id].title,description:legacy[id].description,category:categoryFor(id),
+   id,title:legacy[id].title,description:legacy[id].description,category:categoryFor(id),difficulty:difficultyFor(id),
    filename:'main.py',folderName:id,entryFile:'main.py'
   }));
   const traces=Object.keys(tracing).map(id=>({
-   id,title:tracing[id].title,description:tracing[id].description,category:categoryFor(id),
+   id,title:tracing[id].title,description:tracing[id].description,category:categoryFor(id),difficulty:difficultyFor(id),
    filename:'main.py',folderName:id,entryFile:'main.py'
   }));
   return [...originals,...traces];
@@ -263,10 +264,11 @@
    const card=document.createElement('div');card.className='template-option';
    const start=document.createElement('button');start.className='template-choice';
    const label=document.createElement('strong');label.textContent=item.title;
+   const level=document.createElement('span');level.className='template-level';level.textContent=item.difficulty+' · '+(item.id.startsWith('trace-')?'Predict & trace':item.id.startsWith('practice-')?'Practice challenge':'Explore an example');
    const filename=document.createElement('span');filename.className='template-filename';
    filename.textContent=item.folderName+'/main.py';
    const description=document.createElement('span');description.textContent=item.description;
-   start.append(label,filename,description);
+   start.append(label,level,description,filename);
    start.title='Create '+item.title+' in a separate folder';
    start.onclick=()=>{
     if(install?.(get(item.id)))$('templatesDialog')?.close?.();
