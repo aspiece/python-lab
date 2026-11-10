@@ -34,13 +34,17 @@ Test with **45, 40, 50**. The total should be **135** and the level **Superfan**
 ## Code trace — predict before running
 For your selected theme, record the running value of `total` after each loop iteration. Then run the program and check your predictions.
 
-| Iteration | Value entered | Predicted total |
-|---|---|---|
-| 1 | First test value | |
-| 2 | Second test value | |
-| 3 | Third test value | |
+Complete the table **before running your program**, just as you practiced in your notes. Record the value of `total` after each iteration. Use the test inputs for your chosen theme: Gaming **80, 90, 95** or Music **45, 40, 50**.
 
-Enter your three predicted totals into the Google Form.
+| Iteration | Value entered | `total` before iteration | `total` after iteration |
+|---|---|---|---|
+| 1 | | 0 | |
+| 2 | | | |
+| 3 | | | |
+
+**Final output:** ____________________
+
+After completing the table, run your program and compare the actual values with your predictions. Enter your three predicted running totals into the Google Form.
 
 ## Submit
 1. Save your completed `.py` file.
