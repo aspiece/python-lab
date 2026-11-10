@@ -50,4 +50,3 @@ Enter your three predicted totals into the Google Form.
 
 **Do not use compound assignment operators (`+=`) or f-strings.** Use `total = total + value` and regular `print()` calls.
 
-**Teacher note:** This folder is review-only and must not be added to the Templates gallery. Do not expose it in the live student launcher until approved.
