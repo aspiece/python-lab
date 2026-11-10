@@ -37,3 +37,5 @@ jobs:
         run: node tests/classroom-projects.mjs
       - name: Verify general Python templates and no CS50 lab catalog
         run: node tests/classroom-templates.mjs
+      - name: Verify student help and backup controls
+        run: node tests/student-tools.mjs
