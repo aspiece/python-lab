@@ -306,3 +306,6 @@
 .project-actions-list button{display:block!important;width:100%;text-align:left;padding:10px 12px!important;white-space:nowrap}
 .trace-predict{font-size:12px;color:#c7d9f1;margin:9px 0;background:#203650;border-left:3px solid #7db5f0;padding:8px 11px}
 @media(max-width:850px){.project-actions-menu summary{padding:7px;font-size:11px}}
+
+.trace-changes{border:1px solid #425b76;border-radius:5px;background:#1c3046;color:#d6e9ff;padding:9px 11px;font-size:12px;line-height:1.45;margin:8px 0 12px}
+@media(max-width:760px){#studentToolsBtn{display:inline-block;font-size:0;padding:7px!important}#studentToolsBtn::after{content:"Help";font-size:11px}}
