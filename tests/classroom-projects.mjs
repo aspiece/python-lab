@@ -98,7 +98,7 @@ assert.equal(first.nodes.fallbackEditor.value,legacy,'Switch did not restore ori
 const starterCards=first.nodes.templateGallery.children.filter(item=>item.className==='template-option');
 const helloCard=starterCards.find(item=>item.children[0].children[0].textContent==='Hello, Python!');
 assert(helloCard,'General Python template missing');
-assert.equal(first.window.pythonLabTemplates.catalog().length,15);
+assert.equal(first.window.pythonLabTemplates.catalog().length,21);
 assert(first.window.pythonLabTemplates.catalog().every(t=>!t.id.startsWith('cs50p-')),
  'CS50 problem-set lab leaked into general starter gallery');
 helloCard.children[0].click();
