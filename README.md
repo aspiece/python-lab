@@ -5,7 +5,7 @@ A free browser-based Python workspace for students to write, run, debug, and tes
 **Open Python Lab:** https://ide.geneseelearninglab.com/
 
 **Classification:** K–12 Educational Resource — Computer Science / Programming Instruction  
-**Educational purpose and network-admin information:** https://aspiece.github.io/python-lab/about.html
+**Educational purpose and network-admin information:** https://ide.geneseelearninglab.com/about.html
 
 ## School network filtering / Lightspeed Filter
 
@@ -13,8 +13,8 @@ Python Lab is a classroom programming tool for students to write, run, test, and
 
 If a school-managed device displays a Lightspeed block page, a district Lightspeed Filter administrator should use **Access Checker** (or **AccessScan**, where available) to identify the actual blocked URL, category, and policy, then evaluate recategorization or an approved allow rule. The retired Lightspeed Archive lookup is no longer available. Changing HTML labels does not automatically change district filtering policy.
 
-- **Learning site:** `https://aspiece.github.io/python-lab/`
-- **Educational description:** `https://aspiece.github.io/python-lab/about.html`
+- **Learning site:** `https://ide.geneseelearninglab.com/`
+- **Educational description:** `https://ide.geneseelearninglab.com/about.html`
 - **Supporting static code and libraries:** The editor and Python runtime load packages from `https://cdn.jsdelivr.net/`, including Monaco, JSZip, and Pyodide. Some optional Python packages may also require additional downloads. Investigate which exact asset URLs are being blocked rather than broadly approving a CDN without review.
 - **Student work:** Projects are stored in that browser profile using IndexedDB; the site does not offer accounts or automatic cloud synchronization.
 - **Source for technical review:** This public repository.
