@@ -859,6 +859,7 @@ window.addEventListener('keydown',e=>{
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
 setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);
+window.pythonLabAssessment?.attach({install:installTemplate,getFiles:()=>{workspaceSnapshot();return {...files}},activeFile:()=>filename});
 
 if(window.pythonLabProjects){bootstrapProjects().then(()=>{if(!worker)createWorker();});}
 else createWorker();
