@@ -83,3 +83,11 @@ The GitHub Actions workflow runs the JavaScript, terminal, debugger, project sto
 ## License
 
 See [LICENSE](LICENSE).
+
+## Student help and backups
+
+The **Help & Backup** toolbar action provides a short searchable Python reference, a one-click ZIP export of the current project, and a connection check for core editor/runtime assets. The ZIP includes supported text files and folders, and can be restored through **Import ZIP**. It does not upload work to a server. Backup does not replace local autosave; students should download it before switching devices or clearing site data.
+
+The connection check tests the site's own worker and CDN assets used for Monaco and JSZip. An error points to a possible network/filter issue but does not diagnose the district policy itself. Never use this tool to bypass filtering.
+
+Template entries now distinguish examples, tracing exercises, and challenges by difficulty while preserving existing starter IDs and links.
