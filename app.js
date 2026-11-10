@@ -129,7 +129,7 @@ function persist(immediate=false){
   const task=window.pythonLabProjects.save(activeProjectId,snapshot);
   return task.then(()=>{
    const mode=window.pythonLabProjects.state().mode;
-   $('saveStatus').textContent=mode==='memory'?'Temporary session only — export ZIP':'Saved on this device';
+   $('saveStatus').textContent=mode==='memory'?'Temporary session only — export ZIP':mode==='localStorage'?'Saved with limited storage — back up your project':'Saved on this device';
   }).catch(err=>{
    $('saveStatus').textContent='Save failed — export ZIP';
    console.error('Python Lab local project save failed',err);
@@ -229,6 +229,7 @@ function paletteCommands(){
   ['Show Test Results',()=>window.pythonLabSmart?.setView('tests')],
   ['Save Locally',()=>persist(true)],
   ['Download Current File',()=>download()],
+  ['Python Reference and Backup',()=>window.pythonLabStudentTools?.show()],
   ['Manage Saved Projects',()=>openProjectManager()],
   ['Create New Project',()=>createNewProject()],
   ['Import Project ZIP',()=> $('projectInput').click()],
