@@ -4,6 +4,23 @@ A free browser-based Python workspace for students to write, run, debug, and tes
 
 **Open Python Lab:** https://aspiece.github.io/python-lab/
 
+**Classification:** K–12 Educational Resource — Computer Science / Programming Instruction  
+**Educational purpose and network-admin information:** https://aspiece.github.io/python-lab/about.html
+
+## School network filtering / Lightspeed Filter
+
+Python Lab is a classroom programming tool for students to write, run, test, and debug Python code. It is **not** a gaming, social networking, or chat website. For school IT review, the intended category is **Education / K–12 Educational Resources / Computer Science**.
+
+If a school-managed device displays a Lightspeed block page, a district Lightspeed Filter administrator should use **Access Checker** (or **AccessScan**, where available) to identify the actual blocked URL, category, and policy, then evaluate recategorization or an approved allow rule. The retired Lightspeed Archive lookup is no longer available. Changing HTML labels does not automatically change district filtering policy.
+
+- **Learning site:** `https://aspiece.github.io/python-lab/`
+- **Educational description:** `https://aspiece.github.io/python-lab/about.html`
+- **Supporting static code and libraries:** The editor and Python runtime load packages from `https://cdn.jsdelivr.net/`, including Monaco, JSZip, and Pyodide. Some optional Python packages may also require additional downloads. Investigate which exact asset URLs are being blocked rather than broadly approving a CDN without review.
+- **Student work:** Projects are stored in that browser profile using IndexedDB; the site does not offer accounts or automatic cloud synchronization.
+- **Source for technical review:** This public repository.
+
+Classroom allowlisting must be approved by the district. Students should not attempt to bypass school filtering controls.
+
 ## What students can do
 
 - Write Python using the Monaco editor, code completion, indentation, multiple files, and Explorer folders.
