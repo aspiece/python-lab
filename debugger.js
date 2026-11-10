@@ -90,6 +90,13 @@
   if(hint)hint.textContent=state.truncated?'The trace reached its step limit. Long loops may require a smaller example.':'Variables shown are values before the highlighted line executes.';
   clearHighlight();
   const frame=state.frames[state.position];
+  const changes=$('traceChanges');
+  if(changes){
+   const previous=state.frames[state.position-1]?.locals||{};
+   const current=frame?.locals||{};
+   const keys=Object.keys(current).filter(key=>!Object.hasOwn(previous,key)||String(previous[key])!==String(current[key]));
+   changes.textContent=!frame?'Record a trace, then compare variable values between steps.':state.position===0?'First step: predict what this line will do.':keys.length?'Changed since previous step: '+keys.slice(0,8).map(key=>key+' = '+String(current[key])).join('; '):'No local variable changes since the previous step.';
+  }
   if(frame){
    renderVars(frame.locals);if(out)out.textContent=frame.output||'(no output yet)';
    if(state.openFile&&state.getFiles?.()[frame.file]!==undefined){
