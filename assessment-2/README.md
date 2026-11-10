@@ -51,6 +51,3 @@ After completing the table, run your program and compare the actual values with 
 2. Download the file from Python Lab. Browser storage is local to this device.
 3. Upload the `.py` file to the assessment Google Form.
 4. Paste your complete Python code into the Form's paragraph field.
-
-**Do not use compound assignment operators (`+=`) or f-strings.** Use `total = total + value` and regular `print()` calls.
-
