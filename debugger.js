@@ -7,6 +7,7 @@
  const state={editor:null,monaco:null,models:null,activeFile:null,openFile:null,getFiles:null,requestTrace:null,getArguments:null,reveal:null,persist:null,breakpoints:{},frames:[],position:0,error:'',truncated:false,running:false,output:'',source:{}};
  const marks=new Map();
  let traceHighlight=null;
+ let tableFrames=null,tableRows=[],lastActiveRow=null;
  function serialize(){
   const result={};
   for(const [file,lines] of Object.entries(state.breakpoints)){
@@ -67,6 +68,55 @@
    row.append(key,val);list.append(row);
   }
  }
+ function shortValue(value,max=110){
+  const normalized=String(value??'').replace(/\r/g,'').replace(/\n/g,' ↵ ');
+  return normalized.length>max?normalized.slice(0,max-1)+'…':normalized;
+ }
+ function traceRowData(frame){
+  const values=Object.entries(frame.locals||{}).sort((a,b)=>a[0].localeCompare(b[0]));
+  const variables=values.length?values.map(([key,value])=>key+' = '+String(value)).join('; '):'—';
+  const code=state.source?.[frame.file]||state.getFiles?.()?.[frame.file]||'';
+  const lineNumber=Number(frame.line)||0;
+  const codeLine=code.split('\n')[lineNumber-1]?.trim()|| (frame.function==='<completed>'?'[Program complete]':'—');
+  return [variables,codeLine];
+ }
+ function renderTable(){
+  const tbody=$('traceTableBody');if(!tbody)return;
+  if(tableFrames!==state.frames){
+   tableFrames=state.frames;tableRows=[];lastActiveRow=null;tbody.textContent='';
+   if(!state.frames.length){
+    const row=document.createElement('tr'),cell=document.createElement('td');
+    cell.colSpan=5;cell.textContent=state.running?'Recording trace…':'Record a trace to see each step.';
+    row.append(cell);tbody.append(row);
+   }
+   state.frames.forEach((frame,index)=>{
+    const row=document.createElement('tr');row.className='trace-data-row';row.tabIndex=0;
+    row.setAttribute('aria-label','Step '+(index+1)+' at line '+frame.line);
+    const [variables,codeLine]=traceRowData(frame);
+    const values=[String(index+1),frame.file+':'+String(frame.line||'—'),codeLine,variables,String(frame.output||'')||'—'];
+    for(let column=0;column<values.length;column++){
+     const cell=document.createElement('td');cell.textContent=shortValue(values[column],column===3?160:column===4?110:130);
+     if(column===2||column===3||column===4)cell.title=values[column];
+     row.append(cell);
+    }
+    row.onclick=()=>setPosition(index);
+    row.onkeydown=event=>{
+     if(event.key==='Enter'||event.key===' '){event.preventDefault();setPosition(index);}
+    };
+    tableRows.push(row);tbody.append(row);
+   });
+  }
+  tableRows.forEach((row,index)=>{
+   const selected=index===state.position;
+   row.classList.toggle('trace-row-active',selected);
+   row.setAttribute('aria-selected',String(selected));
+  });
+  const current=tableRows[state.position];
+  if(current&&current!==lastActiveRow){
+   current.scrollIntoView?.({block:'nearest',inline:'nearest'});
+   lastActiveRow=current;
+  }
+ }
  function clearHighlight(){
   if(!traceHighlight)return;
   const {model,ids}=traceHighlight;
@@ -86,10 +136,11 @@
   if($('startTraceBtn'))$('startTraceBtn').disabled=state.running;
   if($('traceRunBtn'))$('traceRunBtn').disabled=state.running;
   if(info)info.textContent=state.running?'Recording execution…':has?'Step '+(state.position+1)+' of '+state.frames.length+(state.frames[state.position]?.function==='<completed>'?' · Program complete':''):'No trace recorded';
-  if(status)status.textContent=state.running?'Collecting up to 450 Python line events…':state.error||'Breakpoints move between matching recorded lines; they do not pause a live process.';
-  if(hint)hint.textContent=state.truncated?'The trace reached its step limit. Long loops may require a smaller example.':'Variables shown are values before the highlighted line executes.';
+  if(status)status.textContent=state.running?'Recording up to 450 steps…':state.error||'Select any row to inspect that step. Values are shown before the line runs.';
+  if(hint){hint.hidden=!state.truncated;hint.textContent=state.truncated?'Trace reached the 450-step limit. Try a shorter loop.':'';}
   clearHighlight();
   const frame=state.frames[state.position];
+  renderTable();
   const changes=$('traceChanges');
   if(changes){
    const previous=state.frames[state.position-1]?.locals||{};
