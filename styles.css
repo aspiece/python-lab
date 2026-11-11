@@ -309,3 +309,29 @@
 
 .trace-changes{border:1px solid #425b76;border-radius:5px;background:#1c3046;color:#d6e9ff;padding:9px 11px;font-size:12px;line-height:1.45;margin:8px 0 12px}
 @media(max-width:760px){#studentToolsBtn{display:inline-block;font-size:0;padding:7px!important}#studentToolsBtn::after{content:"Help";font-size:11px}}
+
+/* Compact recorded trace table: never resize the existing console pane. */
+.console-layout.show-debug #debugView{
+ display:flex;flex-direction:column;flex:1 1 0;min-width:0;min-height:0;height:100%;
+ gap:4px;padding:5px 9px;overflow:hidden;
+}
+#debugView .trace-controls{display:flex;flex:none;flex-wrap:nowrap;gap:4px;overflow-x:auto;overflow-y:hidden;padding:0 0 2px;scrollbar-width:thin;}
+#debugView .trace-controls button{white-space:nowrap;flex:none;padding:3px 7px;min-height:26px;font-size:10px;}
+#debugView .trace-status-row{display:flex;align-items:center;gap:12px;min-width:0;flex:none;min-height:16px;}
+#debugView .trace-frame-meta{margin:0;font-size:11px;white-space:nowrap;flex:none;}
+#debugView .trace-compact-summary{color:#a8bad3;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+#debugView .trace-changes{flex:none;min-height:18px;margin:0;padding:2px 6px;font-size:10px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-width:0 0 0 2px;border-radius:0;}
+#debugView .trace-table-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;border:1px solid #42546a;border-radius:5px;background:#131e2b;}
+#debugView .trace-table{width:100%;min-width:660px;table-layout:fixed;border-collapse:collapse;font:11px/1.35 Consolas,Menlo,monospace;}
+#debugView .trace-table th{position:sticky;top:0;z-index:1;background:#25374b;color:#d7e9fd;font:600 10px/1.4 Inter,system-ui,sans-serif;white-space:nowrap;}
+#debugView .trace-table th,#debugView .trace-table td{padding:4px 7px;border-bottom:1px solid #2a3a4b;text-align:left;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#debugView .trace-table th:first-child,#debugView .trace-table td:first-child{width:48px;}
+#debugView .trace-table th:nth-child(2),#debugView .trace-table td:nth-child(2){width:105px;}
+#debugView .trace-table th:nth-child(3),#debugView .trace-table td:nth-child(3){width:27%;}
+#debugView .trace-table th:nth-child(4),#debugView .trace-table td:nth-child(4){width:32%;}
+#debugView .trace-table .trace-data-row{cursor:pointer;}
+#debugView .trace-table .trace-data-row:hover{background:#29415a;}
+#debugView .trace-table .trace-row-active{background:#234a70;color:#fff;box-shadow:inset 3px 0 0 #81beff;}
+#debugView .trace-table .trace-data-row:focus-visible{outline:2px solid #8ec3ff;outline-offset:-2px;}
+#debugView #traceHint{position:absolute;bottom:2px;right:16px;margin:0;background:#493520;color:#ffe1a0;padding:3px 7px;border-radius:3px;font-size:10px;}
+@media(max-width:650px){#debugView .trace-table{min-width:610px;font-size:10px}#debugView .trace-status-row{gap:6px}}
