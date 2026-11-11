@@ -101,3 +101,9 @@ Less-used file actions are grouped in the **Project** menu. Run stays visible. D
 The **Debug Trace** tab now uses a scrollable step table inside the existing bottom panel (no automatic resizing). Each row shows the step number, source line, code about to execute, local variables **before** the line runs, and program output so far. Click a row to inspect that step and highlight the matching source line. The trace is a replay of recorded execution, not an interactive paused process.
 
 All 21 starter templates use expanded assignments (for example, `total = total + points` rather than `total += points`). The test suite checks every generated `.py` starter to prevent those compound operators from returning. These updates do not rewrite previously saved student projects.
+
+## Python branding and terminal output
+
+The Python Lab header and browser tab use the locally bundled Python programming-language emblem in `assets/python-logo.svg`, with the original Python Lab name kept separate. Attribution and the icon's MIT license are documented in `assets/python-logo-LICENSE.txt`. The Python logo is a trademark of the Python Software Foundation; Python Lab is not affiliated with the PSF.
+
+Terminal output now shows program output and errors without an extra elapsed-time completion banner. Runtime readiness and failures remain visible in the editor status area.
