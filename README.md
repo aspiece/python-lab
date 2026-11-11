@@ -95,3 +95,9 @@ Template entries now distinguish examples, tracing exercises, and challenges by 
 ## Student interface
 
 Less-used file actions are grouped in the **Project** menu. Run stays visible. Debug Trace now prompts students to predict the next change before stepping through the recorded execution.
+
+## Trace table and beginner assignments
+
+The **Debug Trace** tab now uses a scrollable step table inside the existing bottom panel (no automatic resizing). Each row shows the step number, source line, code about to execute, local variables **before** the line runs, and program output so far. Click a row to inspect that step and highlight the matching source line. The trace is a replay of recorded execution, not an interactive paused process.
+
+All 21 starter templates use expanded assignments (for example, `total = total + points` rather than `total += points`). The test suite checks every generated `.py` starter to prevent those compound operators from returning. These updates do not rewrite previously saved student projects.
