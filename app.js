@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id),storageKey='python-lab-v1';
 const sample='# Welcome to Python Lab!\n# Write Python and click Run.\n\nname = input("What is your name? ")\nprint(f"Hello, {name}!")\n\nfor number in range(1, 6):\n    print(f"Count: {number}")\n';
 let initial={};try{initial=JSON.parse(localStorage.getItem(storageKey))||{}}catch{}
-let inputHistory=[],activeRun=null,commandHistory=[],historyIndex=0,terminalMode='shell';let filename=initial.filename||'main.py',code=typeof initial.code==='string'?initial.code:sample,editor=null,worker=null,ready=false,running=false,runStart=0,runSerial=0,saveTimer;
+let inputHistory=[],activeRun=null,commandHistory=[],historyIndex=0,terminalMode='shell';let filename=initial.filename||'main.py',code=typeof initial.code==='string'?initial.code:sample,editor=null,worker=null,ready=false,running=false,runSerial=0,saveTimer;
 const files=(initial.files && typeof initial.files==='object')?initial.files:{};const dirs=new Set(Array.isArray(initial.dirs)?initial.dirs:[]);let cwd=initial.cwd||'';
 files[filename]=code;
 let openTabs=[...new Set((Array.isArray(initial.openTabs)?initial.openTabs:[filename]).filter(p=>typeof p==='string'&&Object.hasOwn(files,p)))];
@@ -529,7 +529,7 @@ function executePython(name,args=[],command=''){
  workspaceSnapshot();const relative=normalize(name);name=Object.hasOwn(files,relative)?relative:Object.hasOwn(files,name)?name:relative;
  if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}
  if(!ready||running)return;
- running=true;terminalMode='busy';runStart=performance.now();inputHistory=[];
+ running=true;terminalMode='busy';inputHistory=[];
  replayBaseline='';scriptTranscript='';replayWarned=false;
  updateButtons();setStatus('Running…');
  activeRun={code:files[name],filename:name,files:{...files},dirs:[...dirs],cwd:parent(name),args,command};
@@ -727,7 +727,7 @@ else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in
 }
 function runWorkerCode(code,command,alreadyEchoed=false,purpose='script',testTargets=[]){
  if(!ready||running)return;workspaceSnapshot();
- running=true;terminalMode='busy';runStart=performance.now();updateButtons();
+ running=true;terminalMode='busy';updateButtons();
  activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command,purpose,testTargets};
  inputHistory=[];replayBaseline='';scriptTranscript='';replayWarned=false;
  lastExecutionFiles={...activeRun.files};
