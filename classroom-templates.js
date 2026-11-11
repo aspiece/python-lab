@@ -16,7 +16,7 @@
     "title": "Loops and Lists",
     "description": "Practice lists, for loops, and accumulating totals.",
     "files": {
-      "main.py": "# Predict the output, then run the code.\nscores = [8, 10, 7, 9]\ntotal = 0\nfor score in scores:\n    total += score\n    print(f\"Added {score}; running total = {total}\")\nprint(f\"Average = {total / len(scores):.1f}\")\n",
+      "main.py": "# Predict the output, then run the code.\nscores = [8, 10, 7, 9]\ntotal = 0\nfor score in scores:\n    total = total + score\n    print(f\"Added {score}; running total = {total}\")\nprint(f\"Average = {total / len(scores):.1f}\")\n",
       "README.md": "# Loops and Lists\nSet a breakpoint inside the for loop, then record a trace. Observe how total changes.\nChallenge: find the highest score without using max().\n"
     }
   },
@@ -42,7 +42,7 @@
    title:"Points Toward a Goal",
    folderName:"practice-points-goal",
    description:"Update the total only for accepted input.",
-   code:"goal = 10\ntotal = 0\nwhile total < goal:\n    points = int(input(\"Points (2 or 4): \"))\n    if points in (2, 4):\n        total += points\n    print(\"Total:\", total)\nprint(\"Points past goal:\", total - goal)\n",
+   code:"goal = 10\ntotal = 0\nwhile total < goal:\n    points = int(input(\"Points (2 or 4): \"))\n    if points in (2, 4):\n        total = total + points\n    print(\"Total:\", total)\nprint(\"Points past goal:\", total - goal)\n",
    task:"Trace the inputs 4, 3, 4, 2. For each pass record the input, whether it is accepted, and the total after the pass.",
    challenge:"Run the trace sequence. Then test 4, 4, 4. Change the goal to 12 and make a new test. Explain why 3 leaves the total alone."
   },
@@ -50,7 +50,7 @@
    title:"Mark the Capitals",
    folderName:"practice-mark-capitals",
    description:"Build a string one character at a time.",
-   code:"message = \"Go Team!\"\nresult = \"\"\nfor char in message:\n    if char.isupper():\n        result += \"[\" + char.lower() + \"]\"\n    else:\n        result += char\nprint(result)\n",
+   code:"message = \"Go Team!\"\nresult = \"\"\nfor char in message:\n    if char.isupper():\n        result = result + \"[\" + char.lower() + \"]\"\n    else:\n        result = result + char\nprint(result)\n",
    task:"Trace the first four characters: G, o, a space, and T. Record the character, the piece added, and the result so far.",
    challenge:"Run the example. Try Hi, Sam! and a message with zero capital letters. Change brackets to parentheses and predict the new output before running."
   },
@@ -58,7 +58,7 @@
    title:"Filter a Message",
    folderName:"practice-filter-message",
    description:"Skip characters while keeping the original text.",
-   code:"message = \"X-ray x2!\"\nskip = \"xy\"\nresult = \"\"\nfor char in message:\n    if char.lower() in skip:\n        continue\n    result += char\nprint(result)\n",
+   code:"message = \"X-ray x2!\"\nskip = \"xy\"\nresult = \"\"\nfor char in message:\n    if char.lower() in skip:\n        continue\n    result = result + char\nprint(result)\n",
    task:"Trace X, the dash, and r. Record the original character, the lowercase version, and whether the pass adds anything.",
    challenge:"Run the example. Try MIX, then try an empty message. Rewrite the loop with not in and no continue. Check that the output stays the same."
   },
@@ -82,7 +82,7 @@
    title:'Trace a While Loop',
    folderName:'trace-while-loops',
    description:'Track the condition, output, and next value in a countdown.',
-   code:'number = 3\nwhile number > 0:\n    print(number)\n    number -= 1\n',
+   code:'number = 3\nwhile number > 0:\n    print(number)\n    number = number - 1\n',
    task:'Record the number, whether the condition is true, what prints, and the next number. Include the final check.'
   },
   'trace-for-loops': {
@@ -110,7 +110,7 @@
    title:"Boss Battle",
    folderName:"trace-boss-battle",
    description:"How many hits will the boss take? What is its final health?",
-   code:"health = 10\nwhile health > 0:\n    health -= 3\n    print(health)\n",
+   code:"health = 10\nwhile health > 0:\n    health = health - 3\n    print(health)\n",
    task:"How many hits will the boss take? What is its final health?",
    challenge:"Change the damage from 3 to 4. Predict and test how many hits it takes."
   },
@@ -118,7 +118,7 @@
    title:"Track Countdown",
    folderName:"trace-track-countdown",
    description:"Which countdown values will print?",
-   code:"seconds = 12\nwhile seconds > 0:\n    print(seconds)\n    seconds -= 3\n",
+   code:"seconds = 12\nwhile seconds > 0:\n    print(seconds)\n    seconds = seconds - 3\n",
    task:"Which countdown values will print?",
    challenge:"Change the loop so it also prints 0. Predict and test what happens when seconds starts at 0."
   },
@@ -126,7 +126,7 @@
    title:"XP Tracker",
    folderName:"trace-xp-tracker",
    description:"Predict the running XP total after each round.",
-   code:"total_xp = 0\nfor xp in range(10, 41, 10):\n    total_xp += xp\n    print(total_xp)\n",
+   code:"total_xp = 0\nfor xp in range(10, 41, 10):\n    total_xp = total_xp + xp\n    print(total_xp)\n",
    task:"Predict the running XP total after each round.",
    challenge:"Change the range so there is a fifth round worth 50 XP. Predict and test the new final total."
   },
