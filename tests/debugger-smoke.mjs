@@ -10,7 +10,9 @@ for(const source of [debug,templates])for(const match of source.matchAll(/\$\('(
  assert(ids.includes(match[1]),'Missing interface element: '+match[1]);
 }
 class Node{
- constructor(id){this.id=id;this.textContent='';this.value='';this.children=[];this.hidden=false;this.disabled=false;this.style={};this.dataset={};this.events={};this.open=false;this.classList={add(){},remove(){},toggle(){}};}
+ constructor(id){this.id=id;this._textContent='';this.value='';this.children=[];this.hidden=false;this.disabled=false;this.style={};this.dataset={};this.events={};this.open=false;this.classList={add(){},remove(){},toggle(){}};}
+ set textContent(value){this._textContent=String(value);this.children=[];}
+ get textContent(){return this._textContent;}
  addEventListener(type,handler){this.events[type]=handler;}
  append(...items){this.children.push(...items);}
  setAttribute(){}
@@ -25,7 +27,7 @@ const window={};
 runInNewContext(debug,{window,document});
 runInNewContext(templates,{window,document});
 let persistCount=0,traceRequest=null,current='main.py',activeModel=null,mouseDown=null;
-const allFiles={'main.py':'total = 0\nfor x in range(3):\n    total += x\nprint(total)\n','test_main.py':'assert True'};
+const allFiles={'main.py':'total = 0\nfor x in range(3):\n    total = total + x\nprint(total)\n','test_main.py':'assert True'};
 const model={
  getValue:()=>allFiles['main.py'],
  deltaDecorations(previous,next){this.decorations=next;return next.map((_,i)=>'d'+i)}
@@ -74,12 +76,18 @@ assert.equal(editor.position.lineNumber,3,'Step Over should skip nested function
 window.pythonLabDebug.setPosition(0);
 window.pythonLabDebug.continueToBreakpoint();
 assert.equal(editor.position.lineNumber,2,'Continue should locate a breakpoint');
-assert(elements.traceVariables.children.length>0,'Variables panel empty');
+assert.equal(elements.traceTableBody.children.length,frames.length,'The debug table should contain every recorded step');
+assert.equal(elements.traceTableBody.children[1].children[0].textContent,'2','Trace step numbering incorrect');
+assert.match(elements.traceTableBody.children[4].children[3].textContent,/total = 3/,'Trace variables missing from table');
+assert.match(elements.traceTableBody.children[5].children[4].textContent,/3/,'Trace output missing from table');
+elements.traceTableBody.children[5].click();
+assert.equal(editor.position.lineNumber,4,'Clicking a trace row should select its source line');
+assert(elements.traceChanges.textContent.includes('Changed')||elements.traceChanges.textContent.includes('No local'), 'Trace change summary missing');
 window.pythonLabDebug.abort();
 let installed=null;
 window.pythonLabTemplates.attach(project=>{installed=project;return true;});
 const cards=elements.templateGallery.children.filter(item=>item.className==='template-option');
-assert.equal(cards.length,15,'Expected general Python and tracing templates only');
+assert.equal(cards.length,21,'Expected all 21 general Python and tracing templates');
 const tracing=cards.find(item=>item.children[0].children[0].textContent==='Trace a While Loop');
 assert(tracing,'Expected tracing exercise to remain available');
 tracing.children[0].click();
