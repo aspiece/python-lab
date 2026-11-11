@@ -33,6 +33,16 @@ const templates=window.pythonLabTemplates;
 assert(templates,'Classroom gallery unavailable');
 const all=templates.catalog();
 assert(all.every(item=>item.difficulty),'Template difficulty label missing');
+// Every distributed Python starter uses explicit assignments for beginner readability.
+for(const item of all){
+ const starter=templates.get(item.id);
+ for(const [path,source] of Object.entries(starter.files)){
+  if(!path.endsWith('.py'))continue;
+  assert(!/(?:\+\=|\-\=|\*\=|\/\=|\%\=|\/\/\=|\*\*\=|\&\=|\|\=|\^\=|\<\<\=|\>\>\=|\@\=)/.test(source),
+   'Compound assignment in '+item.title+' / '+path);
+ }
+}
+
 assert(all.length>=15,'Expected general examples and tracing activities');
 assert(all.every(item=>['start','skills','loops','challenges'].includes(item.category)));
 assert.equal(templates.catalog().find(x=>x.id==='hello-world').category,'start');
