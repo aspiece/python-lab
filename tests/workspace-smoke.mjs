@@ -36,6 +36,8 @@ const scheduled=[];
 runInNewContext(smart,{window,document,setTimeout:cb=>{scheduled.push(cb);return scheduled.length;},clearTimeout(){}});
 runInNewContext(app,{window,document,localStorage,Worker,performance:{now:()=>++clock*200},setTimeout:()=>1,clearTimeout(){},alert(){},prompt(){return null},confirm:()=>true,innerWidth:1200,innerHeight:800});
 const output=[];
+assert(html.includes('assets/python-logo.svg'),'Python logo must be bundled in the app header');
+assert(html.includes('rel="icon"'),'Python favicon must be declared');
 window.pythonLabTerminalHost.attach({
  write:value=>output.push(value),
  echoCommand:value=>output.push('CMD '+value),
@@ -51,6 +53,7 @@ assert.equal(Worker.current.sent.at(-1).stdin,'Alex');
 Worker.current.fire({type:'output',text:'Name: '});
 Worker.current.fire({type:'output',text:'Hello Alex\n'});
 Worker.current.fire({type:'done',success:true});
+assert(!output.some(text=>/Finished.*in\\s+\\d/i.test(text)),'Terminal must not show an elapsed runtime banner');
 assert.equal(output.filter(x=>x==='Name: ').length,1,'Repeated prompt');
 assert.equal(output.filter(x=>x==='Hello Alex\n').length,1,'Missing response output');
 // Regression: two input() prompts must not repeat the first at the second caret.
