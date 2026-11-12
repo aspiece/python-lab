@@ -10,6 +10,7 @@ assert(!html.includes('cs50SubmissionDialog'));
 assert(!html.includes('CS50P Starters'));
 assert(!html.includes('cs50ToolsBtn'));
 assert(!app.includes('pythonLabCS50Tools'));
+assert(!app.includes('print(f"'),'Default welcome program should not use f-strings');
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 assert.equal(ids.length,new Set(ids).size,'Duplicate HTML element IDs');
 for(const id of ['templateBtn','templatesDialog','templateSearch','templateCategory','templateGallery','templateCount','templateClose'])
@@ -40,6 +41,8 @@ for(const item of all){
   if(!path.endsWith('.py'))continue;
   assert(!/(?:\+\=|\-\=|\*\=|\/\=|\%\=|\/\/\=|\*\*\=|\&\=|\|\=|\^\=|\<\<\=|\>\>\=|\@\=)/.test(source),
    'Compound assignment in '+item.title+' / '+path);
+  assert(!/(?:^|[^a-zA-Z0-9_])[fF](?:\"|')/.test(source),
+   'F-string in '+item.title+' / '+path);
  }
 }
 
