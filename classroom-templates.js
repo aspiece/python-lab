@@ -269,7 +269,7 @@
    filename.textContent=item.folderName+'/main.py';
    const description=document.createElement('span');description.textContent=item.description;
    start.append(label,level,description,filename);
-   start.title='Create '+item.title+' in a separate folder';
+   start.title='Open '+item.title+' as a new saved project';
    start.onclick=async()=>{
     if(start.disabled)return;
     start.disabled=true;
