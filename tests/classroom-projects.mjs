@@ -96,7 +96,7 @@ await settle();
 assert.equal(first.document.title.includes('My Python Lab'),true);
 assert.equal(first.nodes.fallbackEditor.value,legacy,'Switch did not restore original content');
 
-// Generic templates still work without CS50P labs and do not overwrite other files.
+// Every template starts a separate project; previously saved work stays accessible.
 const starterCards=first.nodes.templateGallery.children.filter(item=>item.className==='template-option');
 const helloCard=starterCards.find(item=>item.children[0].children[0].textContent==='Hello, Python!');
 assert(helloCard,'General Python template missing');
@@ -104,27 +104,32 @@ assert.equal(first.window.pythonLabTemplates.catalog().length,21);
 assert(first.window.pythonLabTemplates.catalog().every(t=>!t.id.startsWith('cs50p-')),
  'CS50 problem-set lab leaked into general starter gallery');
 helloCard.children[0].click();
+await settle();
 const afterStarter=first.window.pythonLabWorkspace();
-assert.equal(afterStarter.filename,'hello-world/main.py');
-assert(afterStarter.files['hello-world/main.py']);
-assert.equal(afterStarter.files['main.py'],legacy,'Template overwritten the original student code');
-const firstTabs=first.nodes.openTabs.children.map(tab=>tab.children[0].title);
-assert.deepEqual(firstTabs,['hello-world/README.md','hello-world/main.py'],
- 'Opening a template should close other tabs and leave only README and Python open');
-assert.equal(first.nodes.starterGuide.hidden,false,'Plain README should appear alongside .py editor');
-assert(first.nodes.starterGuide.children.length>=2,'README content is not visible in the side pane');
+assert.equal(afterStarter.filename,'main.py');
+assert.deepEqual(Object.keys(afterStarter.files).sort(),['README.md','main.py'],
+ 'Only files from the chosen template should appear in Explorer');
+assert.equal(first.nodes.currentProjectName.textContent,'hello-world');
+assert.equal(afterStarter.files['main.py'],first.window.pythonLabTemplates.get('hello-world').files['main.py']);
+assert.deepEqual(first.nodes.openTabs.children.map(tab=>tab.children[0].title),['README.md','main.py']);
+assert.equal(first.nodes.starterGuide.hidden,false,'Template instructions should appear alongside code');
+const originalRecord=(await store.list()).find(p=>p.name==='My Python Lab');
+assert(originalRecord,'Previous project should remain in saved projects');
+assert.equal((await store.get(originalRecord.id)).snapshot.files['main.py'],legacy,
+ 'Opening a template changed the previous project');
 
 helloCard.children[0].click();
+await settle();
 const afterDuplicate=first.window.pythonLabWorkspace();
-assert.equal(afterDuplicate.filename,'hello-world-2/main.py','Repeat template should use a safe -2 folder');
-assert(afterDuplicate.files['hello-world/main.py'],'First template lost');
-assert.equal(afterDuplicate.files['main.py'],legacy,'Repeat template overwrote student work');
-assert.deepEqual(first.nodes.openTabs.children.map(tab=>tab.children[0].title),
- ['hello-world-2/README.md','hello-world-2/main.py'],
- 'Starting a second template should close the previous template tabs');
-assert(afterDuplicate.files['hello-world/README.md'],'Previous template README was deleted');
-assert(afterDuplicate.files['hello-world/main.py'],'Previous template Python file was deleted');
-
+assert.equal(first.nodes.currentProjectName.textContent,'hello-world-2',
+ 'Repeat template should create a uniquely named project');
+assert.deepEqual(Object.keys(afterDuplicate.files).sort(),['README.md','main.py']);
+assert.deepEqual(first.nodes.openTabs.children.map(tab=>tab.children[0].title),['README.md','main.py']);
+const savedProjects=await store.list();
+assert.equal(savedProjects.length,4,'Each template should save separately');
+assert(savedProjects.some(p=>p.name==='hello-world'),'First template project was lost');
+assert.equal((await store.get(originalRecord.id)).snapshot.files['main.py'],legacy,
+ 'Repeat template overwrote original work');
 
 // Shared Canvas links for general templates remain useful.
 assert(first.window.pythonLabTemplates.get('functions-tests')?.files['test_main.py']);
