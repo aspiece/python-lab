@@ -56,18 +56,6 @@
   }
   const tab=$('debugPanelBtn');tab?.classList.add('active');tab?.setAttribute('aria-pressed','true');
  }
- function renderVars(vars){
-  const list=$('traceVariables');if(!list)return;
-  list.textContent='';
-  const entries=Object.entries(vars||{}).sort((a,b)=>a[0].localeCompare(b[0]));
-  if(!entries.length){const p=document.createElement('p');p.textContent='No local variables at this line.';p.className='analysis-empty';list.append(p);return;}
-  for(const [name,value] of entries){
-   const row=document.createElement('div');row.className='trace-variable';
-   const key=document.createElement('strong');key.textContent=name;
-   const val=document.createElement('code');val.textContent=String(value);
-   row.append(key,val);list.append(row);
-  }
- }
  function shortValue(value,max=110){
   const normalized=String(value??'').replace(/\r/g,'').replace(/\n/g,' ↵ ');
   return normalized.length>max?normalized.slice(0,max-1)+'…':normalized;
@@ -139,7 +127,7 @@
   traceHighlight=null;
  }
  function render(){
-  const info=$('traceFrameInfo'),status=$('traceSummary'),hint=$('traceHint'),out=$('traceOutput');
+  const info=$('traceFrameInfo'),status=$('traceSummary'),hint=$('traceHint');
   const has=state.frames.length>0;
   for(const id of ['traceBack','traceNext','traceStepOver','traceContinue','traceRestart']){
    const b=$(id);if(b)b.disabled=!has||state.running;
@@ -164,7 +152,7 @@
    changes.textContent=!frame?'Record a trace, then compare variable values between steps.':state.position===0?'First step: predict what this line will do.':keys.length?'Changed since previous step: '+keys.slice(0,8).map(key=>key+' = '+String(current[key])).join('; '):'No local variable changes since the previous step.';
   }
   if(frame){
-   renderVars(frame.locals);if(out)out.textContent=frame.output||'(no output yet)';
+
    if(state.openFile&&state.getFiles?.()[frame.file]!==undefined){
     state.openFile(frame.file);
     if(state.editor&&state.monaco){
@@ -180,8 +168,6 @@
      }
     }
    }
-  }else{
-   renderVars({});if(out)out.textContent=state.output||'(run a trace to inspect program output)';
   }
  }
  function setPosition(index){
