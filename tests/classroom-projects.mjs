@@ -23,6 +23,8 @@ class Element{
   this.clientHeight=600;this.clientWidth=800;this.scrollHeight=800;this.selectionStart=0;this.events={};
   this.classList={add(){},remove(){},toggle(){}};
  }
+ set textContent(value){this._text=String(value);this.children=[];}
+ get textContent(){return this._text;}
  addEventListener(name,handler){this.events[name]=handler;}
  append(...nodes){this.children.push(...nodes);}
  setAttribute(key,val){this.attrs[key]=val;}
