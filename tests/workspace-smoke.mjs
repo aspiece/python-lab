@@ -44,7 +44,13 @@ window.pythonLabTerminalHost.attach({
  setMode:(mode,prompt)=>output.push('MODE '+mode+' '+prompt),
  clear(){},focus(){}
 });
+window.pythonLabSmart.setView('problems');
+assert.equal(elements.problemsPanelBtn.attrs['aria-pressed'],'true');
 elements.runBtn.click();
+assert.equal(elements.terminalPanelBtn.attrs['aria-pressed'],'true',
+ 'Run should automatically switch the bottom pane to Terminal');
+assert.equal(elements.problemsPanelBtn.attrs['aria-pressed'],'false',
+ 'Run should close the Problems view');
 assert.equal(Worker.current.sent.at(-1).type,'run');
 Worker.current.fire({type:'output',text:'Name: '});
 Worker.current.fire({type:'needInput'});
