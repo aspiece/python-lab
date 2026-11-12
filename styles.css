@@ -339,3 +339,11 @@
 /* Python programming language mark (kept separate from Python Lab wordmark). */
 .brand-python-logo{display:block;flex:none;width:30px;height:30px;object-fit:contain}
 @media(max-width:560px){.brand-python-logo{width:25px;height:25px}}
+
+/* Show the selected template README beside its active .py file without more open tabs. */
+.editor-area>.starter-guide:not([hidden]){display:block;min-width:235px;flex:0 0 clamp(250px,36%,420px);}
+.starter-guide-text h3{font-size:15px;line-height:1.4;margin:10px 0 6px;color:#e6f1fd;}
+.starter-guide-text h4{font-size:13px;line-height:1.4;margin:10px 0 5px;color:#c2dbf5;}
+.starter-guide-text .starter-guide-bullet{padding-left:10px;text-indent:-10px;}
+.starter-guide-text pre{background:#0f1926;border:1px solid #334960;border-radius:6px;padding:9px;font:12px/1.55 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;}
+@media(max-width:700px){.editor-area>.starter-guide:not([hidden]){flex:0 0 auto;max-height:40%;min-width:0;width:100%;}}
