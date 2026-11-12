@@ -78,8 +78,15 @@ window.pythonLabDebug.continueToBreakpoint();
 assert.equal(editor.position.lineNumber,2,'Continue should locate a breakpoint');
 assert.equal(elements.traceTableBody.children.length,frames.length,'The debug table should contain every recorded step');
 assert.equal(elements.traceTableBody.children[1].children[0].textContent,'2','Trace step numbering incorrect');
-assert.match(elements.traceTableBody.children[4].children[3].textContent,/total = 3/,'Trace variables missing from table');
-assert.match(elements.traceTableBody.children[5].children[4].textContent,/3/,'Trace output missing from table');
+const heads=elements.traceTableHead.children.map(item=>item.textContent);
+assert.deepEqual(heads,['Step','Line','Code to run','number','total','Output so far'],
+ 'Each variable should be a separate, stable column');
+assert.equal(elements.traceTableBody.children[4].children[4].textContent,'3',
+ 'The total variable should be visible in its own column');
+assert.equal(elements.traceTableBody.children[4].children[3].textContent,'—',
+ 'Variable absent at a step should appear as an em dash');
+assert.match(elements.traceTableBody.children[5].children[5].textContent,/3/,
+ 'Trace output should be in the final column');
 elements.traceTableBody.children[5].click();
 assert.equal(editor.position.lineNumber,4,'Clicking a trace row should select its source line');
 assert(elements.traceChanges.textContent.includes('Changed')||elements.traceChanges.textContent.includes('No local'), 'Trace change summary missing');
