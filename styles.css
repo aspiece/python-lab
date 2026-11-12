@@ -347,3 +347,10 @@
 .starter-guide-text .starter-guide-bullet{padding-left:10px;text-indent:-10px;}
 .starter-guide-text pre{background:#0f1926;border:1px solid #334960;border-radius:6px;padding:9px;font:12px/1.55 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;}
 @media(max-width:700px){.editor-area>.starter-guide:not([hidden]){flex:0 0 auto;max-height:40%;min-width:0;width:100%;}}
+
+/* Variable names become their own trace columns; horizontal overflow stays inside the existing pane. */
+#debugView .trace-table{width:max-content;min-width:100%;table-layout:auto}
+#debugView .trace-table th,#debugView .trace-table td{max-width:220px}
+#debugView .trace-table th:nth-child(3),#debugView .trace-table td:nth-child(3){min-width:170px;width:210px}
+#debugView .trace-table th.trace-variable-heading,#debugView .trace-table td.trace-variable-cell{min-width:95px;width:125px;max-width:180px}
+#debugView .trace-table th.trace-output-heading,#debugView .trace-table td.trace-output-cell{min-width:140px;width:180px}
