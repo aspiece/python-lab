@@ -6,9 +6,9 @@
  const legacy={
   "hello-world": {
     "title": "Hello, Python!",
-    "description": "Variables, input, formatted strings, and output.",
+    "description": "Variables, input, simple strings, and output.",
     "files": {
-      "main.py": "# Change the greeting and try your own name.\nname = input(\"What is your name? \")\nprint(f\"Hello, {name}!\")\n",
+      "main.py": "# Change the greeting and try your own name.\nname = input(\"What is your name? \")\nprint(\"Hello, \" + name + \"!\")\n",
       "README.md": "# Hello, Python!\nRun main.py. Change the greeting, add a second question, and print both answers.\n"
     }
   },
@@ -16,7 +16,7 @@
     "title": "Loops and Lists",
     "description": "Practice lists, for loops, and accumulating totals.",
     "files": {
-      "main.py": "# Predict the output, then run the code.\nscores = [8, 10, 7, 9]\ntotal = 0\nfor score in scores:\n    total = total + score\n    print(f\"Added {score}; running total = {total}\")\nprint(f\"Average = {total / len(scores):.1f}\")\n",
+      "main.py": "# Predict the output, then run the code.\nscores = [8, 10, 7, 9]\ntotal = 0\nfor score in scores:\n    total = total + score\n    print(\"Added\", score, \"; running total =\", total)\nprint(\"Average =\", round(total / len(scores), 1))\n",
       "README.md": "# Loops and Lists\nSet a breakpoint inside the for loop, then record a trace. Observe how total changes.\nChallenge: find the highest score without using max().\n"
     }
   },
@@ -270,8 +270,14 @@
    const description=document.createElement('span');description.textContent=item.description;
    start.append(label,level,description,filename);
    start.title='Create '+item.title+' in a separate folder';
-   start.onclick=()=>{
-    if(install?.(get(item.id)))$('templatesDialog')?.close?.();
+   start.onclick=async()=>{
+    if(start.disabled)return;
+    start.disabled=true;
+    try{
+     const installed=await install?.(get(item.id));
+     if(installed)$('templatesDialog')?.close?.();
+    }catch(error){console.error('Template could not be opened',error);}
+    finally{start.disabled=false;}
    };
    const actions=document.createElement('div');actions.className='template-card-actions';
    const share=document.createElement('button');share.className='template-link';
