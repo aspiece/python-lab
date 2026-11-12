@@ -149,27 +149,51 @@ function updateStatusBar(){
  const lang=$('languageStatus');if(lang)lang.textContent=languageFor(filename)==='python'?'Python':languageFor(filename).toUpperCase();
 }
 function starterGuideParts(source){
- const match=source?.match(/^!\[([^\]\n]+)\]\((assets\/loop-guides\/trace-[a-z-]+\.png)\)$/m);
- if(!match)return null;
- return {alt:match[1],image:match[2],text:source.replace(match[0],'').trim()};
+ // All starter README files can be shown next to the Python editor, with or without an image.
+ if(typeof source!=='string')return null;
+ const match=source.match(/^!\[([^\]\n]+)\]\((assets\/loop-guides\/trace-[a-z-]+\.png)\)$/m);
+ return {alt:match?.[1]||'',image:match?.[2]||'',text:match?source.replace(match[0],'').trim():source.trim()};
 }
 function renderStarterGuide(){
  const panel=$('starterGuide');if(!panel)return;
  const folder=parent(filename),readme=folder?folder+'/README.md':'README.md';
- const guide=openTabs.includes(readme)?starterGuideParts(files[readme]):null;
+ const guide=filename.endsWith('.py')&&openTabs.includes(readme)?starterGuideParts(files[readme]):null;
  panel.hidden=!guide;
  panel.textContent='';
  if(!guide)return;
- const heading=document.createElement('h2');heading.textContent='README.md';
- const image=document.createElement('img');image.src=guide.image;image.alt=guide.alt;
+ const heading=document.createElement('h2');heading.textContent='TEMPLATE INSTRUCTIONS · README.md';
  const body=document.createElement('div');body.className='starter-guide-text';
- for(const block of guide.text.split(/\n\s*\n/)){
-  const title=block.startsWith('# ');
-  const part=document.createElement(title?'h3':'p');
-  part.textContent=title?block.slice(2):block;
-  body.append(part);
+ let paragraph=[],code=[],inCode=false;
+ const flushParagraph=()=>{
+  if(!paragraph.length)return;
+  const part=document.createElement('p');part.textContent=paragraph.join(' ');body.append(part);paragraph=[];
+ };
+ const flushCode=()=>{
+  if(!code.length)return;
+  const pre=document.createElement('pre');pre.textContent=code.join('\n');body.append(pre);code=[];
+ };
+ for(const line of guide.text.replace(/\r\n/g,'\n').split('\n')){
+  if(line.trim().startsWith('```')){flushParagraph();if(inCode)flushCode();inCode=!inCode;continue;}
+  if(inCode){code.push(line);continue;}
+  if(!line.trim()){flushParagraph();continue;}
+  const title=line.match(/^(#{1,3})\s+(.+)$/);
+  if(title){
+   flushParagraph();
+   const element=document.createElement(title[1].length===1?'h3':'h4');
+   element.textContent=title[2];body.append(element);continue;
+  }
+  const bullet=line.match(/^\s*[-*]\s+(.+)$/);
+  if(bullet){
+   flushParagraph();const element=document.createElement('p');element.className='starter-guide-bullet';
+   element.textContent='• '+bullet[1];body.append(element);continue;
+  }
+  paragraph.push(line.trim());
  }
- panel.append(heading,image,body);
+ flushParagraph();flushCode();
+ if(guide.image){
+  const image=document.createElement('img');image.src=guide.image;image.alt=guide.alt;
+  panel.append(heading,image,body);
+ }else panel.append(heading,body);
 }
 function renderTabs(){
  const host=$('openTabs');if(!host)return;
@@ -417,16 +441,12 @@ async function createProjectFromSnapshot(name,snapshot,assignmentKey=''){
 }
 function openSavedStarterGuide(template){
  const path='README.md',entry=template.entryFile,source=template.files[path];
- const guide=starterGuideParts(source);
- if(!guide||!Object.hasOwn(files,entry))return;
+ if(!Object.hasOwn(files,entry))return;
  workspaceSnapshot();
- if(!Object.hasOwn(files,path))files[path]=source;
- else if(!starterGuideParts(files[path])){
-  files[path]+='\n\n!['+guide.alt+']('+guide.image+')\n';
-  if(editor&&models.has(path))models.get(path).setValue(files[path]);
-  else if(filename===path)fallback.value=files[path];
- }
- if(!openTabs.includes(path))openTabs.push(path);
+ // Never overwrite a student's edited README or Python file when reopening a shared starter.
+ if(!Object.hasOwn(files,path)&&typeof source==='string')files[path]=source;
+ // Closing other tabs never removes their files from the saved workspace.
+ openTabs=Object.hasOwn(files,path)?[path,entry]:[entry];
  switchToFile(entry);
  renderFiles();
  persist(true);
@@ -451,7 +471,7 @@ async function handleAssignmentLink(){
  if(!confirm('Create a new project for "'+template.title+'"? Your existing projects will stay saved separately.'))return;
  const entry=template.entryFile&&Object.hasOwn(template.files,template.entryFile)?template.entryFile:Object.keys(template.files).find(name=>name.endsWith('.py'));
  if(!entry)return;
- const readme=starterGuideParts(template.files['README.md'])?'README.md':null;
+ const readme=typeof template.files['README.md']==='string'?'README.md':null;
  const workspace={
   filename:entry,code:template.files[entry],
   files:{...template.files},dirs:[],cwd:'',expanded:[],openTabs:readme?[readme,entry]:[entry],
@@ -570,9 +590,11 @@ function installTemplate(project){
   Object.keys(project.files).find(name=>name.endsWith('.py'));
  const entry=preferred?root+'/'+preferred:'';
  const readme=root+'/README.md';
- if(starterGuideParts(files[readme]))openTabs.push(readme);
- if(entry&&Object.hasOwn(files,entry))switchToFile(entry);
- else renderFiles();
+ // Replace the editor tab list, not the files: previous student work remains in Explorer.
+ if(entry&&Object.hasOwn(files,entry)){
+  openTabs=Object.hasOwn(files,readme)?[readme,entry]:[entry];
+  switchToFile(entry);
+ }else renderFiles();
  persist(true);
  return true;
 }
