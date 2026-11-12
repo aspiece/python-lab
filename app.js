@@ -595,7 +595,7 @@ async function installTemplate(project){
  if(!preferred)return false;
  const imported={};
  for(const [path,source] of Object.entries(project.files)){
-  if(!/^[\\w. -]+$/.test(path)||typeof source!=='string')continue;
+  if(!/^[\w. -]+$/.test(path)||typeof source!=='string')continue;
   imported[path]=source;
  }
  if(!Object.hasOwn(imported,preferred))return false;
