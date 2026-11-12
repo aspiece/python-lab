@@ -107,3 +107,7 @@ All 21 starter templates use expanded assignments (for example, `total = total +
 The Python Lab header and browser tab use the locally bundled Python programming-language emblem in `assets/python-logo.svg`, with the original Python Lab name kept separate. Attribution and the icon's MIT license are documented in `assets/python-logo-LICENSE.txt`. The Python logo is a trademark of the Python Software Foundation; Python Lab is not affiliated with the PSF.
 
 Terminal output now shows program output and errors without an extra elapsed-time completion banner. Runtime readiness and failures remain visible in the editor status area.
+
+## Focused template workspace
+
+Choosing any classroom template now closes all other **editor tabs** (not files), opens only that template's `README.md` and main `.py` file, and displays the README instructions alongside the Python editor. This also works for templates without an illustration and for existing assignment links. Students' earlier files and saved projects remain intact in Explorer or the project manager and can be reopened later. Additional support files, such as `test_main.py`, are created but remain closed until needed.
