@@ -111,3 +111,9 @@ Terminal output now shows program output and errors without an extra elapsed-tim
 ## Focused template workspace
 
 Choosing any classroom template now closes all other **editor tabs** (not files), opens only that template's `README.md` and main `.py` file, and displays the README instructions alongside the Python editor. This also works for templates without an illustration and for existing assignment links. Students' earlier files and saved projects remain intact in Explorer or the project manager and can be reopened later. Additional support files, such as `test_main.py`, are created but remain closed until needed.
+
+## Classroom template and Run behavior
+
+Starting a template from the gallery creates a **new saved project**, closes the previously active project, and shows only the new template's `README.md` and main `.py` file side by side. Other projects are preserved separately in Project Manager; opening a second copy creates a uniquely named project. Code written in a previously saved project is not copied into the new template. Pressing **Run** (or launching a Python command) automatically shows the Terminal panel, even if the student was viewing Debug Trace or Problems.
+
+The trace table displays a distinct column for each local variable found during the recorded execution; the table scrolls horizontally inside the existing bottom pane when needed. All starter Python files and the default welcome example avoid f-strings, as well as compound assignments in starter files. Existing student code is never rewritten.
