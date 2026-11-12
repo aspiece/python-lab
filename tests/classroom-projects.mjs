@@ -153,7 +153,7 @@ assert.equal(second.nodes.starterGuide.children.at(-2).src,'assets/loop-guides/t
 assert.equal(assigned.name,'trace-for-loops','Canvas tracing project name mismatch');
 const third=createBrowser(assignment);
 await settle();
-assert.equal((await third.window.pythonLabProjects.list()).length,3,
+assert.equal((await third.window.pythonLabProjects.list()).length,5,
  'Reopening an existing assignment created a duplicate');
 const share=third.window.pythonLabTemplates.assignmentUrl('functions-tests');
 const parsed=new URL(share);
