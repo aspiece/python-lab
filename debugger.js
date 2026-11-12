@@ -72,31 +72,46 @@
   const normalized=String(value??'').replace(/\r/g,'').replace(/\n/g,' ↵ ');
   return normalized.length>max?normalized.slice(0,max-1)+'…':normalized;
  }
- function traceRowData(frame){
-  const values=Object.entries(frame.locals||{}).sort((a,b)=>a[0].localeCompare(b[0]));
-  const variables=values.length?values.map(([key,value])=>key+' = '+String(value)).join('; '):'—';
+ function traceRowCode(frame){
   const code=state.source?.[frame.file]||state.getFiles?.()?.[frame.file]||'';
   const lineNumber=Number(frame.line)||0;
-  const codeLine=code.split('\n')[lineNumber-1]?.trim()|| (frame.function==='<completed>'?'[Program complete]':'—');
-  return [variables,codeLine];
+  return code.split('\n')[lineNumber-1]?.trim()||(frame.function==='<completed>'?'[Program complete]':'—');
  }
  function renderTable(){
-  const tbody=$('traceTableBody');if(!tbody)return;
+  const tbody=$('traceTableBody'),thead=$('traceTableHead');if(!tbody)return;
   if(tableFrames!==state.frames){
    tableFrames=state.frames;tableRows=[];lastActiveRow=null;tbody.textContent='';
+   // Variables are separate columns. The union stays fixed across the recorded trace.
+   const variables=[...new Set(state.frames.flatMap(frame=>Object.keys(frame.locals||{})))].sort((a,b)=>a.localeCompare(b));
+   if(thead){
+    thead.textContent='';
+    const headings=['Step','Line','Code to run',...variables,'Output so far'];
+    for(const [index,name] of headings.entries()){
+     const th=document.createElement('th');th.scope='col';th.textContent=name;
+     if(index>=3&&index<headings.length-1)th.className='trace-variable-heading';
+     if(index===headings.length-1)th.className='trace-output-heading';
+     thead.append(th);
+    }
+   }
    if(!state.frames.length){
     const row=document.createElement('tr'),cell=document.createElement('td');
-    cell.colSpan=5;cell.textContent=state.running?'Recording trace…':'Record a trace to see each step.';
+    cell.colSpan=4+variables.length;cell.textContent=state.running?'Recording trace…':'Record a trace to see each step.';
     row.append(cell);tbody.append(row);
    }
    state.frames.forEach((frame,index)=>{
     const row=document.createElement('tr');row.className='trace-data-row';row.tabIndex=0;
     row.setAttribute('aria-label','Step '+(index+1)+' at line '+frame.line);
-    const [variables,codeLine]=traceRowData(frame);
-    const values=[String(index+1),frame.file+':'+String(frame.line||'—'),codeLine,variables,String(frame.output||'')||'—'];
+    const values=[String(index+1),frame.file+':'+String(frame.line||'—'),traceRowCode(frame),
+     ...variables.map(name=>Object.hasOwn(frame.locals||{},name)?String(frame.locals[name]):'—'),
+     String(frame.output||'')||'—'];
     for(let column=0;column<values.length;column++){
-     const cell=document.createElement('td');cell.textContent=shortValue(values[column],column===3?160:column===4?110:130);
-     if(column===2||column===3||column===4)cell.title=values[column];
+     const cell=document.createElement('td');
+     const isVariable=column>=3&&column<values.length-1;
+     const isOutput=column===values.length-1;
+     if(isVariable)cell.className='trace-variable-cell';
+     if(isOutput)cell.className='trace-output-cell';
+     cell.textContent=shortValue(values[column],isVariable?95:isOutput?110:130);
+     if(column>=2)cell.title=values[column];
      row.append(cell);
     }
     row.onclick=()=>setPosition(index);
