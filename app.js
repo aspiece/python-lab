@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 const $=id=>document.getElementById(id),storageKey='python-lab-v1';
-const sample='# Welcome to Python Lab!\n# Write Python and click Run.\n\nname = input("What is your name? ")\nprint(f"Hello, {name}!")\n\nfor number in range(1, 6):\n    print(f"Count: {number}")\n';
+const sample='# Welcome to Python Lab!\n# Write Python and click Run.\n\nname = input("What is your name? ")\nprint("Hello, " + name + "!")\n\nfor number in range(1, 6):\n    print("Count:", number)\n';
 let initial={};try{initial=JSON.parse(localStorage.getItem(storageKey))||{}}catch{}
 let inputHistory=[],activeRun=null,commandHistory=[],historyIndex=0,terminalMode='shell';let filename=initial.filename||'main.py',code=typeof initial.code==='string'?initial.code:sample,editor=null,worker=null,ready=false,running=false,runSerial=0,saveTimer;
 const files=(initial.files && typeof initial.files==='object')?initial.files:{};const dirs=new Set(Array.isArray(initial.dirs)?initial.dirs:[]);let cwd=initial.cwd||'';
@@ -545,10 +545,24 @@ function sendExecution(){
  scriptTranscript='';enhancedTerminal?.setMode('busy');
  worker.postMessage({type:'run',...activeRun,stdin:inputHistory});
 }
+function revealRunTerminal(){
+ // Switching to Run always reveals actual output, including from a collapsed or Debug view.
+ if(panelCollapsed)togglePanel();
+ if(window.pythonLabSmart?.setView)window.pythonLabSmart.setView('terminal');
+ else{
+  $('consoleLayout')?.classList.remove('show-debug','show-problems','show-tests');
+  for(const id of ['problemsPanelBtn','testsPanelBtn']){$(id)?.classList.remove('active');$(id)?.setAttribute('aria-pressed','false');}
+  $('terminalPanelBtn')?.classList.add('active');
+  $('terminalPanelBtn')?.setAttribute('aria-pressed','true');
+ }
+ $('debugPanelBtn')?.classList.remove('active');
+ $('debugPanelBtn')?.setAttribute('aria-pressed','false');
+}
 function executePython(name,args=[],command=''){
  workspaceSnapshot();const relative=normalize(name);name=Object.hasOwn(files,relative)?relative:Object.hasOwn(files,name)?name:relative;
  if(!(name in files)){append('python: cannot open file '+name+'\n','error-line');showShell();return;}
  if(!ready||running)return;
+ revealRunTerminal();
  running=true;terminalMode='busy';inputHistory=[];
  replayBaseline='';scriptTranscript='';replayWarned=false;
  updateButtons();setStatus('Running…');
@@ -572,31 +586,36 @@ function requestDebugTrace(options){
  running=true;terminalMode='busy';updateButtons();setStatus('Recording trace…');
  worker.postMessage({type:'trace',filename:options.filename,files:{...files},dirs:[...dirs],inputs:options.inputs||[],args:options.args||[]});
 }
-function installTemplate(project){
- if(running){alert('Finish or stop the running program before importing a starter project.');return false;}
- if(!project||!project.id||!project.files)return false;
- workspaceSnapshot();
- const rootName=String(project.folderName||project.slug||project.id).replace(/[^a-zA-Z0-9_-]/g,'-').slice(0,70)||'starter';
- let root=rootName,index=2;
- while(dirs.has(root)||Object.keys(files).some(path=>path===root||path.startsWith(root+'/')))root=rootName+'-'+index++;
- ensureDirs(root);
- for(const [name,source] of Object.entries(project.files)){
-  const path=root+'/'+name;
-  if(!/^[\w. -]+$/.test(name)||typeof source!=='string')continue;
-  files[path]=source;
- }
- expanded.add(root);
+async function installTemplate(project){
+ if(running){alert('Finish or stop the running program before opening a template.');return false;}
+ if(!project?.id||!project.files)return false;
+ if(!projectReady||projectBusy){alert('Project storage is still loading. Try again shortly.');return false;}
  const preferred=project.entryFile&&Object.hasOwn(project.files,project.entryFile)?project.entryFile:
   Object.keys(project.files).find(name=>name.endsWith('.py'));
- const entry=preferred?root+'/'+preferred:'';
- const readme=root+'/README.md';
- // Replace the editor tab list, not the files: previous student work remains in Explorer.
- if(entry&&Object.hasOwn(files,entry)){
-  openTabs=Object.hasOwn(files,readme)?[readme,entry]:[entry];
-  switchToFile(entry);
- }else renderFiles();
- persist(true);
- return true;
+ if(!preferred)return false;
+ const imported={};
+ for(const [path,source] of Object.entries(project.files)){
+  if(!/^[\\w. -]+$/.test(path)||typeof source!=='string')continue;
+  imported[path]=source;
+ }
+ if(!Object.hasOwn(imported,preferred))return false;
+ const readme=Object.hasOwn(imported,'README.md')?'README.md':null;
+ const snapshot={
+  filename:preferred,code:imported[preferred],files:imported,dirs:[],cwd:'',expanded:[],
+  openTabs:readme?[readme,preferred]:[preferred],stdin:'',args:'',debugBreakpoints:{}
+ };
+ const base=String(project.folderName||project.slug||project.id).slice(0,65)||'starter';
+ try{
+  // Each starter is a separate saved project; the previously open project remains intact.
+  const existing=new Set((await window.pythonLabProjects.list()).map(item=>item.name));
+  let name=base,index=2;
+  while(existing.has(name))name=base+'-'+index++;
+  await createProjectFromSnapshot(name,snapshot);
+  return true;
+ }catch(error){
+  alert('Could not open this template. Your existing projects are unchanged. '+String(error.message||error));
+  return false;
+ }
 }
 
 function stop(){if(!running)return;window.pythonLabDebug?.abort();terminalMode='shell';activeRun=null;inputHistory=[];replayBaseline='';scriptTranscript='';$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
@@ -749,6 +768,7 @@ else if(cmd==='pip'&&rest[0]==='list')append('Full pip listing is unavailable in
 }
 function runWorkerCode(code,command,alreadyEchoed=false,purpose='script',testTargets=[]){
  if(!ready||running)return;workspaceSnapshot();
+ revealRunTerminal();
  running=true;terminalMode='busy';updateButtons();
  activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command,purpose,testTargets};
  inputHistory=[];replayBaseline='';scriptTranscript='';replayWarned=false;
