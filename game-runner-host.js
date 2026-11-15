@@ -31,7 +31,7 @@
   stop();callbacks=handlers;
   const panel=document.getElementById('pygamePanel');panel.hidden=false;
   frame=document.createElement('iframe');frame.title=run.mode==='pgzero'?'Pygame Zero game':'Pygame CE game';
-  frame.src='pygame-runner.html?v=2';
+  frame.src='pygame-runner.html?v=3';
   document.getElementById('pygameFrameHost').replaceChildren(frame);
   // Only the current frame may start execution or report results.
   frame._run=run;

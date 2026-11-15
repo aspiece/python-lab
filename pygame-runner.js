@@ -57,7 +57,7 @@ window.addEventListener('message',async event=>{
   py.globals.set('__game_filename',base+'/'+run.filename);
   py.globals.set('__game_mode',run.mode);
   py.globals.set('__game_args',run.args||[]);
-  const response=await fetch('pygame-support.py?v=1');
+  const response=await fetch('pygame-support.py?v=2');
   if(!response.ok)throw Error('Could not load the browser game runner.');
   status.textContent=run.mode==='pgzero'?'Pygame Zero · click the game for keyboard controls':'Pygame CE · click the game for keyboard controls';
   canvas.focus();

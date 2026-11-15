@@ -72,6 +72,11 @@ async def _execute_game():
             # Supports normal "import pgzrun; pgzrun.go()" student files.
             sys._pgzrun = True
             from pgzero.runner import prepare_mod
+            from pgzero.game import PGZeroGame
+            # Browser canvases have no desktop window icon. SDL's WASM image
+            # loader cannot read pgzero's BytesIO default icon on this build.
+            PGZeroGame.show_default_icon = staticmethod(lambda: None)
+            module.ICON = None
             prepare_mod(module)
         sys.settrace(_responsive_trace)
         result = eval(compile(__game_code, __game_filename, 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT), module.__dict__)
