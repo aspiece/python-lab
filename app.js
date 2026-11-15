@@ -523,10 +523,10 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=19');worker.onmessage=({data})=>{if(serial!==runSerial)return;window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
+function createWorker(){window.pythonLabGraphics?.close();if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=20');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='graphicsFrame')window.pythonLabGraphics?.draw(data.commands);window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
 
   append(data.success?'✓ CS50 Python library loaded automatically.\n':'CS50 library could not load in this browser (regular Python still works): '+String(data.error||'Unknown error')+'\n',data.success?'success-line':'error-line');
-}if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',latestInputPrompt());if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='traceResults'){running=false;updateButtons();setStatus('Python ready','ready');window.pythonLabDebug?.onResult(data);showShell();}if(data.type==='done'){terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');/* No elapsed-time banner: keep students focused on their program output. */showShell();}if(data.type==='files'){
+}if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',latestInputPrompt());if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='traceResults'){running=false;updateButtons();setStatus('Python ready','ready');window.pythonLabDebug?.onResult(data);showShell();}if(data.type==='done'){window.pythonLabGraphics?.close();terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');/* No elapsed-time banner: keep students focused on their program output. */showShell();}if(data.type==='files'){
   workspaceSnapshot();
   for(const [path,content] of Object.entries(data.files||{})){
    const prior=files[path],model=models.get(path);
@@ -538,7 +538,7 @@ function createWorker(){if(worker)worker.terminate();ready=false;running=false;u
   }
   for(const dir of (data.dirs||[]))ensureDirs(dir);
   renderFiles();renderTabs();persist();
- }if(data.type==='fatal'){running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
+ }if(data.type==='fatal'){window.pythonLabGraphics?.close();running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Runtime error: '+data.message+'\n','error-line');}};worker.onerror=()=>{if(serial!==runSerial)return;running=false;ready=false;updateButtons();setStatus('Runtime failed','error');append('Could not start Python. Check your connection and reload.\n','error-line');};worker.postMessage({type:'init'});}
 function sendExecution(){
  if(!activeRun)return;
  $('terminalPrompt').hidden=true;
@@ -574,6 +574,10 @@ function executePython(name,args=[],command=''){
 function run(){if(!filename.endsWith('.py')){append('Select a .py file to run.\n','error-line');return;}executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
 
 function requestDebugTrace(options){
+ if(/\b(?:import\s+lab_graphics|from\s+lab_graphics\s+import)\b/.test(files[options.filename]||'')){
+  window.pythonLabDebug?.onResult({type:'traceResults',frames:[],error:'Use Run for interactive graphics. Debug Trace does not replay keyboard input or game frames.',output:''});return;
+ }
+
  if(!ready||running){
   window.pythonLabDebug?.onResult({type:'traceResults',frames:[],error:'Python is busy or not loaded yet. Try again after it becomes ready.',output:''});
   return;
@@ -901,6 +905,7 @@ window.addEventListener('keydown',e=>{
  else if(key==='w'){e.preventDefault();closeTab(filename);}
  else if(key==='tab'){e.preventDefault();const index=openTabs.indexOf(filename);switchToFile(openTabs[(index+1)%openTabs.length]);}
 },true);
+window.pythonLabGraphics?.attach(()=>worker);
 setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);
 
 if(window.pythonLabProjects){bootstrapProjects().then(()=>{if(!worker)createWorker();});}

@@ -39,3 +39,7 @@ jobs:
         run: node tests/classroom-templates.mjs
       - name: Verify student help and backup controls
         run: node tests/student-tools.mjs
+      - name: Exercise Breakout gameplay and graphics bridge
+        run: |
+          python3 tests/breakout-smoke.py
+          node tests/graphics-smoke.mjs
