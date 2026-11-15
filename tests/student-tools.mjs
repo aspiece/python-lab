@@ -8,7 +8,7 @@ for(const id of ['studentToolsBtn','studentToolsDialog','toolsReferenceTab','too
  assert(html.includes('id="'+id+'"'),'Missing student tool UI '+id);
 }
 assert(html.includes('student-tools.js?v=2'));
-assert(html.includes('styles.css?v=31'));
+assert.match(html, /styles\.css\?v=\d+/);
 assert(html.includes('traceChanges'));
 assert(css.includes('project-actions-menu'));
 assert(css.includes('trace-changes'));

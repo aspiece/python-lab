@@ -28,7 +28,7 @@ const pyodide={
  }
 };
 const self={postMessage:message=>sent.push(message)};
-runInNewContext(code,{self,importScripts(){},loadPyodide:async()=>pyodide});
+runInNewContext(code,{self,TextDecoder,importScripts(){},loadPyodide:async()=>pyodide});
 await self.onmessage({data:{type:'init'}});
 assert(sent.some(m=>m.type==='ready'),'Worker not ready');
 assert.deepEqual(installCalls,['cs50==9.5.0'],'The official CS50 package was not installed automatically');
@@ -68,7 +68,7 @@ const failingPyodide={
  pyimport:()=>({install:async()=>{throw Error('Dependency has no WASM wheel');},destroy(){}})
 };
 const failureWorker={postMessage:message=>failedSent.push(message)};
-runInNewContext(code,{self:failureWorker,importScripts(){},loadPyodide:async()=>failingPyodide});
+runInNewContext(code,{self:failureWorker,TextDecoder,importScripts(){},loadPyodide:async()=>failingPyodide});
 await failureWorker.onmessage({data:{type:'init'}});
 const failedPackage=failedSent.find(m=>m.type==='packageStatus'&&m.name==='cs50');
 assert(failedPackage&&!failedPackage.success&&failedPackage.automatic,'CS50 installation failure was not surfaced');

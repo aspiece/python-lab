@@ -5,6 +5,8 @@ let pyodide, initialized=false, initializing;
 let lastWorkspaceFiles=new Set(),lastWorkspaceDirs=new Set();
 let runningProgram=false;
 let cs50Ready=false;
+let graphicsKeys=[], graphicsReady=false;
+const graphicsActions=new Set();
 function message(type, extra={}) { self.postMessage({type,...extra}); }
 async function init() {
   if(initialized)return;
@@ -50,6 +52,7 @@ async function init() {
   return initializing;
 }
 self.onmessage=async ({data})=>{
+  if(data.type==='graphicsInput'){graphicsKeys=Array.isArray(data.keys)?data.keys.filter(k=>['ArrowLeft','ArrowRight','Space','r'].includes(k)):[];for(const key of graphicsKeys)if(key==='Space'||key==='r')graphicsActions.add(key);return;}
   try {
     if(data.type==='init'){await init();return;}
     if(data.type==='diagnose'){
@@ -127,6 +130,18 @@ self.onmessage=async ({data})=>{
     pyodide.globals.set('__lab_stdin',inputs);
     pyodide.globals.set('__lab_args',data.args||[]);
     pyodide.globals.set('__lab_cwd',cwd);
+    graphicsKeys=[];graphicsActions.clear();
+    if(Object.values(userFiles).some(source=>/\b(?:import\s+lab_graphics|from\s+lab_graphics\s+import)\b/.test(source)) && !graphicsReady){
+      const response=await fetch('lab-graphics.py?v=1');
+      if(!response.ok)throw Error('Could not load Python Lab graphics. Reload and try again.');
+      pyodide.registerJsModule('lab_canvas',{
+        send_frame:json=>message('graphicsFrame',{commands:JSON.parse(json)}),
+        read_keys:()=>{const keys=JSON.stringify([...new Set([...graphicsKeys,...graphicsActions])]);graphicsActions.clear();return keys;}
+      });
+      pyodide.globals.set('__lab_graphics_source',await response.text());
+      pyodide.runPython("import sys, types\n__lab_graphics = types.ModuleType('lab_graphics')\nexec(__lab_graphics_source, __lab_graphics.__dict__)\nsys.modules['lab_graphics'] = __lab_graphics");
+      graphicsReady=true;
+    }
     await pyodide.loadPackagesFromImports(data.code);
     const names=[...data.code.matchAll(/^\s*(?:from|import)\s+(emoji|pyfiglet|inflect|requests|validators|tabulate|pytest|PIL|cowsay|cs50)(?:\b|\.)/gm)].map(m=>m[1]);
     if(names.length){
@@ -146,7 +161,7 @@ self.onmessage=async ({data})=>{
       mp.destroy?.();
     }
 
-    const script=`import sys, builtins, os
+    const script=`import sys, builtins, os, ast, inspect
 from io import StringIO
 __lab_original_input = builtins.input
 __lab_old_argv = sys.argv[:]
@@ -167,7 +182,9 @@ sys.argv=[__lab_filename]+list(__lab_args)
 sys.path.insert(0, os.getcwd())
 try:
     try:
-        exec(compile(__lab_source, __lab_filename, 'exec'), {'__name__':'__main__','__file__':__lab_filename})
+        __lab_result = eval(compile(__lab_source, __lab_filename, 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT), {'__name__':'__main__','__file__':__lab_filename})
+        if inspect.isawaitable(__lab_result):
+            await __lab_result
     except __LabNeedInput:
         __lab_needs_input = True
 finally:

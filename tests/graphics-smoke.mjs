@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const sent=[],drawn=[],events={};
+const context={beginPath(){},fillRect(...v){drawn.push(v)},arc(){},fill(){},fillText(...v){drawn.push(v)}};
+const canvas={getContext:()=>context,focus(){},addEventListener:(name,fn)=>events[name]=fn};
+const panel={hidden:true,querySelectorAll:()=>[]};
+let closeClick,stopped=false;
+const document={getElementById:id=>({gamePanel:panel,gameCanvas:canvas,closeGameBtn:{addEventListener:(n,f)=>closeClick=f},stopBtn:{click:()=>stopped=true}}[id]),addEventListener(){}};
+const window={addEventListener(){}};
+runInNewContext(read('game-canvas.js'),{window,document,Set,Math,String});
+window.pythonLabGraphics.attach(()=>({postMessage:m=>sent.push(m)}));
+window.pythonLabGraphics.draw([['clear','black'],['rect',10,20,96,12,'white'],['text','Score: 10',20,30,'white',20]]);
+assert.equal(panel.hidden,false);
+assert.equal(drawn.length,3);
+events.keydown({code:'ArrowLeft',key:'ArrowLeft',preventDefault(){}});
+assert.equal(sent.at(-1).keys[0],'ArrowLeft');
+events.blur();assert.equal(sent.at(-1).keys.length,0);
+closeClick();assert(stopped);assert(panel.hidden);
+// Prevent source examples and gallery versions drifting apart.
+const galleryWindow={location:{href:'https://example.com/'}};
+runInNewContext(read('classroom-templates.js'),{window:galleryWindow,document:{getElementById:()=>null},URL});
+const starter=galleryWindow.pythonLabTemplates.get('breakout');
+for(const file of ['main.py','README.md'])assert.equal(starter.files[file],read('templates/breakout/'+file));
+console.log('Canvas drawing, key forwarding, blur release, close/stop and template source parity passed.');

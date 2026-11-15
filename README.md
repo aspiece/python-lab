@@ -117,3 +117,9 @@ Choosing any classroom template now closes all other **editor tabs** (not files)
 Starting a template from the gallery creates a **new saved project**, closes the previously active project, and shows only the new template's `README.md` and main `.py` file side by side. Other projects are preserved separately in Project Manager; opening a second copy creates a uniquely named project. Code written in a previously saved project is not copied into the new template. Pressing **Run** (or launching a Python command) automatically shows the Terminal panel, even if the student was viewing Debug Trace or Problems.
 
 The trace table displays a distinct column for each local variable found during the recorded execution; the table scrolls horizontally inside the existing bottom pane when needed. All starter Python files and the default welcome example avoid f-strings, as well as compound assignments in starter files. Existing student code is never rewritten.
+
+## Classic Breakout and browser graphics
+
+Choose **Templates → Classic Breakout** and run `main.py`. The playable learning example includes four change-and-test checkpoints, arrow-key and touch controls, launch, score, lives, and restart. No student installation is needed. Templates still create separate saved projects.
+
+`lab-graphics.py` supplies the small `lab_graphics` canvas API through the existing Pyodide worker; it is not a Pygame compatibility layer. The worker supports top-level `await`, and `await screen.frame()` yields between drawings and input events. Stop terminates the worker as usual. Debug Trace explains that interactive graphics require Run. Graphics assets are bundled on the same origin; no new external service is required. The editable source copies in `templates/breakout/` must match the gallery's embedded files.
