@@ -41,8 +41,8 @@ window.addEventListener('message',async event=>{
   if(run.mode==='pgzero'){
    status.textContent='Loading Pygame Zero…';
    await py.loadPackage(['micropip','numpy']);
-   const mp=py.pyimport('micropip');
-   try{await mp.install(new URL('assets/vendor/pgzero-1.2.1-py3-none-any.whl',location.href).href,{deps:false});}finally{mp.destroy();}
+   py.globals.set('__pgzero_wheel',new URL('assets/vendor/pgzero-1.2.1-py3-none-any.whl',location.href).href);
+   await py.runPythonAsync('import micropip\nawait micropip.install(__pgzero_wheel, deps=False)');
   }
   const base='/home/pyodide';
   for(const [path,content] of Object.entries(run.files||{})){
