@@ -523,7 +523,7 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){window.pythonLabGraphics?.close();if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=20');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='graphicsFrame')window.pythonLabGraphics?.draw(data.commands);window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
+function createWorker(){window.pythonLabGameRunner?.stop();window.pythonLabGraphics?.close();if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=20');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='graphicsFrame')window.pythonLabGraphics?.draw(data.commands);window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
 
   append(data.success?'✓ CS50 Python library loaded automatically.\n':'CS50 library could not load in this browser (regular Python still works): '+String(data.error||'Unknown error')+'\n',data.success?'success-line':'error-line');
 }if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',latestInputPrompt());if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='traceResults'){running=false;updateButtons();setStatus('Python ready','ready');window.pythonLabDebug?.onResult(data);showShell();}if(data.type==='done'){window.pythonLabGraphics?.close();terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');/* No elapsed-time banner: keep students focused on their program output. */showShell();}if(data.type==='files'){
@@ -543,6 +543,14 @@ function sendExecution(){
  if(!activeRun)return;
  $('terminalPrompt').hidden=true;
  scriptTranscript='';enhancedTerminal?.setMode('busy');
+ const mode=activeRun.purpose==='tests'?'python':window.pythonLabGameRunner?.modeFor(activeRun.code,activeRun.files,$('runMode')?.value||'auto')||'python';
+ if(mode!=='python'){
+  window.pythonLabGameRunner.start({...activeRun,mode},{
+   output:(text,error)=>append(text,error?'error-line':''),
+   done:()=>{window.pythonLabGameRunner.stop();terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');showShell();}
+  });
+  return;
+ }
  worker.postMessage({type:'run',...activeRun,stdin:inputHistory});
 }
 function revealRunTerminal(){
@@ -574,7 +582,7 @@ function executePython(name,args=[],command=''){
 function run(){if(!filename.endsWith('.py')){append('Select a .py file to run.\n','error-line');return;}executePython(filename,$('args').value.trim()?$('args').value.trim().split(/\s+/):[]);}
 
 function requestDebugTrace(options){
- if(/\b(?:import\s+lab_graphics|from\s+lab_graphics\s+import)\b/.test(files[options.filename]||'')){
+ if((window.pythonLabGameRunner?.modeFor(files[options.filename]||'',files,$('runMode')?.value||'auto')||'python')!=='python'||/\b(?:import\s+lab_graphics|from\s+lab_graphics\s+import)\b/.test(files[options.filename]||'')){
   window.pythonLabDebug?.onResult({type:'traceResults',frames:[],error:'Use Run for interactive graphics. Debug Trace does not replay keyboard input or game frames.',output:''});return;
  }
 

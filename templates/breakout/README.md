@@ -17,6 +17,10 @@ Find make_bricks() and touches_brick(). Change the brick colors. Predict the num
 Find where score and lives change. Give each brick 20 points. Add a different starting number of lives; update both the starting and restart values. Test missing the paddle, losing all lives, and restarting.
 
 ## How drawing works
-Python Lab includes lab_graphics; you do not install anything. It is a small canvas module, not Pygame. The drawing area is 640 by 480 pixels, with (0, 0) at the top left. clear(), rectangle(), circle(), and text() build a picture. await screen.frame() displays it and lets the browser process keys. Keep that line inside the loop so the game stays responsive.
+This version uses real Pygame Community Edition. Python Lab loads it for you. Leave Run mode on Auto, or select Pygame. The drawing area is 640 by 480 pixels, with (0, 0) at the top left. pygame.draw.rect() draws a rectangle, pygame.draw.circle() draws the ball, and pygame.display.flip() displays the frame.
 
-Use Run for this interactive example. Debug Trace is for short, non-interactive programs and does not replay the game. To inspect a value, add an occasional print() or display it with screen.text(). Downloaded code needs Python Lab's graphics module and browser runner; it will not run as a normal desktop Pygame program.
+Keep await asyncio.sleep(1 / 60) inside the loop. It lets the browser draw and read keys. A blocking loop will stop with a message explaining how to fix it. Debug Trace does not replay games; use Run and print() for debugging. Runtime errors appear in the Terminal.
+
+The browser game runner currently transfers your Python and other text files. Uploaded pictures and audio files are not supported by Python Lab's file tools yet. Start with shapes and the built-in font. The first game may take a little longer to load. Nothing needs to be installed on your computer.
+
+To run this example on a desktop with Python and pygame-ce installed, replace the final await main() with asyncio.run(main()). Existing saved projects keep their original code.

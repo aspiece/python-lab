@@ -356,3 +356,5 @@
 #debugView .trace-table th.trace-output-heading,#debugView .trace-table td.trace-output-cell{min-width:140px;width:180px}
 
 .game-panel{position:fixed;right:18px;top:76px;width:min(660px,calc(100vw - 36px));max-height:calc(100dvh - 95px);overflow:auto;z-index:80;background:#182334;border:1px solid #60738b;border-radius:12px;box-shadow:0 15px 60px #0009;padding:10px;color:#edf2f7}.game-panel[hidden]{display:none}.game-panel header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.game-panel canvas{display:block;width:100%;height:auto;max-height:calc(100dvh - 235px);object-fit:contain;background:#101827;outline-offset:2px}.game-controls{display:flex;justify-content:center;gap:8px;margin-top:10px;touch-action:none}.game-panel p{text-align:center;font-size:12px;margin:8px 0 0}
+
+#pygameFrameHost iframe{width:100%;height:min(630px,calc(100dvh - 160px));border:0;display:block;background:#101827}#runMode{background:#263449;color:#edf2f7;border:1px solid #53657b;border-radius:5px;padding:7px;max-width:112px}

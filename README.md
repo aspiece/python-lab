@@ -118,8 +118,14 @@ Starting a template from the gallery creates a **new saved project**, closes the
 
 The trace table displays a distinct column for each local variable found during the recorded execution; the table scrolls horizontally inside the existing bottom pane when needed. All starter Python files and the default welcome example avoid f-strings, as well as compound assignments in starter files. Existing student code is never rewritten.
 
-## Classic Breakout and browser graphics
+## Pygame CE and Pygame Zero
 
-Choose **Templates → Classic Breakout** and run `main.py`. The playable learning example includes four change-and-test checkpoints, arrow-key and touch controls, launch, score, lives, and restart. No student installation is needed. Templates still create separate saved projects.
+Choose **Templates → Classic Breakout** (Pygame CE) or **Pygame Zero: Move the Ball**, then Run. **Auto** detects `pygame`, `pgzero`, and `pgzrun` imports in the entry and local modules. For import-free Pygame Zero scripts choose **Pygame Zero** in the Run mode selector. Students install nothing.
 
-`lab-graphics.py` supplies the small `lab_graphics` canvas API through the existing Pyodide worker; it is not a Pygame compatibility layer. The worker supports top-level `await`, and `await screen.frame()` yields between drawings and input events. Stop terminates the worker as usual. Debug Trace explains that interactive graphics require Run. Graphics assets are bundled on the same origin; no new external service is required. The editable source copies in `templates/breakout/` must match the gallery's embedded files.
+The disposable game iframe pins Pyodide **0.27.7**, its bundled **pygame-ce 2.4.1**, and the official **pgzero 1.2.1** wheel under `assets/vendor/`. Normal Python retains Pyodide 0.28.3 in its worker. Pygame's SDL browser support is experimental. A game loads this additional runtime only when needed; dependencies use the existing jsDelivr CDN. The Pygame Zero adapter retains the real package's builtins, event dispatch, keyboard, scheduler, and drawing APIs while replacing its blocking loop with async frames.
+
+Pygame loops must yield with `await asyncio.sleep(1 / 60)`. Pygame Zero uses short `draw()` and `update()` callbacks. A trace guard stops long-running Python loops with guidance. Native blocking calls cannot all be interrupted; keep browser games cooperative. Input uses game events, not terminal `input()`. Run mode does not change pytest's worker or Debug Trace; interactive games cannot be traced. Student editor files remain saved independently. Game-generated files are temporary in the game runtime and are not synced back to Explorer.
+
+Current scope: Python/text files, drawing, built-in fonts, keyboard/mouse and touch buttons. Image/audio asset upload is not implemented in the editor; audio and `tone.play()` are not validated. No promise of desktop feature parity. The first load downloads extra runtime assets. Close/Stop disposes the game frame; normal Python continues in its worker.
+
+Previously saved Breakout projects using `lab_graphics` still run with the retained canvas bridge. New Breakout projects use Pygame CE. No saved student code is rewritten. Source copies in `templates/` must match the embedded gallery files.

@@ -94,7 +94,7 @@ window.pythonLabDebug.abort();
 let installed=null;
 window.pythonLabTemplates.attach(project=>{installed=project;return true;});
 const cards=elements.templateGallery.children.filter(item=>item.className==='template-option');
-assert.equal(cards.length,22,'Expected all 22 general Python and tracing templates');
+assert.equal(cards.length,23,'Expected all 23 general Python and tracing templates');
 const tracing=cards.find(item=>item.children[0].children[0].textContent==='Trace a While Loop');
 assert(tracing,'Expected tracing exercise to remain available');
 tracing.children[0].click();
