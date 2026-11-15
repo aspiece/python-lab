@@ -5,6 +5,10 @@ import inspect
 import pathlib
 import sys
 import types
+import os
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+os.environ["SDL_AUDIODRIVER"] = "dummy"
+import pygame
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 source = (ROOT / 'templates/breakout/main.py').read_text()
@@ -13,32 +17,30 @@ mode = 'play'
 class Finished(Exception):
     pass
 
-def keys():
+def events():
     state = inspect.currentframe().f_back.f_locals
     if mode == 'restart':
-        return {'r'}
-    pressed = {'Space'}
+        return [pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r)]
+    if not state['launched']:
+        return [pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE)]
+    return []
+
+def held_keys():
+    state = inspect.currentframe().f_back.f_locals
     target = state['ball_x'] if mode == 'play' else 0
     center = state['paddle_x'] + 48
-    if target < center - 5:
-        pressed.add('ArrowLeft')
-    elif target > center + 5:
-        pressed.add('ArrowRight')
-    return pressed
+    return {pygame.K_LEFT: target < center - 5, pygame.K_RIGHT: target > center + 5}
 
-async def frame():
+async def frame(delay):
     state = inspect.currentframe().f_back.f_locals
     snapshots.append({key: state[key] for key in ['score','lives','ball_x','ball_y','paddle_x','launched']})
     assert 0 <= state['paddle_x'] <= 544
     if mode == 'restart' or state['lives'] == 0 or not state['bricks'] or len(snapshots) >= 12000:
         raise Finished()
 
-screen = types.ModuleType('lab_graphics')
-screen.keys = keys
-screen.frame = frame
-for name in ['clear', 'text', 'rectangle', 'circle']:
-    setattr(screen, name, lambda *args: None)
-sys.modules['lab_graphics'] = screen
+pygame.event.get = events
+pygame.key.get_pressed = held_keys
+asyncio.sleep = frame
 namespace = {'__name__': 'test_game'}
 # The module has a top-level await branch, so evaluate its coroutine explicitly.
 async def load():

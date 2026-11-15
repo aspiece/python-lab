@@ -1,6 +1,7 @@
 # Classic Breakout: a playable example to change and test.
 # Read README.md for four coding checkpoints.
-import lab_graphics as screen
+import asyncio
+import pygame
 
 WIDTH = 640
 HEIGHT = 480
@@ -25,7 +26,14 @@ def touches_brick(x, y, brick):
     return (x - nearest_x) ** 2 + (y - nearest_y) ** 2 <= 49
 
 
+def draw_text(screen, font, message, x, y):
+    screen.blit(font.render(message, True, "white"), (x, y))
+
+
 async def main():
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    font = pygame.font.Font(None, 28)
     paddle_x = (WIDTH - PADDLE_WIDTH) / 2
     ball_x = WIDTH / 2
     ball_y = 413
@@ -37,7 +45,20 @@ async def main():
     bricks = make_bricks()
 
     while True:
-        pressed = screen.keys()
+        pressed = set()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    pressed.add("Space")
+                if event.key == pygame.K_r:
+                    pressed.add("r")
+        held = pygame.key.get_pressed()
+        if held[pygame.K_LEFT]:
+            pressed.add("ArrowLeft")
+        if held[pygame.K_RIGHT]:
+            pressed.add("ArrowRight")
         if "r" in pressed:
             bricks = make_bricks()
             score = 0
@@ -89,20 +110,21 @@ async def main():
                     speed_x = BALL_SPEED
                     speed_y = -BALL_SPEED
 
-        screen.clear()
-        screen.text("Score: " + str(score), 20, 30)
-        screen.text("Lives: " + str(lives), 525, 30)
+        screen.fill("#101827")
+        draw_text(screen, font, "Score: " + str(score), 20, 30)
+        draw_text(screen, font, "Lives: " + str(lives), 525, 30)
         for brick in bricks:
-            screen.rectangle(brick[0], brick[1], 56, 20, brick[2])
-        screen.rectangle(paddle_x, 430, PADDLE_WIDTH, 12, "#e2e8f0")
-        screen.circle(ball_x, ball_y, 7, "white")
+            pygame.draw.rect(screen, brick[2], (brick[0], brick[1], 56, 20))
+        pygame.draw.rect(screen, "#e2e8f0", (paddle_x, 430, PADDLE_WIDTH, 12))
+        pygame.draw.circle(screen, "white", (round(ball_x), round(ball_y)), 7)
         if lives == 0:
-            screen.text("Game over. Press R to restart.", 155, 270)
+            draw_text(screen, font, "Game over. Press R to restart.", 155, 270)
         elif len(bricks) == 0:
-            screen.text("You cleared the wall! Press R.", 155, 270)
+            draw_text(screen, font, "You cleared the wall! Press R.", 155, 270)
         elif not launched:
-            screen.text("Move with arrows. Space to launch.", 150, 300)
-        await screen.frame()
+            draw_text(screen, font, "Move with arrows. Space to launch.", 150, 300)
+        pygame.display.flip()
+        await asyncio.sleep(1 / 60)
 
 
 if __name__ == "__main__":
