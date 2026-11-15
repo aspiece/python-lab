@@ -41,9 +41,10 @@ jobs:
         run: node tests/student-tools.mjs
       - name: Exercise Breakout gameplay and graphics bridge
         run: |
-          python3 -m pip install pygame-ce==2.5.3
+          python3 -m pip install pygame-ce==2.5.3 numpy==2.2.6
           python3 -m pip install --no-deps assets/vendor/pgzero-1.2.1-py3-none-any.whl
           python3 tests/breakout-smoke.py
           python3 tests/pgzero-smoke.py
           node tests/pygame-runner.mjs
           node tests/graphics-smoke.mjs
+
