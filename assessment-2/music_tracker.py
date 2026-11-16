@@ -1,18 +1,18 @@
-# Music — Listening Tracker
-# Read the README for instructions.
+# Playlist DJ
+# Read README.md for instructions.
+name = input("DJ name: ").strip()
+songs = ["Pixel Beat", "Night Drive", "Game On"]
+ratings = [5, 3, 5]
+favorites = 0
 
-name = input("Enter playlist name: ").strip()
-total = 0
+for index in range(3):
+    rating = ratings[index]
+    # TODO 1: Update favorites for a rating of 5.
 
-for session in range(3):
-    minutes = int(input("Enter session minutes: "))
-    # TODO 1: Update the running total.
+    # TODO 2: Write if, elif, else to set label.
+    label = ""
 
+    print(songs[index], "-", label)
 
-# TODO 2: Write if, elif, and else to set level.
-# Remove the temporary line below when you add your conditions.
-level = ""
-
-print("Playlist:", name)
-print("Total minutes:", total)
-print("Level:", level)
+print("DJ:", name)
+print("Favorites:", favorites)
