@@ -7,12 +7,10 @@ const activities = {
 name = input("Player name: ").strip()
 ball_x = 4
 direction = 1
-for frame in range(3):
-    # TODO 1: Update ball_x using direction and 3 units.
-
-    # TODO 2: Write if, elif, else for wall bounces.
-    status = ""
-    print("Position:", ball_x, "Status:", status)
+# TODO 1: Write a for loop that repeats 3 times.
+    # TODO 2: Update ball_x using direction and 3 units.
+    # TODO 3: Write if, elif, else for wall bounces.
+    # Print the position and status during each frame.
 print("Player:", name)
 `},
  music:{name:'Playlist DJ',file:'playlist_dj.py',inputs:[5,3,5],classification:'Favorite',starter:`# Playlist DJ
@@ -21,13 +19,11 @@ name = input("DJ name: ").strip()
 songs = ["Pixel Beat", "Night Drive", "Game On"]
 ratings = [5, 3, 5]
 favorites = 0
-for index in range(3):
-    rating = ratings[index]
-    # TODO 1: Increase favorites if rating is 5.
-
-    # TODO 2: Write if, elif, else to set label.
-    label = ""
-    print(songs[index], "-", label)
+# TODO 1: Write a for loop that repeats 3 times.
+    # TODO 2: Get the rating at the current index.
+    # TODO 3: Increase favorites when rating is 5.
+    # TODO 4: Write if, elif, else to set label.
+    # Print the song and label during each iteration.
 print("DJ:", name)
 print("Favorites:", favorites)
 `}
