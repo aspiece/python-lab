@@ -4,13 +4,10 @@ name = input("Player name: ").strip()
 ball_x = 4
 direction = 1
 
-for frame in range(3):
-    # TODO 1: Update ball_x using direction and 3 units.
-
-    # TODO 2: Write if, elif, else for wall bounces.
-    # Set direction and status as described in README.
-    status = ""
-
-    print("Position:", ball_x, "Status:", status)
+# TODO 1: Write a for loop that repeats 3 times.
+    # TODO 2: Update ball_x using direction and 3 units.
+    # TODO 3: Write if, elif, else for wall bounces.
+    # Set status to "Right bounce", "Left bounce", or "Moving".
+    # Print the position and status during each frame.
 
 print("Player:", name)
