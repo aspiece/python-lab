@@ -2,38 +2,39 @@
 'use strict';
 const $ = id => document.getElementById(id);
 const activities = {
- gaming:{name:'Gaming — Score Tracker',file:'game_tracker.py',inputs:[80,90,95],classification:'Pro',starter:`# Gaming: Player Score Tracker
+ gaming:{name:'Pong — Ball Movement',file:'pong_logic.py',inputs:[7,10,7],classification:'Right bounce',starter:`# Pong — Ball Movement
 # Read README.md for instructions.
-name = input("Enter gamer tag: ").strip()
-total = 0
-for round_number in range(3):
-    score = int(input("Enter round score: "))
-    # TODO 1: Update total.
+name = input("Player name: ").strip()
+ball_x = 4
+direction = 1
+for frame in range(3):
+    # TODO 1: Update ball_x using direction and 3 units.
 
-# TODO 2: Write if, elif, and else to set rank.
-rank = ""
+    # TODO 2: Write if, elif, else for wall bounces.
+    status = ""
+    print("Position:", ball_x, "Status:", status)
 print("Player:", name)
-print("Total:", total)
-print("Rank:", rank)
 `},
- music:{name:'Music — Listening Tracker',file:'music_tracker.py',inputs:[45,40,50],classification:'Superfan',starter:`# Music: Listening Tracker
+ music:{name:'Playlist DJ',file:'playlist_dj.py',inputs:[5,3,5],classification:'Favorite',starter:`# Playlist DJ
 # Read README.md for instructions.
-name = input("Enter playlist name: ").strip()
-total = 0
-for session in range(3):
-    minutes = int(input("Enter session minutes: "))
-    # TODO 1: Update total.
+name = input("DJ name: ").strip()
+songs = ["Pixel Beat", "Night Drive", "Game On"]
+ratings = [5, 3, 5]
+favorites = 0
+for index in range(3):
+    rating = ratings[index]
+    # TODO 1: Increase favorites if rating is 5.
 
-# TODO 2: Write if, elif, and else to set level.
-level = ""
-print("Playlist:", name)
-print("Total minutes:", total)
-print("Level:", level)
+    # TODO 2: Write if, elif, else to set label.
+    label = ""
+    print(songs[index], "-", label)
+print("DJ:", name)
+print("Favorites:", favorites)
 `}
 };
 const state={theme:'gaming',pred:['','',''],actual:['','',''],locked:false,compared:false,reflection:'',started:false,lockedAt:''};
 let host=null;
-const key='python-lab-assessment-2';
+const key='python-lab-assessment-2-pong-dj';
 try {Object.assign(state,JSON.parse(localStorage.getItem(key))||{});}catch{}
 const save=()=>localStorage.setItem(key,JSON.stringify(state));
 function element(tag,text){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;}
@@ -41,7 +42,7 @@ function button(label,fn){const b=element('button',label);b.type='button';b.oncl
 function show(){render();const d=$('assessmentDialog');if(d&&!d.open)d.showModal();}
 function render(){
  const root=$('assessmentContent');if(!root)return;root.replaceChildren();
- const info=activities[state.theme],totals=info.inputs.map((_,i)=>info.inputs.slice(0,i+1).reduce((a,b)=>a+b,0));
+ const info=activities[state.theme],totals=state.theme==='gaming'?[7,10,7]:[1,1,2];
  const choices=element('div');choices.style.cssText='display:flex;gap:12px;flex-wrap:wrap;margin:12px 0';
  for(const [id,a] of Object.entries(activities)){
   const b=button(a.name,()=>{if(state.locked)return;state.theme=id;state.pred=['','',''];state.actual=['','',''];save();render();});
@@ -50,7 +51,7 @@ function render(){
  }root.append(choices);
  const start=button('Open '+info.name+' starter',()=>{
   if(!host?.install)return alert('Python Lab is still loading.');
-  const readme='# '+info.name+'\\n\\nComplete the accumulator and the if/elif/else conditions. See the assessment instructions in the assignment README.\\n\\nGaming: Pro >= 250, Skilled 150-249, Beginner below 150.\\nMusic: Superfan >= 120, Regular 60-119, Casual below 60.\\n\\nPredict the three running totals before using Debug Trace. Return to Assessment to lock them.\\n';
+  const readme = state.theme==='gaming' ? '# Pong — Ball Movement\\n\\nStart at ball_x = 4 and direction = 1. Each of 3 frames moves 3 units in direction. Update ball_x. Write if/elif/else: at >= 10 set direction = -1 and status = "Right bounce"; at <= 0 set direction = 1 and status = "Left bounce"; otherwise status = "Moving". Predict ball_x after each frame before Debug Trace.\\n' : '# Playlist DJ\\n\\nThree song ratings are 5, 3, 5. Increase favorites by 1 when rating is 5. Write if/elif/else to set label: 5 = "Favorite", 4 = "Recommended", otherwise "Skip". Predict favorites after each song before Debug Trace.\\n';
   if(host.install({id:'assessment-2-'+state.theme,folderName:'assessment-2-'+state.theme,entryFile:info.file,files:{[info.file]:info.starter,'README.md':readme}})){state.started=true;save();$('assessmentDialog').close();}
  });root.append(start);
  root.append(element('h4','Predict before debugging'));
