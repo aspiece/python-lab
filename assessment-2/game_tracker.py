@@ -1,18 +1,16 @@
-# Gaming — Player Score Tracker
-# Read the README for instructions.
+# Pong — Ball Movement
+# Read README.md for instructions.
+name = input("Player name: ").strip()
+ball_x = 4
+direction = 1
 
-name = input("Enter gamer tag: ").strip()
-total = 0
+for frame in range(3):
+    # TODO 1: Update ball_x using direction and 3 units.
 
-for round_number in range(3):
-    score = int(input("Enter round score: "))
-    # TODO 1: Update the running total.
+    # TODO 2: Write if, elif, else for wall bounces.
+    # Set direction and status as described in README.
+    status = ""
 
-
-# TODO 2: Write if, elif, and else to set rank.
-# Remove the temporary line below when you add your conditions.
-rank = ""
+    print("Position:", ball_x, "Status:", status)
 
 print("Player:", name)
-print("Total:", total)
-print("Rank:", rank)
