@@ -1,53 +1,41 @@
 # Python Assessment 2 — Choose Your Challenge
 
-**Choose ONE:** Gaming (Player Score Tracker) or Music (Listening Tracker). Open only the matching starter file. Do not change the other theme.
+Choose **one** challenge. Complete the starter code in Python Lab, predict your trace values **before** using Debug Trace, and submit the downloaded assessment ZIP to Google Forms.
 
-## Learning target
-Use a loop, an accumulator, string input, and if/elif/else to process three values and classify the total.
+## Option A — Pong: Ball Movement
+Open `pong_logic.py`. The ball begins at position 4, moving right (`direction = 1`). The left wall is at 0 and the right wall at 10. The provided loop simulates three frames, moving 3 units per frame.
 
-## Option A: Gaming
-Complete `game_tracker.py`.
-1. Ask for a gamer tag (already provided).
-2. Collect three integer round scores (loop provided).
-3. Update `total` inside the loop using ordinary assignment.
-4. Write an `if` / `elif` / `else` structure that sets `rank`:
-   - Pro: 250 or more
-   - Skilled: 150–249
-   - Beginner: below 150
-5. Print the name, total, and rank (provided).
+Complete two sections:
+1. Update `ball_x` by adding `direction * 3`.
+2. Write `if`, `elif`, and `else` statements:
+   - At or beyond 10, set direction to -1 and status to "Right bounce".
+   - At or below 0, set direction to 1 and status to "Left bounce".
+   - Otherwise, set status to "Moving".
 
-Test with **80, 90, 95**. The total should be **265** and the rank **Pro**.
+The starter handles the player's name, loop, and output. Test the three frames. Trace **ball_x after each frame**.
 
-## Option B: Music
-Complete `music_tracker.py`.
-1. Ask for a playlist name (already provided).
-2. Collect three integer listening times in minutes (loop provided).
-3. Update `total` inside the loop using ordinary assignment.
-4. Write an `if` / `elif` / `else` structure that sets `level`:
-   - Superfan: 120 or more
-   - Regular Listener: 60–119
-   - Casual Listener: below 60
-5. Print the name, total minutes, and level (provided).
+## Option B — Music: Playlist DJ
+Open `playlist_dj.py`. Three song ratings are provided: 5, 3, and 5.
 
-Test with **45, 40, 50**. The total should be **135** and the level **Superfan**.
+Complete two sections:
+1. When a song has rating 5, increase `favorites` by 1 using `favorites = favorites + 1`.
+2. Write `if`, `elif`, and `else` statements:
+   - Rating 5: label "Favorite".
+   - Rating 4: label "Recommended".
+   - All other ratings: label "Skip".
 
-## Code trace — predict before running
-For your selected theme, record the running value of `total` after each loop iteration. Then run the program and check your predictions.
+The starter handles the DJ name, loop, and output. Trace **favorites after each song**.
 
-Complete the table **before running your program**, just as you practiced in your notes. Record the value of `total` after each iteration. Use the test inputs for your chosen theme: Gaming **80, 90, 95** or Music **45, 40, 50**.
+## Predict → Debug → Reflect
+Before recording a Debug Trace, fill out and lock your predictions in the Assessment panel.
 
-| Iteration | Value entered | `total` before iteration | `total` after iteration |
+| Iteration | Value examined | Running variable before | Running variable after |
 |---|---|---|---|
-| 1 | | 0 | |
+| 1 | | | |
 | 2 | | | |
 | 3 | | | |
 
-**Final output:** ____________________
-
-After completing the table, run your program and compare the actual values with your predictions. Enter your three predicted running totals into the Google Form.
+Then record the actual values using Debug Trace and write a short reflection comparing them.
 
 ## Submit
-1. Save your completed `.py` file.
-2. Download the file from Python Lab. Browser storage is local to this device.
-3. Upload the `.py` file to the assessment Google Form.
-4. Paste your complete Python code into the Form's paragraph field.
+Use **Download Assessment ZIP** to download your Python program and `trace_results.txt` together. Upload the ZIP to Google Forms and paste your completed Python code into the paragraph box.
