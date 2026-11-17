@@ -64,6 +64,8 @@ function createBrowser(search=''){
   alert:message=>{throw Error('Unexpected alert: '+message);},
   prompt:()=>promptAnswer,confirm:()=>confirmed,innerWidth:1200,innerHeight:800
  };
+ Object.assign(ctx,{Uint8Array,atob,btoa});
+ runInNewContext(read('media-assets.js'),ctx);
  runInNewContext(app,ctx,{filename:'app.js'});
  return {nodes,window,document,Worker};
 }
@@ -164,3 +166,24 @@ assert(!html.includes('cs50p-starters.js')&&!html.includes('cs50SubmissionDialog
  'The HTML must not load the removed labs or handoff dialog');
 
 console.log('General templates, saved project migration, file preservation and classroom links passed.');
+
+// Uploads stage all selected files, preserve code, avoid overwrites and persist.
+const assetStore=third.window.pythonLabProjects;
+const actualState=assetStore.state;
+assetStore.state=()=>({...actualState(),mode:'indexeddb'});
+const upload=third.nodes.assetInput.events.change;
+const png=Uint8Array.from([137,80,78,71,13,10,26,10]);
+const mediaFile={name:'Tile.PNG',size:png.length,arrayBuffer:async()=>png.buffer};
+const beforeCode=third.window.pythonLabWorkspace().files['main.py'];
+await upload({target:{files:[mediaFile],value:''}});
+assert.match(third.nodes.mediaUploadStatus.textContent,/Saved on this device/);
+assert.equal(third.window.pythonLabWorkspace().assets['images/tile.png'].base64,'iVBORw0KGgo=');
+assert.equal(third.window.pythonLabWorkspace().files['main.py'],beforeCode);
+await upload({target:{files:[mediaFile],value:''}});
+assert(third.window.pythonLabWorkspace().assets['images/tile_2.png']);
+await upload({target:{files:[mediaFile,{...mediaFile,name:'bad.wav'}],value:''}});
+assert.match(third.nodes.mediaUploadStatus.textContent,/Upload failed/);
+assert(!third.window.pythonLabWorkspace().assets['images/tile_3.png'],'Failed batch partially committed');
+const fourth=createBrowser();await settle();
+assert.equal(fourth.window.pythonLabWorkspace().assets['images/tile.png'].base64,'iVBORw0KGgo=');
+console.log('Media upload, collision naming, atomic failure and saved-project reopening passed.');

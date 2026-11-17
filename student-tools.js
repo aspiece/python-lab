@@ -45,6 +45,7 @@
    const zip=new JSZip();
    for(const dir of workspace.dirs||[])if(dir)zip.folder(dir);
    for(const [path,contents] of Object.entries(workspace.files))zip.file(path,String(contents));
+   for(const [path,asset] of Object.entries(workspace.assets||{}))zip.file(path,asset.base64,{base64:true});
    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
    const url=URL.createObjectURL(blob),a=document.createElement('a');
    a.href=url;

@@ -4,6 +4,7 @@ import {runInNewContext} from 'node:vm';
 import {spawnSync} from 'node:child_process';
 
 const code=readFileSync(new URL('../python-worker.js',import.meta.url),'utf8');
+const binaryWrites=[],removed=[];
 const sent=[],globals=new Map(),pythonScripts=[],installCalls=[];
 const pyodide={
  setStdout(){},setStderr(){},
@@ -21,14 +22,14 @@ const pyodide={
   }
  },
  FS:{
-  chdir(){},unlink(){},rmdir(){},mkdir(){},writeFile(){},
+  chdir(){},unlink(path){removed.push(path);},rmdir(){},mkdir(){},writeFile(path,data){if(typeof data!=="string")binaryWrites.push({path,data});},
   readdir:()=>['.','..'],
   stat:()=>({mode:1,size:0}),
   isDir:()=>false,isFile:()=>false,readFile:()=>''
  }
 };
 const self={postMessage:message=>sent.push(message)};
-runInNewContext(code,{self,TextDecoder,importScripts(){},loadPyodide:async()=>pyodide});
+runInNewContext(code,{self,TextDecoder,Uint8Array,atob,importScripts(){},loadPyodide:async()=>pyodide});
 await self.onmessage({data:{type:'init'}});
 assert(sent.some(m=>m.type==='ready'),'Worker not ready');
 assert.deepEqual(installCalls,['cs50==9.5.0'],'The official CS50 package was not installed automatically');
@@ -45,8 +46,11 @@ assert(astSource,'No Python AST parser code was created');
 
 await self.onmessage({data:{
  type:'run',purpose:'tests',filename:'__command__.py',code:'',cwd:'',args:[],stdin:'',
+ assets:{'images/tile.png':{base64:'iVBORw0KGgo=',size:8,mime:'image/png'}},
  files:{'main.py':'print(2)','test_main.py':'def test_example():\n    assert False'},dirs:[],testTargets:['test_main.py']
 }});
+assert.equal(binaryWrites[0].path,'/home/pyodide/images/tile.png');
+assert.deepEqual([...binaryWrites[0].data],[137,80,78,71,13,10,26,10]);
 const result=sent.find(m=>m.type==='testResults');
 assert(result,'Worker did not send individual pytest results');
 assert.equal(result.exitCode,1);
@@ -76,3 +80,6 @@ assert(failedPackage.error.includes('WASM wheel'),'Detailed installation failure
 assert(failedSent.some(m=>m.type==='ready'),'Standard Python must still start after CS50 dependency failure');
 
 console.log('Pyodide worker contract and embedded Python syntax checks passed.');
+
+await self.onmessage({data:{type:'run',filename:'main.py',code:'',files:{'main.py':''},assets:{}}});
+assert(removed.includes('/home/pyodide/images/tile.png'),'Deleted assets remain in the runtime');

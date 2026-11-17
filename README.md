@@ -129,3 +129,11 @@ Pygame loops must yield with `await asyncio.sleep(1 / 60)`. Pygame Zero uses sho
 Current scope: Python/text files, drawing, built-in fonts, keyboard/mouse and touch buttons. Image/audio asset upload is not implemented in the editor; audio and `tone.play()` are not validated. No promise of desktop feature parity. The first load downloads extra runtime assets. Close/Stop disposes the game frame; normal Python continues in its worker.
 
 Previously saved Breakout projects using `lab_graphics` still run with the retained canvas bridge. New Breakout projects use Pygame CE. No saved student code is rewritten. Source copies in `templates/` must match the embedded gallery files.
+
+## Images and audio
+
+Choose **Project → Upload Images / Audio**. PNG, JPG/JPEG, GIF, WebP and BMP images go into `images/`; WAV, MP3 and OGG audio goes into `sounds/` (or choose `music/` for background music). You may also choose the current folder. Uploads normalize filenames to lowercase underscores and add a suffix on collisions. Click a media file in Explorer to preview it and see usage examples.
+
+Limits: 8 MB per file and 24 MB of media per project. Media requires IndexedDB; ZIP backups include the original binary data and can be imported as separate projects. Uploaded media is available to normal Python, tests, recorded traces, Pygame and Pygame Zero. These uploads stay on the device in browser storage.
+
+Paths are relative to the running script's folder. Pygame Zero expects `images/`, `sounds/`, and `music/` beside the script. Click **Enable audio** in the game view before sound playback. GIFs load as still images. Browser codec support applies; PNG and WAV are good classroom defaults. Uploads do not record microphone audio.
