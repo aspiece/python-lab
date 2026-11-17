@@ -39,6 +39,8 @@ jobs:
         run: node tests/classroom-templates.mjs
       - name: Verify student help and backup controls
         run: node tests/student-tools.mjs
+      - name: Validate binary media uploads and preloading
+        run: node tests/media-assets.mjs
       - name: Exercise Breakout gameplay and graphics bridge
         run: |
           python3 -m pip install pygame-ce==2.5.3 numpy==2.2.6

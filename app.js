@@ -5,6 +5,9 @@ const sample='# Welcome to Python Lab!\n# Write Python and click Run.\n\nname = 
 let initial={};try{initial=JSON.parse(localStorage.getItem(storageKey))||{}}catch{}
 let inputHistory=[],activeRun=null,commandHistory=[],historyIndex=0,terminalMode='shell';let filename=initial.filename||'main.py',code=typeof initial.code==='string'?initial.code:sample,editor=null,worker=null,ready=false,running=false,runSerial=0,saveTimer;
 const files=(initial.files && typeof initial.files==='object')?initial.files:{};const dirs=new Set(Array.isArray(initial.dirs)?initial.dirs:[]);let cwd=initial.cwd||'';
+const assets={...(initial.assets||{})};
+const hasEntry=path=>Object.hasOwn(files,path)||Object.hasOwn(assets,path);
+const entryNames=()=>[...Object.keys(files),...Object.keys(assets)];
 files[filename]=code;
 let openTabs=[...new Set((Array.isArray(initial.openTabs)?initial.openTabs:[filename]).filter(p=>typeof p==='string'&&Object.hasOwn(files,p)))];
 if(!openTabs.includes(filename))openTabs.push(filename);
@@ -95,14 +98,14 @@ function shellWords(line){
  return words;
 }
 function parent(path){return path.includes('/')?path.slice(0,path.lastIndexOf('/')):'';}
-function ensureDirs(path){let cur='';for(const p of path.split('/').filter(Boolean)){cur=cur?cur+'/'+p:p;dirs.add(cur);}}
+function ensureDirs(path){let cur='';const pending=[];for(const p of path.split('/').filter(Boolean)){cur=cur?cur+'/'+p:p;if(hasEntry(cur))throw Error('A file already uses the folder path: '+cur);pending.push(cur);}for(const dir of pending)dirs.add(dir);}
 function displayPath(){return '~/python-lab'+(cwd?'/'+cwd:'');}
  const fallback=$('fallbackEditor');fallback.value=code;$('stdin').value=typeof initial.stdin==='string'?initial.stdin:'Alex';
 function getCode(){return editor?editor.getValue():fallback.value;}
 function workspaceSnapshot(){if(Object.hasOwn(files,filename))files[filename]=getCode();}
-window.pythonLabWorkspace=()=>{workspaceSnapshot();return {filename,files:{...files},dirs:[...dirs],cwd};};
+window.pythonLabWorkspace=()=>{workspaceSnapshot();return {filename,files:{...files},assets:{...assets},dirs:[...dirs],cwd};};
 function languageFor(path){const ext=path.split('.').pop().toLowerCase();return ({py:'python',json:'json',md:'markdown',html:'html',css:'css',js:'javascript'})[ext]||'plaintext';}
-function iconFor(path){const ext=path.split('.').pop().toLowerCase();return ext==='py'?'🐍':ext==='json'?'{}':ext==='csv'?'▦':'📄';}
+function iconFor(path){if(assets[path])return assets[path].mime.startsWith('image/')?'🖼':'♫';const ext=path.split('.').pop().toLowerCase();return ext==='py'?'🐍':ext==='json'?'{}':ext==='csv'?'▦':'📄';}
 function modelFor(path){
  if(typeof monaco==='undefined')return null;
  if(models.has(path))return models.get(path);
@@ -114,7 +117,7 @@ function projectSnapshot(){
  workspaceSnapshot();
  return {
   filename,code:getCode(),stdin:$('stdin').value,args:$('args').value,
-  files:{...files},dirs:[...dirs],cwd,expanded:[...expanded],openTabs:[...openTabs],
+  files:{...files},assets:{...assets},dirs:[...dirs],cwd,expanded:[...expanded],openTabs:[...openTabs],
   debugBreakpoints:window.pythonLabDebug?.serialize()||initial.debugBreakpoints||{}
  };
 }
@@ -123,16 +126,18 @@ function persist(immediate=false){
  clearTimeout(saveTimer);
  const write=()=>{
   const snapshot=projectSnapshot();
-  try{localStorage.setItem(storageKey,JSON.stringify(snapshot));}
+  try{if(!Object.keys(assets).length)localStorage.setItem(storageKey,JSON.stringify(snapshot));}
   catch{$('saveStatus').textContent='Browser storage limited — export a ZIP';}
-  if(!projectReady||!activeProjectId||projectBusy)return Promise.resolve();
+  if(!projectReady||!activeProjectId||projectBusy)return Promise.resolve(false);
   const task=window.pythonLabProjects.save(activeProjectId,snapshot);
   return task.then(()=>{
    const mode=window.pythonLabProjects.state().mode;
    $('saveStatus').textContent=mode==='memory'?'Temporary session only — export ZIP':mode==='localStorage'?'Saved with limited storage — back up your project':'Saved on this device';
+   return mode!=='memory';
   }).catch(err=>{
    $('saveStatus').textContent='Save failed — export ZIP';
    console.error('Python Lab local project save failed',err);
+   return false;
   });
  };
  if(immediate)return write();
@@ -209,6 +214,7 @@ function renderTabs(){
 }
 function setFilename(value){filename=normalize(value||'main.py','');if(!/\.[^/]+$/.test(filename))filename+='.py';ensureDirs(parent(filename));for(let p=parent(filename);p;p=parent(p))expanded?.add(p);if(!openTabs.includes(filename))openTabs.push(filename);renderTabs();updateStatusBar();persist();}
 function switchToFile(next){
+ if(assets[next]){window.pythonLabAssets?.preview(next,assets[next]);return;}
  if(!Object.hasOwn(files,next))return;
  if(next===filename){if(!openTabs.includes(next))openTabs.push(next);renderTabs();return;}
  workspaceSnapshot();
@@ -280,8 +286,8 @@ function modifyEntry(type,oldPath,action){
   workspaceSnapshot();
   if(action==='delete'){
     if(!confirm('Delete '+oldPath+(type==='folder'?' and all files and folders inside it':'')+'? This cannot be undone.'))return;
-    if(type==='folder'){for(const p of Object.keys(files))if(p.startsWith(oldPath+'/'))delete files[p];for(const p of [...dirs])if(p===oldPath||p.startsWith(oldPath+'/'))dirs.delete(p);}
-    else delete files[oldPath];
+    if(type==='folder'){for(const p of Object.keys(assets))if(p.startsWith(oldPath+'/'))delete assets[p];for(const p of Object.keys(files))if(p.startsWith(oldPath+'/'))delete files[p];for(const p of [...dirs])if(p===oldPath||p.startsWith(oldPath+'/'))dirs.delete(p);}
+    else {delete files[oldPath];delete assets[oldPath];}
     if(type==='folder'&&(cwd===oldPath||cwd.startsWith(oldPath+'/')))cwd='';
     for(const [path,model] of [...models])if(!Object.hasOwn(files,path)){if(editor&&editor.getModel()===model)editor.setModel(null);model.dispose();models.delete(path);viewStates.delete(path);}
     openTabs=openTabs.filter(path=>Object.hasOwn(files,path));
@@ -293,13 +299,14 @@ function modifyEntry(type,oldPath,action){
   const name=prompt(action==='move'?'Move to path (including name):':'Rename (new name or path):',oldPath);
   if(name===null)return;
   let dest;
-  try{dest=normalize(name,'');if(!dest||dest===oldPath)return;if(type==='file'&&!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(dest))throw Error('Use a supported text file extension (.py, .txt, .csv, .json, .md, etc.)');if(type==='folder'&&dest.startsWith(oldPath+'/'))throw Error('Cannot move a folder inside itself');if(type==='folder'&&Object.keys(files).some(p=>p.startsWith(oldPath+'/')&&Object.hasOwn(files,dest+p.slice(oldPath.length))))throw Error('Destination has conflicting files');if((type==='folder'&&dirs.has(dest))||Object.hasOwn(files,dest)||[...dirs].some(d=>d===dest&&type==='file'))throw Error('Destination already exists');if(parent(dest)&&!dirs.has(parent(dest)))throw Error('Destination folder does not exist');}
+  try{dest=normalize(name,'');if(!dest||dest===oldPath)return;if(type==='file'&&assets[oldPath]&&dest.split('.').pop().toLowerCase()!==oldPath.split('.').pop().toLowerCase())throw Error('Keep the original media file extension');if(type==='file'&&!assets[oldPath]&&!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(dest))throw Error('Use a supported text file extension (.py, .txt, .csv, .json, .md, etc.)');if(type==='folder'&&dest.startsWith(oldPath+'/'))throw Error('Cannot move a folder inside itself');if(type==='folder'&&entryNames().some(p=>p.startsWith(oldPath+'/')&&hasEntry(dest+p.slice(oldPath.length))))throw Error('Destination has conflicting files');if((type==='folder'&&dirs.has(dest))||hasEntry(dest)||[...dirs].some(d=>d===dest&&type==='file'))throw Error('Destination already exists');if(parent(dest)&&!dirs.has(parent(dest)))throw Error('Destination folder does not exist');}
   catch(err){alert(err.message);return;}
-  if(type==='file'){files[dest]=files[oldPath];delete files[oldPath];if(filename===oldPath)filename=dest;}
+  if(type==='file'){if(assets[oldPath]){assets[dest]=assets[oldPath];delete assets[oldPath];}else{files[dest]=files[oldPath];delete files[oldPath];if(filename===oldPath)filename=dest;}}
   else {
     const movePath=p=>p===oldPath?dest:p.startsWith(oldPath+'/')?dest+p.slice(oldPath.length):p;
     const movedFiles={};for(const [p,code] of Object.entries(files)){const next=movePath(p);if(next in movedFiles)throw Error('Path collision');movedFiles[next]=code;}
     for(const p of Object.keys(files))delete files[p];Object.assign(files,movedFiles);
+    const movedAssets={};for(const [p,a] of Object.entries(assets))movedAssets[movePath(p)]=a;for(const p of Object.keys(assets))delete assets[p];Object.assign(assets,movedAssets);
     const movedDirs=[...dirs].map(movePath);dirs.clear();for(const p of movedDirs)dirs.add(p);
     filename=movePath(filename);cwd=movePath(cwd);
   }
@@ -329,6 +336,8 @@ function loadWorkspace(snapshot){
    if(typeof content==='string')files[path]=content;
   }
  }
+ for(const path of Object.keys(assets))delete assets[path];
+ for(const [path,asset] of Object.entries(incoming.assets||{}))if(window.pythonLabAssets?.valid(asset)&&path.split('/').every(part=>part&&part!=='.'&&part!=='..'&&/^[\w. -]+$/.test(part))&&window.pythonLabAssets.mime(path)===asset.mime&&!Object.hasOwn(files,path))assets[path]=asset;
  if(!Object.keys(files).length)files['main.py']='# New Python program\n';
  dirs.clear();
  for(const dir of (Array.isArray(incoming.dirs)?incoming.dirs:[]))if(typeof dir==='string')dirs.add(dir);
@@ -499,7 +508,7 @@ async function bootstrapProjects(){
 const expanded=new Set(Array.isArray(initial.expanded)?initial.expanded:[...dirs]);
 function renderFiles(){
  const host=$('fileList');host.textContent='';
- const allFiles=[...new Set([filename,...Object.keys(files)])];
+ const allFiles=[...new Set([filename,...entryNames()])];
  function children(folder,depth){
   const folders=[...dirs].filter(d=>parent(d)===folder).sort((a,b)=>a.localeCompare(b));
   for(const path of folders){
@@ -523,12 +532,13 @@ function renderFiles(){
  children('',0);
 }
 function updatePrompt(){const node=$('terminalChevron');if(node)node.textContent=displayPath()+' $';}
-function createWorker(){window.pythonLabGameRunner?.stop();window.pythonLabGraphics?.close();if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=20');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='graphicsFrame')window.pythonLabGraphics?.draw(data.commands);window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
+function createWorker(){window.pythonLabGameRunner?.stop();window.pythonLabGraphics?.close();if(worker)worker.terminate();ready=false;running=false;updateButtons();setStatus('Loading Python…');const serial=++runSerial;worker=new Worker('python-worker.js?v=21');worker.onmessage=({data})=>{if(serial!==runSerial)return;if(data.type==='graphicsFrame')window.pythonLabGraphics?.draw(data.commands);window.pythonLabSmart?.onWorkerMessage(data);if(data.type==='packageStatus'&&data.name==='cs50'){
 
   append(data.success?'✓ CS50 Python library loaded automatically.\n':'CS50 library could not load in this browser (regular Python still works): '+String(data.error||'Unknown error')+'\n',data.success?'success-line':'error-line');
 }if(data.type==='ready'){window.pythonLabSmart?.onWorkerReady();ready=true;setStatus('Python ready','ready');updateButtons();append('✓ Python ready. Type help for supported commands.\n','success-line');showShell();}if(data.type==='output')receiveWorkerOutput(data.text,data.stream==='stderr'?'error-line':'');if(data.type==='needInput'){terminalMode='input';running=true;setStatus('Waiting for input…');$('terminalPrompt').hidden=false;enhancedTerminal?.setMode('input',latestInputPrompt());if(enhancedTerminal)enhancedTerminal.focus();else $('terminalInput').focus();$('output').parentElement.scrollTop=$('output').parentElement.scrollHeight;}if(data.type==='traceResults'){running=false;updateButtons();setStatus('Python ready','ready');window.pythonLabDebug?.onResult(data);showShell();}if(data.type==='done'){window.pythonLabGraphics?.close();terminalMode='shell';activeRun=null;running=false;updateButtons();setStatus('Python ready','ready');/* No elapsed-time banner: keep students focused on their program output. */showShell();}if(data.type==='files'){
   workspaceSnapshot();
   for(const [path,content] of Object.entries(data.files||{})){
+   if(assets[path])continue;
    const prior=files[path],model=models.get(path);
    // Do not overwrite changes a student made after pressing Run.
    if(Object.hasOwn(lastExecutionFiles,path)&&prior!==lastExecutionFiles[path])continue;
@@ -574,7 +584,7 @@ function executePython(name,args=[],command=''){
  running=true;terminalMode='busy';inputHistory=[];
  replayBaseline='';scriptTranscript='';replayWarned=false;
  updateButtons();setStatus('Running…');
- activeRun={code:files[name],filename:name,files:{...files},dirs:[...dirs],cwd:parent(name),args,command};
+ activeRun={code:files[name],filename:name,files:{...files},assets:{...assets},dirs:[...dirs],cwd:parent(name),args,command};
  lastExecutionFiles={...activeRun.files};
  if(!command){const label='python '+name+(args.length?' '+args.join(' '):'');if(enhancedTerminal)enhancedTerminal.echoCommand(label);else append(displayPath()+' $ '+label+'\n');}
  sendExecution();persist();
@@ -596,7 +606,7 @@ function requestDebugTrace(options){
   return;
  }
  running=true;terminalMode='busy';updateButtons();setStatus('Recording trace…');
- worker.postMessage({type:'trace',filename:options.filename,files:{...files},dirs:[...dirs],inputs:options.inputs||[],args:options.args||[]});
+ worker.postMessage({type:'trace',filename:options.filename,files:{...files},assets:{...assets},dirs:[...dirs],inputs:options.inputs||[],args:options.args||[]});
 }
 async function installTemplate(project){
  if(running){alert('Finish or stop the running program before opening a template.');return false;}
@@ -633,16 +643,16 @@ async function installTemplate(project){
 function stop(){if(!running)return;window.pythonLabDebug?.abort();terminalMode='shell';activeRun=null;inputHistory=[];replayBaseline='';scriptTranscript='';$('terminalPrompt').hidden=true;append('\n^C\n','error-line');createWorker();}
 function download(path=filename){
  workspaceSnapshot();
- if(!Object.hasOwn(files,path))throw Error('File not found: '+path);
- const content=files[path];
- const type=path.endsWith('.py')?'text/x-python;charset=utf-8':'text/plain;charset=utf-8';
+ if(!hasEntry(path))throw Error('File not found: '+path);
+ const content=assets[path]?window.pythonLabAssets.bytes(assets[path]):files[path];
+ const type=assets[path]?.mime||(path.endsWith('.py')?'text/x-python;charset=utf-8':'text/plain;charset=utf-8');
  const url=URL.createObjectURL(new Blob([content],{type}));
  const a=document.createElement('a');
  a.href=url;a.download=path.split('/').pop();
  document.body.append(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(Object.hasOwn(files,path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
+function resetFile(){workspaceSnapshot();let name=prompt('New filename',cwd?cwd+'/main.py':'main.py');if(!name)return;try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(hasEntry(path)){switchToFile(path);return;}files[path]=path.endsWith('.py')?'# New Python program\n\n':'';ensureDirs(parent(path));switchToFile(path);$('stdin').value='';persist();}catch(err){alert(err.message);}}
 function showShell(){if(!ready||running)return;updatePrompt();terminalMode='shell';$('terminalPrompt').hidden=false;$('terminalInput').placeholder='Type a command';$('terminalInput').value='';if(enhancedTerminal){enhancedTerminal.setMode('shell',displayPath()+' $ ');}else $('terminalInput').focus();}
 function shellCommand(line,alreadyEchoed=false){
  try{
@@ -650,9 +660,24 @@ function shellCommand(line,alreadyEchoed=false){
   if(!alreadyEchoed)append(displayPath()+' $ '+line+'\n');
   if(!args.length){showShell();return;}
   const cmd=args[0],rest=args.slice(1);
+  if(['cp','mv','rm'].includes(cmd)&&rest[0]&&assets[normalize(rest[0])]){
+    if(running)throw Error('Stop the running program before changing assets.');
+    const source=normalize(rest[0]);
+    if(cmd==='rm'){if(rest.length!==1)throw Error('Usage: rm FILE');delete assets[source];}
+    else{
+     if(rest.length!==2)throw Error('Usage: '+cmd+' SOURCE DEST');
+     const requested=normalize(rest[1]),dest=dirs.has(requested)?requested+'/'+source.split('/').pop():requested;
+     if(hasEntry(dest)||dirs.has(dest))throw Error('Destination already exists');
+     if(parent(dest)&&!dirs.has(parent(dest)))throw Error('Destination folder does not exist');
+     if(source.split('.').pop().toLowerCase()!==dest.split('.').pop().toLowerCase())throw Error('Keep the media file extension');
+     if(cmd==='cp'&&window.pythonLabAssets.total(assets)+assets[source].size>window.pythonLabAssets.MAX_TOTAL)throw Error('Project media exceeds 24 MB');
+     assets[dest]=assets[source];if(cmd==='mv')delete assets[source];
+    }
+    renderFiles();persist();showShell();return;
+  }
   if(cmd==='clear'||cmd==='cls'){clearTerminal();}
   else if(cmd==='help')append('Browser commands: python/python3 FILE.py [args], python -c CODE, pytest [FILE_OR_DIR], python -m pytest [FILE_OR_DIR], ls/dir, tree, pwd, cd, mkdir [-p], rmdir, cat/type, echo, touch, cp, mv, rm, whoami, clear/cls, help, pip list.\nPaths may be relative to the current directory; quoted names with spaces are supported.\nCS50 Python loads automatically. Official submit50/check50 need an authenticated CS50 Codespace; the terminal is a simulation.\n');
-  else if(cmd==='ls'||cmd==='dir'){const target=normalize(rest.find(a=>!a.startsWith('-'))||'.');if(target&&!dirs.has(target))append('No such directory: '+target+'\n','error-line');else append([...dirs].filter(d=>parent(d)===target).map(d=>d.split('/').pop()+'/').concat(Object.keys(files).filter(f=>parent(f)===target).map(f=>f.split('/').pop())).sort().join('    ')+'\n');}
+  else if(cmd==='ls'||cmd==='dir'){const target=normalize(rest.find(a=>!a.startsWith('-'))||'.');if(target&&!dirs.has(target))append('No such directory: '+target+'\n','error-line');else append([...dirs].filter(d=>parent(d)===target).map(d=>d.split('/').pop()+'/').concat(entryNames().filter(f=>parent(f)===target).map(f=>f.split('/').pop())).sort().join('    ')+'\n');}
   else if(cmd==='pwd')append('/home/pyodide'+(cwd?'/'+cwd:'')+'\n');
   else if(cmd==='echo')append(rest.join(' ')+'\n');
   else if(cmd==='whoami')append('student (browser simulation)\n');
@@ -662,7 +687,7 @@ function shellCommand(line,alreadyEchoed=false){
     const root=normalize(rest[0]||'.');if(root&&!dirs.has(root)){append('tree: no such directory: '+root+'\n','error-line');}
     else{
       const entries=[];
-      for(const p of [...dirs,...Object.keys(files)].sort()){
+      for(const p of [...dirs,...entryNames()].sort()){
         if(root&&!p.startsWith(root+'/'))continue;
         const rel=root?p.slice(root.length+1):p;
         if(!rel)continue;
@@ -675,7 +700,8 @@ function shellCommand(line,alreadyEchoed=false){
     if(!rest.length)append('Usage: cat FILE [FILE ...]\n','error-line');
     else for(const name of rest){
       const path=normalize(name);
-      if(!Object.hasOwn(files,path))append('cat: file not found: '+name+'\n','error-line');
+      if(assets[path])append(path+' is a media file. Click it in Explorer to preview it.\n');
+      else if(!Object.hasOwn(files,path))append('cat: file not found: '+name+'\n','error-line');
       else append(files[path]+(files[path].endsWith('\n')?'':'\n'));
     }
   }
@@ -684,7 +710,7 @@ function shellCommand(line,alreadyEchoed=false){
     else{const source=normalize(rest[0]),requested=normalize(rest[1]);
       const dest=dirs.has(requested)?requested+'/'+source.split('/').pop():requested;
       if(!Object.hasOwn(files,source))append('cp: source file not found\n','error-line');
-      else if(Object.hasOwn(files,dest)||dirs.has(dest))append('cp: destination already exists\n','error-line');
+      else if(hasEntry(dest)||dirs.has(dest))append('cp: destination already exists\n','error-line');
       else if(parent(dest)&&!dirs.has(parent(dest)))append('cp: destination folder not found\n','error-line');
       else{files[dest]=files[source];renderFiles();persist();}
     }
@@ -711,7 +737,7 @@ function shellCommand(line,alreadyEchoed=false){
       const source=normalize(rest[0]),requested=normalize(rest[1]);
       const dest=dirs.has(requested)?requested+'/'+source.split('/').pop():requested;
       if(!Object.hasOwn(files,source))append('mv: source must be a file (move folders in Explorer)\n','error-line');
-      else if(Object.hasOwn(files,dest)||dirs.has(dest))append('mv: destination already exists\n','error-line');
+      else if(hasEntry(dest)||dirs.has(dest))append('mv: destination already exists\n','error-line');
       else if(parent(dest)&&!dirs.has(parent(dest)))append('mv: destination folder not found\n','error-line');
       else{
         files[dest]=files[source];delete files[source];
@@ -728,7 +754,7 @@ function shellCommand(line,alreadyEchoed=false){
     if(!rest[0])append('Usage: rmdir EMPTY_DIRECTORY\n','error-line');
     else{const dir=normalize(rest[0]);
       if(!dirs.has(dir))append('rmdir: directory not found\n','error-line');
-      else if([...dirs].some(p=>p.startsWith(dir+'/'))||Object.keys(files).some(p=>p.startsWith(dir+'/')))append('rmdir: directory is not empty\n','error-line');
+      else if([...dirs].some(p=>p.startsWith(dir+'/'))||entryNames().some(p=>p.startsWith(dir+'/')))append('rmdir: directory is not empty\n','error-line');
       else{dirs.delete(dir);expanded.delete(dir);if(cwd===dir)cwd=parent(dir);renderFiles();persist();}
     }
   }
@@ -736,7 +762,7 @@ function shellCommand(line,alreadyEchoed=false){
     if(rest.length!==1)append('Usage: touch FILE\n','error-line');
     else{
       const p=normalize(rest[0]);
-      if(!p||dirs.has(p))append('touch: target is a directory\n','error-line');
+      if(!p||dirs.has(p)||assets[p])append('touch: target is a directory\n','error-line');
       else if(parent(p)&&!dirs.has(parent(p)))append('touch: parent directory does not exist\n','error-line');
       else{files[p]??='';renderFiles();persist();}
     }
@@ -746,7 +772,7 @@ function shellCommand(line,alreadyEchoed=false){
     if(args.length!==1)append('Usage: mkdir [-p] DIRECTORY\n','error-line');
     else{
       const target=normalize(args[0]);
-      const components=target.split('/');const conflict=components.some((_,i)=>Object.hasOwn(files,components.slice(0,i+1).join('/')));
+      const components=target.split('/');const conflict=components.some((_,i)=>hasEntry(components.slice(0,i+1).join('/')));
       if(!target)append('mkdir: invalid directory\n','error-line');
       else if(conflict)append('mkdir: a file blocks that directory path\n','error-line');
       else if(dirs.has(target)){if(!recursive)append('mkdir: directory already exists\n','error-line');}
@@ -782,7 +808,7 @@ function runWorkerCode(code,command,alreadyEchoed=false,purpose='script',testTar
  if(!ready||running)return;workspaceSnapshot();
  revealRunTerminal();
  running=true;terminalMode='busy';updateButtons();
- activeRun={code,filename:'__command__.py',files:{...files},dirs:[...dirs],cwd,args:[],command,purpose,testTargets};
+ activeRun={code,filename:'__command__.py',files:{...files},assets:{...assets},dirs:[...dirs],cwd,args:[],command,purpose,testTargets};
  inputHistory=[];replayBaseline='';scriptTranscript='';replayWarned=false;
  lastExecutionFiles={...activeRun.files};
  if(command&&!alreadyEchoed){if(enhancedTerminal)enhancedTerminal.echoCommand(command);else append(displayPath()+' $ '+command+'\n');}
@@ -831,22 +857,29 @@ $('projectInput').addEventListener('change',async e=>{
  if(!projectReady){alert('Project storage is still loading. Try again shortly.');return;}
  if(running){alert('Stop the running Python program before importing a project.');return;}
  try{
-  const zip=await JSZip.loadAsync(archive),newFiles={},newDirs=new Set();let count=0;
+  if(archive.size>32*1024*1024)throw Error('ZIP must be under 32 MB');
+  const zip=await JSZip.loadAsync(archive),newFiles={},newAssets={},newDirs=new Set();let count=0,totalSize=0;
   for(const [raw,entry] of Object.entries(zip.files)){
    const clean=raw.replace(/\/$/,'');
    if(!clean||clean.startsWith('/')||clean.split('/').some(p=>p==='..'||p==='.'||!p||!/^[\w. -]+$/.test(p)))continue;
    if(entry.dir){newDirs.add(clean);continue;}
-   if(!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(clean))continue;
-   if(++count>150)throw Error('Project exceeds 150 text files.');
-   const content=await entry.async('string');if(content.length>1024*1024)throw Error('File too large: '+clean);
-   newFiles[clean]=content;let parentDir=parent(clean);
+   const media=window.pythonLabAssets?.mime(clean);
+   if(!media&&!/\.(py|txt|csv|json|md|html|css|js|toml|ini)$/i.test(clean))continue;
+   if(++count>150)throw Error('Project exceeds 150 files.');
+   const data=await window.pythonLabAssets.readZip(entry,media?window.pythonLabAssets.MAX_FILE:1024*1024);
+   totalSize+=data.length;if(totalSize>32*1024*1024)throw Error('Expanded project exceeds 32 MB');
+   if(media){newAssets[clean]=window.pythonLabAssets.fromBytes(clean,data);if(window.pythonLabAssets.total(newAssets)>window.pythonLabAssets.MAX_TOTAL)throw Error('Project media exceeds 24 MB');}
+   else newFiles[clean]=new TextDecoder().decode(data);
+   let parentDir=parent(clean);
    while(parentDir){newDirs.add(parentDir);parentDir=parent(parentDir);}
   }
-  if(!Object.keys(newFiles).length)throw Error('No supported text files were found.');
+  if(Object.keys(newAssets).length&&window.pythonLabProjects.state().mode!=='indexeddb')throw Error('Media projects need IndexedDB storage. Use a browser with persistent site storage enabled.');
+  if(!Object.keys(newFiles).length){if(!Object.keys(newAssets).length)throw Error('No supported files were found.');newFiles['main.py']='# Your uploaded media is in Explorer.\n';}
+  for(const p of [...Object.keys(newFiles),...Object.keys(newAssets)])if(newDirs.has(p))throw Error('ZIP contains a file/folder path conflict: '+p);
   const name=archive.name.replace(/\.zip$/i,'').slice(0,70)||'Imported Project';
   if(!confirm('Import "'+name+'" as a separate project? Your current files will be preserved.'))return;
   const selected=Object.hasOwn(newFiles,'main.py')?'main.py':Object.keys(newFiles).sort()[0];
-  const workspace={filename:selected,code:newFiles[selected],files:newFiles,dirs:[...newDirs],
+  const workspace={filename:selected,code:newFiles[selected],files:newFiles,assets:newAssets,dirs:[...newDirs],
    expanded:[...newDirs],openTabs:[selected],cwd:'',stdin:'',args:'',debugBreakpoints:{}};
   await createProjectFromSnapshot(name,workspace);
   append('Imported '+count+' files into a separate project.\n','success-line');
@@ -857,6 +890,38 @@ document.addEventListener('click',e=>{if(!e.target.closest('#fileContextMenu'))$
 document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fileContextMenu').hidden=true;});
 $('newBtn').addEventListener('click',()=>{const d=$('confirmDialog');if(d.showModal)d.showModal();else if(confirm('Create a new file?'))resetFile();});
 $('confirmDialog').addEventListener('close',()=>{if($('confirmDialog').returnValue==='confirm')resetFile();});
+$('uploadMediaBtn').addEventListener('click',()=>{$('mediaUploadDialog').showModal();});
+$('mediaUploadClose').addEventListener('click',()=> $('mediaUploadDialog').close());
+$('assetPreviewClose').addEventListener('click',()=>{$('assetPreviewBody').textContent='';$('assetPreviewDialog').close();});
+$('assetPreviewDialog').addEventListener('close',()=>{$('assetPreviewBody').textContent='';});
+$('assetInput').addEventListener('change',async e=>{
+ const selected=[...e.target.files];e.target.value='';if(!selected.length)return;
+ const status=$('mediaUploadStatus');
+ const project=activeProjectId,uploadCwd=cwd,destination=$('mediaDestination').value||'auto';
+ $('assetInput').disabled=true;
+ try{
+  if(running||projectBusy)throw Error('Stop the running program before uploading media.');
+  if(!projectReady||window.pythonLabProjects.state().mode!=='indexeddb')throw Error('Media uploads need IndexedDB storage. Use a browser with persistent site storage enabled.');
+  const lib=window.pythonLabAssets,staged={};
+  for(const file of selected){
+   if(file.size>lib.MAX_FILE)throw Error(file.name+': maximum size is 8 MB');
+   const type=lib.mime(file.name);if(!type)throw Error('Unsupported media: '+file.name);
+   const folder=destination==='current'?uploadCwd:type.startsWith('image/')?'images':destination==='music'?'music':'sounds';
+   const path=lib.unique((folder?folder+'/':'')+lib.name(file.name),p=>hasEntry(p)||dirs.has(p)||Object.hasOwn(staged,p));
+   if(folder.split('/').some((_,i)=>hasEntry(folder.split('/').slice(0,i+1).join('/'))))throw Error('A file is using the destination folder name. Rename it first.');
+   staged[path]=lib.fromBytes(path,new Uint8Array(await file.arrayBuffer()));
+   if(lib.total(assets)+lib.total(staged)>lib.MAX_TOTAL)throw Error('Project media exceeds 24 MB');
+  }
+  if(project!==activeProjectId||running||projectBusy)throw Error('The active project changed. Try uploading again.');
+  // Commit the whole batch only after validation succeeds.
+  Object.assign(assets,staged);
+  for(const path of Object.keys(staged)){ensureDirs(parent(path));for(let d=parent(path);d;d=parent(d))expanded.add(d);}
+  renderFiles();const saved=await persist(true);
+  if(!saved)throw Error('Files were added in this session but could not be saved. Export a ZIP before closing.');
+  status.textContent='Added '+Object.keys(staged).join(', ')+'. Saved on this device. Click a file in Explorer to preview it.';
+ }catch(error){status.textContent='Upload failed: '+error.message;}
+ finally{$('assetInput').disabled=false;}
+});
 $('openBtn').addEventListener('click',()=> $('fileInput').click());
 $('runBtn').addEventListener('click',run);
 $('stopBtn').addEventListener('click',stop);
@@ -873,7 +938,7 @@ $('addFolderBtn').addEventListener('click',()=>{
 });
 $('addFileBtn').addEventListener('click',()=>{
  const name=prompt('New file path',cwd?cwd+'/test_main.py':'test_main.py');if(!name)return;
- try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(!path)return;if(Object.hasOwn(files,path)){switchToFile(path);return;}
+ try{const stem=normalize(name,'');const path=stem+(/\.[^/]+$/.test(stem)?'':'.py');if(!path)return;if(hasEntry(path)){switchToFile(path);return;}
   if(dirs.has(path))throw Error('A folder already uses that name.');if(parent(path)&&!dirs.has(parent(path)))throw Error('Create the parent folder first.');
   workspaceSnapshot();files[path]=path.endsWith('.py')?'# '+path+'\n':'';switchToFile(path);
  }catch(err){alert(err.message);}
@@ -882,7 +947,7 @@ $('testBtn').addEventListener('click',()=>executeVirtualTest());
 fallback.addEventListener('input',persist);fallback.addEventListener('click',updateStatusBar);fallback.addEventListener('keyup',updateStatusBar);
 $('fileInput').addEventListener('change',async e=>{
  const f=e.target.files?.[0];e.target.value='';if(!f)return;
- try{if(f.size>1048576)throw Error('File must be under 1 MB');workspaceSnapshot();const path=normalize(cwd?cwd+'/'+f.name:f.name,'');if(parent(path)&&!dirs.has(parent(path)))ensureDirs(parent(path));files[path]=await f.text();if(models.has(path)&&models.get(path).getValue()!==files[path])models.get(path).setValue(files[path]);if(path===filename){setCode(files[path]);renderFiles();}else switchToFile(path);}
+ try{if(f.size>1048576)throw Error('File must be under 1 MB');workspaceSnapshot();const path=normalize(cwd?cwd+'/'+f.name:f.name,'');if(parent(path)&&!dirs.has(parent(path)))ensureDirs(parent(path));if(assets[path])throw Error('A media file already uses that path');files[path]=await f.text();if(models.has(path)&&models.get(path).getValue()!==files[path])models.get(path).setValue(files[path]);if(path===filename){setCode(files[path]);renderFiles();}else switchToFile(path);}
  catch(err){append('Open failed: '+err.message+'\n','error-line');}
 });
 $('explorerToggle').addEventListener('click',toggleSidebar);

@@ -7,7 +7,7 @@ new Script(source,{filename:'student-tools.js'});
 for(const id of ['studentToolsBtn','studentToolsDialog','toolsReferenceTab','toolsBackupTab','toolsNetworkTab','toolsReferencePanel','toolsBackupPanel','toolsNetworkPanel','pythonReferenceSearch','pythonReferenceResults','downloadBackupBtn','networkCheckBtn','networkCheckResults','studentToolsClose']){
  assert(html.includes('id="'+id+'"'),'Missing student tool UI '+id);
 }
-assert(html.includes('student-tools.js?v=2'));
+assert(html.includes('student-tools.js?v=3'));
 assert.match(html, /styles\.css\?v=\d+/);
 assert(html.includes('traceChanges'));
 assert(css.includes('project-actions-menu'));

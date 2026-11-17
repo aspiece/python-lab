@@ -54,6 +54,7 @@ function makeContext(storage,idb){
  });
  return window.pythonLabProjects;
 }
+const media={'images/tile.png':{mime:'image/png',size:8,base64:'iVBORw0KGgo='}};
 const legacy={
  filename:'main.py',code:'print("legacy")',files:{'main.py':'print("legacy")'},
  dirs:[],cwd:'',openTabs:['main.py'],debugBreakpoints:{'main.py':[2]}
@@ -72,7 +73,7 @@ for(const backend of ['indexeddb','localStorage']){
  },'assignment-abc');
  assert.notEqual(second.id,first);
  await store.save(second.id,{
-  filename:'main.py',files:{'main.py':'print(2)'},dirs:[],cwd:''
+  filename:'main.py',files:{'main.py':'print(2)'},assets:media,dirs:['images'],cwd:''
  });
  await store.rename(second.id,'My Loops');
  store.select(second.id);
@@ -82,6 +83,8 @@ for(const backend of ['indexeddb','localStorage']){
  const loaded=await reopened.init({filename:'other.py',files:{'other.py':'print("ignored")'}});
  assert.equal(loaded.project.id,second.id,'Project selection not restored');
  assert.equal(loaded.project.name,'My Loops');
+ assert.deepEqual(JSON.parse(JSON.stringify(loaded.project.snapshot.assets)),media,'Media bytes lost on save/reopen');
+ assert.equal((await store.get(first)).snapshot.assets,undefined,'Media leaked between projects');
  assert.equal(loaded.project.snapshot.files['main.py'],'print(2)');
  assert.equal((await reopened.list()).length,2,'Projects lost on reload');
  await reopened.remove(first);

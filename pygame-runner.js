@@ -3,7 +3,39 @@
 const canvas=document.getElementById('canvas');
 const status=document.getElementById('status');
 const origin=location.origin;
-let started=false;
+let started=false,gameRuntime;
+const audioButton=document.getElementById('enableAudio');
+audioButton.addEventListener('click',async()=>{
+ try{
+  if(!gameRuntime){audioButton.textContent='Wait for the game to load';return;}
+  gameRuntime._module.SDL?.openAudioContext?.();
+  const context=gameRuntime._module.SDL?.audioContext;
+  if(context)await context.resume();
+  audioButton.textContent=context?.state==='running'?'Audio enabled':'Click the game to enable audio';
+  canvas.focus();
+ }catch{audioButton.textContent='Audio unavailable in this browser';}
+});
+async function preloadAssets(py,assets,files){
+ // SDL's WASM image loader needs Emscripten's decoded image cache as well
+ // as the bytes in MEMFS. Browser-supported GIF/WebP use the same decoder.
+ const plugins=py._module.preloadPlugins;
+ const imagePlugin=plugins?.find(plugin=>plugin.canHandle('probe.png'));
+ if(imagePlugin){const canHandle=imagePlugin.canHandle.bind(imagePlugin);imagePlugin.canHandle=name=>canHandle(name)||/\.(gif|webp)$/i.test(name);}
+ for(const [path,asset] of Object.entries(assets||{})){
+  if(!safePath(path)||Object.hasOwn(files||{},path))throw Error('Invalid asset path: '+path);
+  const data=Uint8Array.from(atob(asset.base64),c=>c.charCodeAt(0));
+  if(data.length!==asset.size||data.length>8*1024*1024)throw Error('Invalid media: '+path);
+  const full='/home/pyodide/'+path,slash=full.lastIndexOf('/');
+  py.FS.mkdirTree(full.slice(0,slash));
+  await new Promise((resolve,reject)=>{
+   const timeout=setTimeout(()=>reject(Error('Media could not load: '+path)),15000);
+   const finish=()=>{clearTimeout(timeout);resolve();};
+   const fail=()=>{clearTimeout(timeout);reject(Error('Media could not decode: '+path));};
+   py._module.FS_createPreloadedFile(full.slice(0,slash),full.slice(slash+1),data,true,true,finish,fail);
+  });
+ }
+}
+
 const send=(type,extra={})=>parent.postMessage({channel:'python-lab-game',type,...extra},origin);
 // The trace guard reads this timestamp. A blocked loop cannot refresh it.
 window.gameHeartbeat=performance.now();
@@ -32,6 +64,7 @@ window.addEventListener('message',async event=>{
  try{
   if(typeof loadPyodide!=='function')throw Error('Game runtime could not load. Check the CDN connection and try again.');
   const py=await loadPyodide({indexURL:'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/'});
+  gameRuntime=py;
   py.setStdout({batched:text=>send('output',{text:text+'\n'})});
   py.setStderr({batched:text=>send('output',{text:text+'\n',error:true})});
   status.textContent='Loading Pygame CE…';
@@ -51,13 +84,15 @@ window.addEventListener('message',async event=>{
    py.FS.writeFile(base+'/'+path,content,{encoding:'utf8'});
   }
   for(const dir of run.dirs||[])if(safePath(dir))py.FS.mkdirTree(base+'/'+dir);
+  status.textContent='Loading project images and audio…';
+  await preloadAssets(py,run.assets,run.files);
   const cwd=run.cwd&&safePath(run.cwd)?run.cwd:'';
   py.FS.chdir(base+(cwd?'/'+cwd:''));
   py.globals.set('__game_code',run.code);
   py.globals.set('__game_filename',base+'/'+run.filename);
   py.globals.set('__game_mode',run.mode);
   py.globals.set('__game_args',run.args||[]);
-  const response=await fetch('pygame-support.py?v=2');
+  const response=await fetch('pygame-support.py?v=3');
   if(!response.ok)throw Error('Could not load the browser game runner.');
   status.textContent=run.mode==='pgzero'?'Pygame Zero · click the game for keyboard controls':'Pygame CE · click the game for keyboard controls';
   canvas.focus();

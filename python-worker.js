@@ -75,7 +75,7 @@ self.onmessage=async ({data})=>{
       runningProgram=true;
       try{
         await init();
-        if(typeof self.pythonLabRunTrace!=='function')importScripts('python-tracer.js?v=1');
+        if(typeof self.pythonLabRunTrace!=='function')importScripts('python-tracer.js?v=2');
         await self.pythonLabRunTrace(pyodide,data,message);
       }catch(err){
         message('traceResults',{frames:[],error:'Trace failed: '+String(err),output:''});
@@ -91,7 +91,8 @@ self.onmessage=async ({data})=>{
     const inputs=Array.isArray(data.stdin)
       ? data.stdin
       : data.stdin?data.stdin.replace(/\r\n/g,'\n').split('\n'):[];
-    const userFiles=data.files||{};
+    const userFiles=data.files||{},userAssets=data.assets||{};
+    const workspaceNames=[...Object.keys(userFiles),...Object.keys(userAssets)];
     const safePath=p=>typeof p==='string'&&p.split('/').every(x=>x&&!['.','..'].includes(x)&&/^[\w. -]+$/.test(x));
     const base='/home/pyodide';
     // A previous run may have changed cwd into a folder the student deleted.
@@ -102,10 +103,10 @@ self.onmessage=async ({data})=>{
     // local writes, but cannot undo external network effects or randomness.
     // Keep the virtual filesystem consistent with Explorer renames and deletions.
     for(const old of lastWorkspaceFiles){
-      if(!Object.hasOwn(userFiles,old))try{pyodide.FS.unlink(base+'/'+old);}catch{}
+      if(!Object.hasOwn(userFiles,old)&&!Object.hasOwn(userAssets,old))try{pyodide.FS.unlink(base+'/'+old);}catch{}
     }
-    lastWorkspaceFiles=new Set(Object.keys(userFiles));
-    const dirs=[...(data.dirs||[]),...Object.keys(userFiles).map(n=>n.includes('/')?n.slice(0,n.lastIndexOf('/')):'')].filter(Boolean);
+    lastWorkspaceFiles=new Set(workspaceNames);
+    const dirs=[...(data.dirs||[]),...workspaceNames.map(n=>n.includes('/')?n.slice(0,n.lastIndexOf('/')):'')].filter(Boolean);
     const expectedDirs=new Set();
     for(const dir of dirs)if(safePath(dir)){let p='';for(const seg of dir.split('/')){p=p?p+'/'+seg:seg;expectedDirs.add(p);}}
     // A deleted Explorer folder must not reappear merely because Pyodide retained it.
@@ -122,6 +123,12 @@ self.onmessage=async ({data})=>{
     for(const [name,text] of Object.entries(userFiles)){
       if(!safePath(name)||typeof text!=='string')continue;
       pyodide.FS.writeFile(base+'/'+name,text,{encoding:'utf8'});
+    }
+    for(const [name,asset] of Object.entries(userAssets)){
+      if(!safePath(name)||Object.hasOwn(userFiles,name))continue;
+      const bytes=Uint8Array.from(atob(asset.base64),c=>c.charCodeAt(0));
+      if(bytes.length!==asset.size||bytes.length>8*1024*1024)throw Error('Invalid asset: '+name);
+      pyodide.FS.writeFile(base+'/'+name,bytes);
     }
     const cwd=(data.cwd&&safePath(data.cwd))?data.cwd:'';
     pyodide.FS.chdir(base+'/'+cwd);
@@ -244,7 +251,7 @@ finally:
         }
       }
       try{collect(base,'',0);}catch(err){message('output',{text:'Workspace synchronization: '+String(err)+'\n',stream:'stderr'});}
-      lastWorkspaceFiles=new Set(Object.keys(changed));
+      lastWorkspaceFiles=new Set([...Object.keys(changed),...Object.keys(userAssets)]);
       lastWorkspaceDirs=new Set(newDirs);
       message('files',{files:changed,dirs:newDirs});
     }

@@ -77,6 +77,11 @@ async def _execute_game():
             # loader cannot read pgzero's BytesIO default icon on this build.
             PGZeroGame.show_default_icon = staticmethod(lambda: None)
             module.ICON = None
+            from pgzero.loaders import ImageLoader, SoundLoader
+            if "webp" not in ImageLoader.EXTNS:
+                ImageLoader.EXTNS = list(ImageLoader.EXTNS) + ["webp"]
+            if "mp3" not in SoundLoader.EXTNS:
+                SoundLoader.EXTNS = list(SoundLoader.EXTNS) + ["mp3"]
             prepare_mod(module)
         sys.settrace(_responsive_trace)
         result = eval(compile(__game_code, __game_filename, 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT), module.__dict__)

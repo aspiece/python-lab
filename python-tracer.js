@@ -19,6 +19,14 @@
     if(folder)pyodide.FS.mkdirTree(root+'/'+folder);
     pyodide.FS.writeFile(root+'/'+name,code,{encoding:'utf8'});
    }
+   for(const [name,asset] of Object.entries(data.assets||{})){
+    if(!valid(name)||Object.hasOwn(files,name))continue;
+    const bytes=Uint8Array.from(atob(asset.base64),c=>c.charCodeAt(0));
+    if(bytes.length!==asset.size||bytes.length>8*1024*1024)throw Error('Invalid asset: '+name);
+    const folder=name.split('/').slice(0,-1).join('/');
+    if(folder)pyodide.FS.mkdirTree(root+'/'+folder);
+    pyodide.FS.writeFile(root+'/'+name,bytes);
+   }
    pyodide.globals.set('__pl_trace_root',root);
    pyodide.globals.set('__pl_trace_file',filename);
    pyodide.globals.set('__pl_trace_inputs',Array.isArray(data.inputs)?data.inputs.map(String):[]);
