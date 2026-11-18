@@ -980,6 +980,7 @@ window.addEventListener('keydown',e=>{
 },true);
 window.pythonLabGraphics?.attach(()=>worker);
 setFilename(filename);renderFiles();updatePrompt();window.pythonLabTemplates?.attach(installTemplate);
+window.pythonLabAssessment?.attach({install:installTemplate,getFiles:()=>{workspaceSnapshot();return {...files}},activeFile:()=>filename});
 
 if(window.pythonLabProjects){bootstrapProjects().then(()=>{if(!worker)createWorker();});}
 else createWorker();
