@@ -50,11 +50,11 @@ function render(){
   const readme = state.theme==='gaming' ? '# Pong — Ball Movement\\n\\nStart at ball_x = 4 and direction = 1. Each of 3 frames moves 3 units in direction. Update ball_x. Write if/elif/else: at >= 10 set direction = -1 and status = "Right bounce"; at <= 0 set direction = 1 and status = "Left bounce"; otherwise status = "Moving". Predict ball_x after each frame before Debug Trace.\\n' : '# Playlist DJ\\n\\nThree song ratings are 5, 3, 5. Increase favorites by 1 when rating is 5. Write if/elif/else to set label: 5 = "Favorite", 4 = "Recommended", otherwise "Skip". Predict favorites after each song before Debug Trace.\\n';
   if(host.install({id:'assessment-2-'+state.theme,folderName:'assessment-2-'+state.theme,entryFile:info.file,files:{[info.file]:info.starter,'README.md':readme}})){state.started=true;save();$('assessmentDialog').close();}
  });root.append(start);
- root.append(element('h4','Predict before debugging'));
- const table=element('table');table.style.width='100%';const header=element('tr');['Iteration','Value entered','Predicted total',...(state.locked?['Observed total']:[])].forEach(x=>header.append(element('th',x)));table.append(header);
+ root.append(element('h4',state.theme==='gaming'?'Predict ball position before debugging':'Predict favorite count before debugging'));
+ const table=element('table');table.style.width='100%';const header=element('tr');['Iteration',state.theme==='gaming'?'Ball position':'Song rating',state.theme==='gaming'?'Predicted ball_x':'Predicted favorites',...(state.locked?[state.theme==='gaming'?'Observed ball_x':'Observed favorites']:[])].forEach(x=>header.append(element('th',x)));table.append(header);
  for(let i=0;i<3;i++){const tr=element('tr');tr.append(element('td',String(i+1)),element('td',String(info.inputs[i])));
-  const td=element('td'),input=element('input');input.type='number';input.value=state.pred[i];input.disabled=state.locked;input.setAttribute('aria-label','Predicted total iteration '+(i+1));input.style.width='90px';input.oninput=()=>{state.pred[i]=input.value;save();};td.append(input);tr.append(td);
-  if(state.locked){const observed=element('td'),actual=element('input');actual.type='number';actual.value=state.actual[i];actual.style.width='90px';actual.setAttribute('aria-label','Observed total iteration '+(i+1));actual.oninput=()=>{state.actual[i]=actual.value;save();};observed.append(actual);tr.append(observed);}table.append(tr);
+  const td=element('td'),input=element('input');input.type='number';input.value=state.pred[i];input.disabled=state.locked;input.setAttribute('aria-label','Predicted variable iteration '+(i+1));input.style.width='90px';input.oninput=()=>{state.pred[i]=input.value;save();};td.append(input);tr.append(td);
+  if(state.locked){const observed=element('td'),actual=element('input');actual.type='number';actual.value=state.actual[i];actual.style.width='90px';actual.setAttribute('aria-label','Observed variable iteration '+(i+1));actual.oninput=()=>{state.actual[i]=actual.value;save();};observed.append(actual);tr.append(observed);}table.append(tr);
  }root.append(table);
  if(!state.locked)root.append(button('Lock predictions before Debug Trace',()=>{if(state.pred.some(x=>x.trim()===''||!Number.isFinite(Number(x))))return alert('Enter all three predictions.');state.locked=true;state.lockedAt=new Date().toISOString();save();render();}));
  else {root.append(element('p','Predictions locked at '+state.lockedAt+'. Use Debug Trace, then enter the observed totals.'));root.append(button('Compare results',()=>{if(state.actual.some(x=>x.trim()===''))return alert('Enter the three observed values.');state.compared=true;save();render();}));
@@ -70,7 +70,7 @@ function render(){
   const path=matching.find(x=>x.includes('assessment-2-'+state.theme))||matching[0];
   if(!path)return alert('Open the starter and complete your Python program first.');
   const zip=new JSZip();zip.file(name,files[path]);
-  const trace=['Python Assessment 2','Theme: '+info.name,'Predictions locked: '+(state.lockedAt||'Not locked'),'','Iteration | Input | Predicted | Observed | Expected',...info.inputs.map((v,i)=>[i+1,v,state.pred[i]||'(blank)',state.actual[i]||'(blank)',totals[i]].join(' | ')),'','Reflection: '+(state.reflection||'(not completed)')].join('\\n');
+  const trace=['Python Assessment 2','Theme: '+info.name,'Predictions locked: '+(state.lockedAt||'Not locked'),'','Iteration | Test value | Predicted | Observed | Expected',...info.inputs.map((v,i)=>[i+1,v,state.pred[i]||'(blank)',state.actual[i]||'(blank)',totals[i]].join(' | ')),'','Reflection: '+(state.reflection||'(not completed)')].join('\\n');
   zip.file('trace_results.txt',trace);
   const blob=await zip.generateAsync({type:'blob'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='python_assessment_2_'+state.theme+'.zip';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }));
