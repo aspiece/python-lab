@@ -209,8 +209,8 @@
   return [...originals,...traces];
  }
  const privateAssessments={
-  'python-skills-pong-v3':{
-   id:'python-skills-pong-v3',title:'Pong Scoreboard Challenge',folderName:'python-skills-pong-v3',entryFile:'main.py',
+  'python-skills-pong-v4':{
+   id:'python-skills-pong-v4',title:'Pong Scoreboard Challenge',folderName:'python-skills-pong-v4',entryFile:'main.py',
    files:{
     'README.md':`![Pong arcade scoreboard](assets/assessment/pong-banner.svg)
 # Pong Scoreboard
@@ -232,10 +232,9 @@
 - **Conditionals (3):** Assigns the correct rank.
 - **Running total (2):** Adds scores correctly.
 - **Input and output (2):** Shows the player's name, total, and rank.
-- **Testing (1):** Checks all three examples.
-- **Explanation (1):** Explains how the program chooses a rank.
+- **Correct execution (2):** Runs successfully and produces the expected results.
 
-## Check your work
+## Optional self-check
 - **3, 4, 2** → 9 → Rookie
 - **5, 5, 5** → 15 → Competitor
 - **8, 7, 5** → 20 → Champion
@@ -244,7 +243,7 @@
 1. Download your completed \`main.py\` file.
 2. Upload it to the assessment Google Form.
 3. Paste your complete Python code into the form.
-4. Record your test results and explain how your rank conditions work.`,
+`,
     'main.py':`# Pong Scoreboard
 # Read README.md before starting.
 
@@ -260,8 +259,8 @@ total = 0
 `
    }
   },
-  'python-skills-music-v3':{
-   id:'python-skills-music-v3',title:'Music Listening Tracker Challenge',folderName:'python-skills-music-v3',entryFile:'main.py',
+  'python-skills-music-v4':{
+   id:'python-skills-music-v4',title:'Music Listening Tracker Challenge',folderName:'python-skills-music-v4',entryFile:'main.py',
    files:{
     'README.md':`![Music headphones and equalizer](assets/assessment/music-banner.svg)
 # Music Listening Tracker
@@ -283,10 +282,9 @@ total = 0
 - **Conditionals (3):** Assigns the correct level.
 - **Running total (2):** Adds minutes correctly.
 - **Input and output (2):** Shows the listener's name, total, and level.
-- **Testing (1):** Checks all three examples.
-- **Explanation (1):** Explains how the program chooses a level.
+- **Correct execution (2):** Runs successfully and produces the expected results.
 
-## Check your work
+## Optional self-check
 - **5, 10, 10** → 25 → Casual
 - **10, 15, 15** → 40 → Regular
 - **20, 20, 20** → 60 → Superfan
@@ -295,7 +293,7 @@ total = 0
 1. Download your completed \`main.py\` file.
 2. Upload it to the assessment Google Form.
 3. Paste your complete Python code into the form.
-4. Record your test results and explain how your level conditions work.`,
+`,
     'main.py':`# Music Listening Tracker
 # Read README.md before starting.
 
@@ -313,9 +311,11 @@ total = 0
   }
  };
  function get(id){
-  if(id==='python-skills-pong')id='python-skills-pong-v3';
+  if(id==='python-skills-pong')id='python-skills-pong-v4';
+  if(id==='python-skills-pong-v3')id='python-skills-pong-v4';
   if(id==='python-skills-pong-v2')id='python-skills-pong-v3';
-  if(id==='python-skills-music')id='python-skills-music-v3';
+  if(id==='python-skills-music')id='python-skills-music-v4';
+  if(id==='python-skills-music-v3')id='python-skills-music-v4';
   if(id==='python-skills-music-v2')id='python-skills-music-v3';
   if(Object.hasOwn(privateAssessments,id))return JSON.parse(JSON.stringify(privateAssessments[id]));
   const trace=tracingStarter(id);
