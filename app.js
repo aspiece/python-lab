@@ -166,21 +166,6 @@ function renderStarterGuide(){
  panel.hidden=!guide;panel.textContent='';if(!guide)return;
  const heading=document.createElement('h2');heading.textContent='YOUR CHALLENGE';
  panel.append(heading);
- const isAssessment=folder.startsWith('python-skills-')||activeProjectName.startsWith('python-skills-');
- if(isAssessment){
-  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Refresh assignment instructions';
-  refresh.className='starter-guide-refresh';
-  refresh.onclick=()=>{
-   const isMusic=(folder+' '+activeProjectName).includes('music');
-   const id=isMusic?'python-skills-music-v3':'python-skills-pong-v3';
-   const latest=window.pythonLabTemplates?.get(id)?.files?.['README.md'];
-   if(typeof latest!=='string')return alert('Updated instructions are not available. Please refresh Python Lab.');
-   if(files[readme]===latest)return alert('These instructions are already up to date.');
-   files[readme]=latest;
-   persist(true);renderStarterGuide();
-  };
-  panel.append(refresh);
- }
  const body=document.createElement('div');body.className='starter-guide-text';
  let paragraph=[],code=[],inCode=false,list=null;
  const inline=(node,source)=>{
