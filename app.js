@@ -162,6 +162,9 @@ function starterGuideParts(source){
 function renderCompactAssessment(panel,folder,readme,guide){
  const music=(folder+' '+activeProjectName).includes('music');
  const title=music?'Music Listening Tracker':'Pong Scoreboard';
+ const mission=music?
+  "You are building a music listening tracker. Ask how many whole minutes each of three sessions lasted, calculate the total listening time in minutes, and assign a listening level. The starter already asks for the listener's name and sets total to 0. You write the loop, update total, decide the level, and display the result.":
+  "You are building the scoreboard logic for a Pong game. Ask for each of three round scores, calculate the total points, and assign a player rank. The starter already asks for the player's name and sets total to 0. You write the loop, update total, decide the rank, and display the result.";
  const steps=music?[
   'Write a for loop for 3 sessions (minutes).',
   'Add each session to total.',
@@ -181,6 +184,7 @@ function renderCompactAssessment(panel,folder,readme,guide){
  const img=el('img','assessment-mini-art');img.src=music?'assets/assessment/music-banner.svg':'assets/assessment/pong-banner.svg';img.alt=music?'Music headphones illustration':'Pong arcade illustration';
  const headText=el('div');headText.append(el('div','assessment-mini-kicker','PROGRAMMING CHALLENGE · 12 PTS'),el('h3','',title));
  header.append(img,headText);panel.append(header);
+ const missionBox=el('section','assessment-mini-mission');missionBox.append(el('h4','','YOUR MISSION'),el('p','',mission));panel.append(missionBox);
 
  const grid=el('div','assessment-mini-grid');
  const build=el('section');build.append(el('h4','','BUILD'));
