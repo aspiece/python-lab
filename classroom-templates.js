@@ -213,35 +213,30 @@
    id:'python-skills-pong',title:'Pong Scoreboard Challenge',folderName:'python-skills-pong',entryFile:'main.py',
    files:{
     'README.md':`![Pong arcade scoreboard](assets/assessment/pong-banner.svg)
-# Python Skills & Problem-Solving Assessment
-## Option A: Pong Scoreboard
+# Pong Scoreboard
+**Your mission:** Build a scoreboard for three rounds of Pong.
 
-**Your task:** Complete a simple scoreboard for three rounds of Pong. Write your own loop and conditional statements.
+## Build your program
+1. Write a `for` loop that asks for **three scores**.
+2. Add each score to `total`.
+3. Use `if`, `elif`, and `else` to assign a rank.
+4. Print the **player name, total, and rank**.
 
-### Requirements
-1. Ask for three whole-number scores using a \`for\` loop.
-2. Add each score to \`total\` using ordinary assignment.
-3. After the loop, use \`if\`, \`elif\`, and \`else\` to set \`rank\`:
-   - **Champion**: total is 20 or higher
-   - **Competitor**: total is 10 through 19
-   - **Rookie**: total is below 10
-4. Print the player name, total score, and rank.
+## Player ranks
+- **Champion:** 20 or more points
+- **Competitor:** 10 to 19 points
+- **Rookie:** fewer than 10 points
 
-The starter provides the name prompt and initial variable. Write the loop and classification yourself.
+## Test your program
+- **3, 4, 2** → total 9 → Rookie
+- **5, 5, 5** → total 15 → Competitor
+- **8, 7, 5** → total 20 → Champion
 
-### Test your work
-Try three different sets of scores:
-- 3, 4, 2: Rookie (total 9)
-- 5, 5, 5: Competitor (total 15)
-- 8, 7, 5: Champion (total 20, boundary case)
-
-### Submit
-1. Save \`main.py\`.
-2. Use Python Lab's file Download action to download the completed \`.py\` file.
-3. Upload that file to the Google Form.
-4. Paste the entire Python code into the paragraph response.
-5. In the Form, report whether your three test cases passed and explain how your conditions choose the rank.
-`,
+## Submit your work
+1. Download your completed `main.py` from Python Lab.
+2. Upload the file to the Google Form.
+3. Paste your complete code into the paragraph box.
+4. Report your test results and explain how the rank is chosen.`,
     'main.py':`# Pong Scoreboard
 # Read README.md before starting.
 
@@ -261,35 +256,30 @@ total = 0
    id:'python-skills-music',title:'Music Listening Tracker Challenge',folderName:'python-skills-music',entryFile:'main.py',
    files:{
     'README.md':`![Music headphones and equalizer](assets/assessment/music-banner.svg)
-# Python Skills & Problem-Solving Assessment
-## Option B: Music Listening Tracker
+# Music Listening Tracker
+**Your mission:** Build a tracker for three music-listening sessions.
 
-**Your task:** Complete a tracker for three music-listening sessions. Write your own loop and conditional statements.
+## Build your program
+1. Write a `for` loop that asks for **three listening times**.
+2. Add each time to `total`.
+3. Use `if`, `elif`, and `else` to assign a listening level.
+4. Print the **listener name, total, and level**.
 
-### Requirements
-1. Ask for three whole-number listening times using a \`for\` loop.
-2. Add each number of minutes to \`total\` using ordinary assignment.
-3. After the loop, use \`if\`, \`elif\`, and \`else\` to set \`level\`:
-   - **Superfan**: total is 60 or higher
-   - **Regular**: total is 30 through 59
-   - **Casual**: total is below 30
-4. Print the listener name, total minutes, and level.
+## Listening levels
+- **Superfan:** 60 or more minutes
+- **Regular:** 30 to 59 minutes
+- **Casual:** fewer than 30 minutes
 
-The starter provides the name prompt and initial variable. Write the loop and classification yourself.
+## Test your program
+- **5, 10, 10** → total 25 → Casual
+- **10, 15, 15** → total 40 → Regular
+- **20, 20, 20** → total 60 → Superfan
 
-### Test your work
-Try three different sets of minutes:
-- 5, 10, 10: Casual (total 25)
-- 10, 15, 15: Regular (total 40)
-- 20, 20, 20: Superfan (total 60, boundary case)
-
-### Submit
-1. Save \`main.py\`.
-2. Use Python Lab's file Download action to download the completed \`.py\` file.
-3. Upload that file to the Google Form.
-4. Paste the entire Python code into the paragraph response.
-5. In the Form, report whether your three test cases passed and explain how your conditions choose the level.
-`,
+## Submit your work
+1. Download your completed `main.py` from Python Lab.
+2. Upload the file to the Google Form.
+3. Paste your complete code into the paragraph box.
+4. Report your test results and explain how the level is chosen.`,
     'main.py':`# Music Listening Tracker
 # Read README.md before starting.
 

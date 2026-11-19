@@ -360,3 +360,25 @@
 #pygameFrameHost iframe{width:100%;height:min(630px,calc(100dvh - 160px));border:0;display:block;background:#101827}#runMode{background:#263449;color:#edf2f7;border:1px solid #53657b;border-radius:5px;padding:7px;max-width:112px}
 
 #mediaUploadDialog,#assetPreviewDialog{max-width:min(660px,90vw);max-height:85vh;overflow:auto}#assetPreviewBody img{display:block;max-width:100%;max-height:55vh;object-fit:contain}#assetPreviewBody audio{width:100%}#assetPreviewBody pre{white-space:pre-wrap;overflow-wrap:anywhere}#mediaUploadStatus{overflow-wrap:anywhere}
+
+/* Direct-link assessment choice screen. Not part of the Templates gallery. */
+.challenge-choice-dialog{width:min(960px,94vw);max-height:92vh;overflow:auto;border:1px solid #425476;border-radius:18px;padding:24px;background:#111b30;color:#f2f6ff;box-shadow:0 22px 80px #0009}
+.challenge-choice-dialog::backdrop{background:rgba(5,12,26,.78)}
+.challenge-choice-head{text-align:center;margin-bottom:20px}
+.challenge-eyebrow{font-size:12px;font-weight:800;letter-spacing:.13em;color:#94c9ff}
+.challenge-choice-head h2{font-size:26px;margin:8px 0}
+.challenge-choice-head p,.challenge-choice-note{color:#c7d4eb;font-size:14px}
+.challenge-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.challenge-choice-card{border:1px solid #45638b;border-radius:14px;overflow:hidden;background:#1b2c48}
+.challenge-choice-card img{width:100%;height:180px;display:block;object-fit:cover}
+.challenge-choice-body{padding:18px;display:flex;flex-direction:column;gap:12px}
+.challenge-choice-body h3{margin:0;font-size:19px;color:#fff}
+.challenge-choice-body p{margin:0;line-height:1.5;min-height:48px;color:#d9e5f5}
+.challenge-choice-body button{margin-top:auto;padding:12px;border-radius:9px;font-weight:700}
+.challenge-choice-note{margin:20px 0 10px;line-height:1.5;text-align:center}
+.challenge-choice-close{display:block;margin-left:auto;padding:8px 14px}
+.starter-guide-text strong{font-weight:750;color:inherit}
+.starter-guide-text code{padding:1px 5px;border-radius:4px;background:rgba(110,140,185,.18);font-family:Consolas,monospace}
+.starter-guide-text ol,.starter-guide-text ul{padding-left:22px;margin:8px 0 15px}
+.starter-guide-text li{margin:0 0 8px;line-height:1.5}
+@media(max-width:650px){.challenge-choice-dialog{padding:14px}.challenge-choice-grid{grid-template-columns:1fr}.challenge-choice-card img{height:140px}.challenge-choice-head h2{font-size:21px}}
