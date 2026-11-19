@@ -156,7 +156,7 @@ function updateStatusBar(){
 function starterGuideParts(source){
  // All starter README files can be shown next to the Python editor, with or without an image.
  if(typeof source!=='string')return null;
- const match=source.match(/^!\[([^\]\n]+)\]\((assets\/loop-guides\/trace-[a-z-]+\.png)\)$/m);
+ const match=source.match(/^!\[([^\]\n]+)\]\((assets\/(?:loop-guides\/trace-[a-z-]+\.png|assessment\/[a-z-]+\.svg))\)$/m);
  return {alt:match?.[1]||'',image:match?.[2]||'',text:match?source.replace(match[0],'').trim():source.trim()};
 }
 function renderStarterGuide(){
@@ -166,7 +166,7 @@ function renderStarterGuide(){
  panel.hidden=!guide;
  panel.textContent='';
  if(!guide)return;
- const heading=document.createElement('h2');heading.textContent='TEMPLATE INSTRUCTIONS · README.md';
+ const heading=document.createElement('h2');heading.textContent='PROJECT INSTRUCTIONS · README.md';
  const body=document.createElement('div');body.className='starter-guide-text';
  let paragraph=[],code=[],inCode=false;
  const flushParagraph=()=>{
