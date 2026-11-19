@@ -8,8 +8,8 @@
   if(typeof dialog.showModal==='function'&&!dialog.open)dialog.showModal();
  };
  function start(theme){
-  const starter=theme==='pong'?'python-skills-pong':'python-skills-music';
-  const storageKey='python-skills-choice-'+theme;
+  const starter=theme==='pong'?'python-skills-pong-v2':'python-skills-music-v2';
+  const storageKey='python-skills-choice-v2-'+theme;
   let assignment;
   try{assignment=localStorage.getItem(storageKey);}catch{}
   if(!assignment||!/^[a-z0-9]{6,24}$/i.test(assignment)){
