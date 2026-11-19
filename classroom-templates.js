@@ -259,8 +259,8 @@ total = 0
 `
    }
   },
-  'python-skills-music-v4':{
-   id:'python-skills-music-v4',title:'Music Listening Tracker Challenge',folderName:'python-skills-music-v4',entryFile:'main.py',
+  'python-skills-music-v5':{
+   id:'python-skills-music-v5',title:'Music Listening Tracker Challenge',folderName:'python-skills-music-v5',entryFile:'main.py',
    files:{
     'README.md':`![Music headphones and equalizer](assets/assessment/music-banner.svg)
 # Music Listening Tracker
@@ -314,8 +314,9 @@ total = 0
   if(id==='python-skills-pong')id='python-skills-pong-v4';
   if(id==='python-skills-pong-v3')id='python-skills-pong-v4';
   if(id==='python-skills-pong-v2')id='python-skills-pong-v3';
-  if(id==='python-skills-music')id='python-skills-music-v4';
-  if(id==='python-skills-music-v3')id='python-skills-music-v4';
+  if(id==='python-skills-music')id='python-skills-music-v5';
+  if(id==='python-skills-music-v3')id='python-skills-music-v5';
+  if(id==='python-skills-music-v4')id='python-skills-music-v5';
   if(id==='python-skills-music-v2')id='python-skills-music-v3';
   if(Object.hasOwn(privateAssessments,id))return JSON.parse(JSON.stringify(privateAssessments[id]));
   const trace=tracingStarter(id);
