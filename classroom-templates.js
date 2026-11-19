@@ -208,7 +208,104 @@
   }));
   return [...originals,...traces];
  }
+ const privateAssessments={
+  'python-skills-pong':{
+   id:'python-skills-pong',title:'Pong Scoreboard Challenge',folderName:'python-skills-pong',entryFile:'main.py',
+   files:{
+    'README.md':`# Python Skills & Problem-Solving Assessment
+## Option A: Pong Scoreboard
+
+**Your task:** Complete a simple scoreboard for three rounds of Pong. Write your own loop and conditional statements.
+
+### Requirements
+1. Ask for three whole-number scores using a \`for\` loop.
+2. Add each score to \`total\` using ordinary assignment.
+3. After the loop, use \`if\`, \`elif\`, and \`else\` to set \`rank\`:
+   - **Champion**: total is 20 or higher
+   - **Competitor**: total is 10 through 19
+   - **Rookie**: total is below 10
+4. Print the player name, total score, and rank.
+
+The starter provides the name prompt and initial variable. Write the loop and classification yourself.
+
+### Test your work
+Try three different sets of scores:
+- 3, 4, 2: Rookie (total 9)
+- 5, 5, 5: Competitor (total 15)
+- 8, 7, 5: Champion (total 20, boundary case)
+
+### Submit
+1. Save \`main.py\`.
+2. Use Python Lab's file Download action to download the completed \`.py\` file.
+3. Upload that file to the Google Form.
+4. Paste the entire Python code into the paragraph response.
+5. In the Form, report whether your three test cases passed and explain how your conditions choose the rank.
+`,
+    'main.py':`# Pong Scoreboard
+# Read README.md before starting.
+
+player = input("Player name: ").strip()
+total = 0
+
+# TODO 1: Write a for loop to ask for 3 round scores.
+# TODO 2: Add each score to total.
+
+# TODO 3: Write if, elif, and else to set rank.
+
+# TODO 4: Print player, total, and rank.
+`
+   }
+  },
+  'python-skills-music':{
+   id:'python-skills-music',title:'Music Listening Tracker Challenge',folderName:'python-skills-music',entryFile:'main.py',
+   files:{
+    'README.md':`# Python Skills & Problem-Solving Assessment
+## Option B: Music Listening Tracker
+
+**Your task:** Complete a tracker for three music-listening sessions. Write your own loop and conditional statements.
+
+### Requirements
+1. Ask for three whole-number listening times using a \`for\` loop.
+2. Add each number of minutes to \`total\` using ordinary assignment.
+3. After the loop, use \`if\`, \`elif\`, and \`else\` to set \`level\`:
+   - **Superfan**: total is 60 or higher
+   - **Regular**: total is 30 through 59
+   - **Casual**: total is below 30
+4. Print the listener name, total minutes, and level.
+
+The starter provides the name prompt and initial variable. Write the loop and classification yourself.
+
+### Test your work
+Try three different sets of minutes:
+- 5, 10, 10: Casual (total 25)
+- 10, 15, 15: Regular (total 40)
+- 20, 20, 20: Superfan (total 60, boundary case)
+
+### Submit
+1. Save \`main.py\`.
+2. Use Python Lab's file Download action to download the completed \`.py\` file.
+3. Upload that file to the Google Form.
+4. Paste the entire Python code into the paragraph response.
+5. In the Form, report whether your three test cases passed and explain how your conditions choose the level.
+`,
+    'main.py':`# Music Listening Tracker
+# Read README.md before starting.
+
+listener = input("Listener name: ").strip()
+total = 0
+
+# TODO 1: Write a for loop to ask for 3 listening times.
+# TODO 2: Add each time to total.
+
+# TODO 3: Write if, elif, and else to set level.
+
+# TODO 4: Print listener, total, and level.
+`
+   }
+  }
+ };
  function get(id){
+  if(Object.hasOwn(privateAssessments,id))return JSON.parse(JSON.stringify(privateAssessments[id]));
   const trace=tracingStarter(id);
   if(trace)return trace;
   const item=legacy[id];
