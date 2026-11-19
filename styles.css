@@ -416,8 +416,6 @@ dialog.challenge-choice-dialog{
  .challenge-choice-head h2{font-size:23px}
 }
 
-.starter-guide-refresh{display:block;width:100%;margin:0 0 12px;padding:9px 10px;border-radius:8px;border:1px solid #5d8bbd;background:#263d5b;color:#e9f4ff;font-weight:700;font-size:12px;cursor:pointer}
-.starter-guide-refresh:hover{background:#315579}
 .starter-guide-text{line-height:1.5}
 .starter-guide-text h3{margin:18px 0 9px;font-size:18px;line-height:1.3}
 .starter-guide-text h4{margin:17px 0 8px;font-size:14px;line-height:1.4;color:#d4e9ff}
