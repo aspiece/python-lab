@@ -313,6 +313,8 @@ total = 0
   }
  };
  function get(id){
+  if(id==='python-skills-pong')id='python-skills-pong-v2';
+  if(id==='python-skills-music')id='python-skills-music-v2';
   if(Object.hasOwn(privateAssessments,id))return JSON.parse(JSON.stringify(privateAssessments[id]));
   const trace=tracingStarter(id);
   if(trace)return trace;
