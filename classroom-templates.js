@@ -212,7 +212,8 @@
   'python-skills-pong':{
    id:'python-skills-pong',title:'Pong Scoreboard Challenge',folderName:'python-skills-pong',entryFile:'main.py',
    files:{
-    'README.md':`# Python Skills & Problem-Solving Assessment
+    'README.md':`![Pong arcade scoreboard](assets/assessment/pong-banner.svg)
+# Python Skills & Problem-Solving Assessment
 ## Option A: Pong Scoreboard
 
 **Your task:** Complete a simple scoreboard for three rounds of Pong. Write your own loop and conditional statements.
@@ -259,7 +260,8 @@ total = 0
   'python-skills-music':{
    id:'python-skills-music',title:'Music Listening Tracker Challenge',folderName:'python-skills-music',entryFile:'main.py',
    files:{
-    'README.md':`# Python Skills & Problem-Solving Assessment
+    'README.md':`![Music headphones and equalizer](assets/assessment/music-banner.svg)
+# Python Skills & Problem-Solving Assessment
 ## Option B: Music Listening Tracker
 
 **Your task:** Complete a tracker for three music-listening sessions. Write your own loop and conditional statements.
