@@ -159,11 +159,52 @@ function starterGuideParts(source){
  const match=source.match(/^!\[([^\]\n]+)\]\((assets\/(?:loop-guides\/trace-[a-z-]+\.png|assessment\/[a-z-]+\.svg))\)$/m);
  return {alt:match?.[1]||'',image:match?.[2]||'',text:match?source.replace(match[0],'').trim():source.trim()};
 }
+function renderCompactAssessment(panel,folder,readme,guide){
+ const music=(folder+' '+activeProjectName).includes('music');
+ const title=music?'Music Listening Tracker':'Pong Scoreboard';
+ const mission=music?'Track three listening sessions in minutes.':'Track three rounds of Pong scores.';
+ const steps=music?[
+  'Write a for loop for 3 sessions (minutes).',
+  'Add each session to total.',
+  'Use if / elif / else to set level.',
+  'Print name, total minutes, and level.'
+ ]:[
+  'Write a for loop for 3 rounds.',
+  'Add each score to total.',
+  'Use if / elif / else to set rank.',
+  'Print name, total score, and rank.'
+ ];
+ const rules=music?['Superfan: 60+ min','Regular: 30–59 min','Casual: below 30 min']:['Champion: 20+ points','Competitor: 10–19 points','Rookie: below 10 points'];
+ const tests=music?['5, 10, 10 → 25 → Casual','10, 15, 15 → 40 → Regular','20, 20, 20 → 60 → Superfan']:['3, 4, 2 → 9 → Rookie','5, 5, 5 → 15 → Competitor','8, 7, 5 → 20 → Champion'];
+ const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e;};
+ panel.classList.add('assessment-compact');
+ const header=el('div','assessment-mini-head');
+ const img=el('img','assessment-mini-art');img.src=music?'assets/assessment/music-banner.svg':'assets/assessment/pong-banner.svg';img.alt=music?'Music headphones illustration':'Pong arcade illustration';
+ const headText=el('div');headText.append(el('div','assessment-mini-kicker','PROGRAMMING CHALLENGE · 12 PTS'),el('h3','',title));
+ header.append(img,headText);panel.append(header);
+ panel.append(el('p','assessment-mini-mission',mission));
+ const grid=el('div','assessment-mini-grid');
+ const build=el('section');build.append(el('h4','','BUILD'));
+ const ol=el('ol');steps.forEach(v=>ol.append(el('li','',v)));build.append(ol);
+ const levels=el('section');levels.append(el('h4','',music?'LEVELS':'RANKS'));
+ rules.forEach(v=>levels.append(el('p','assessment-mini-rule',v)));
+ grid.append(build,levels);panel.append(grid);
+ panel.append(el('h4','assessment-mini-label','HOW YOU ARE GRADED'));
+ const rubric=el('div','assessment-mini-rubric');
+ [['Loop','3'],['Conditionals','3'],['Running total','2'],['Input / output','2'],['Correct execution','2']].forEach(([name,points])=>{
+  const row=el('div');row.append(el('span','',name),el('strong','',points+' pts'));rubric.append(row);
+ });panel.append(rubric);
+ panel.append(el('p','assessment-mini-submit','SUBMIT  Download main.py → Upload file → Paste code in Google Form.'));
+ const details=el('details','assessment-mini-tests');details.append(el('summary','','Optional test examples'));
+ tests.forEach(v=>details.append(el('p','',v)));panel.append(details);
+ const open=el('button','assessment-mini-open','Open full README');open.type='button';open.onclick=()=>switchToFile(readme);panel.append(open);
+}
 function renderStarterGuide(){
  const panel=$('starterGuide');if(!panel)return;
  const folder=parent(filename),readme=folder?folder+'/README.md':'README.md';
  const guide=filename.endsWith('.py')&&openTabs.includes(readme)?starterGuideParts(files[readme]):null;
- panel.hidden=!guide;panel.textContent='';if(!guide)return;
+ panel.hidden=!guide;panel.textContent='';panel.classList.remove('assessment-compact');if(!guide)return;
+ if(folder.startsWith('python-skills-')){renderCompactAssessment(panel,folder,readme,guide);return;}
  const heading=document.createElement('h2');heading.textContent='YOUR CHALLENGE';
  panel.append(heading);
  const body=document.createElement('div');body.className='starter-guide-text';
