@@ -209,34 +209,42 @@
   return [...originals,...traces];
  }
  const privateAssessments={
-  'python-skills-pong':{
-   id:'python-skills-pong',title:'Pong Scoreboard Challenge',folderName:'python-skills-pong',entryFile:'main.py',
+  'python-skills-pong-v2':{
+   id:'python-skills-pong-v2',title:'Pong Scoreboard Challenge',folderName:'python-skills-pong-v2',entryFile:'main.py',
    files:{
     'README.md':`![Pong arcade scoreboard](assets/assessment/pong-banner.svg)
 # Pong Scoreboard
-**Your mission:** Build a scoreboard for three rounds of Pong.
+**Your mission:** Create a Python program that tracks a player's scores across three rounds.
 
-## Build your program
-1. Write a `for` loop that asks for **three scores**.
+## 1. Build your program
+1. Use a `for` loop to ask for **three whole-number scores**.
 2. Add each score to `total`.
-3. Use `if`, `elif`, and `else` to assign a rank.
-4. Print the **player name, total, and rank**.
+3. Use `if`, `elif`, and `else` to set `rank`.
+4. Print the player's name, total score, and rank.
 
-## Player ranks
+## 2. Player ranks
 - **Champion:** 20 or more points
-- **Competitor:** 10 to 19 points
+- **Competitor:** 10–19 points
 - **Rookie:** fewer than 10 points
 
-## Test your program
-- **3, 4, 2** → total 9 → Rookie
-- **5, 5, 5** → total 15 → Competitor
-- **8, 7, 5** → total 20 → Champion
+## 3. How you'll be graded — 12 points
+- **Loop (3):** Collects exactly three scores.
+- **Conditionals (3):** Assigns the correct rank.
+- **Running total (2):** Adds scores correctly.
+- **Input and output (2):** Shows the player's name, total, and rank.
+- **Testing (1):** Checks all three examples.
+- **Explanation (1):** Explains how the program chooses a rank.
 
-## Submit your work
-1. Download your completed `main.py` from Python Lab.
-2. Upload the file to the Google Form.
-3. Paste your complete code into the paragraph box.
-4. Report your test results and explain how the rank is chosen.`,
+## 4. Test your program
+- **3, 4, 2** → 9 → Rookie
+- **5, 5, 5** → 15 → Competitor
+- **8, 7, 5** → 20 → Champion
+
+## 5. Submit
+1. Download your completed `main.py` file.
+2. Upload it to the assessment Google Form.
+3. Paste your complete Python code into the form.
+4. Record your test results and explain how your rank conditions work.`,
     'main.py':`# Pong Scoreboard
 # Read README.md before starting.
 
@@ -252,34 +260,42 @@ total = 0
 `
    }
   },
-  'python-skills-music':{
-   id:'python-skills-music',title:'Music Listening Tracker Challenge',folderName:'python-skills-music',entryFile:'main.py',
+  'python-skills-music-v2':{
+   id:'python-skills-music-v2',title:'Music Listening Tracker Challenge',folderName:'python-skills-music-v2',entryFile:'main.py',
    files:{
     'README.md':`![Music headphones and equalizer](assets/assessment/music-banner.svg)
 # Music Listening Tracker
-**Your mission:** Build a tracker for three music-listening sessions.
+**Your mission:** Create a Python program that tracks listening time across three sessions.
 
-## Build your program
-1. Write a `for` loop that asks for **three listening times**.
+## 1. Build your program
+1. Use a `for` loop to ask for **three whole-number listening times**.
 2. Add each time to `total`.
-3. Use `if`, `elif`, and `else` to assign a listening level.
-4. Print the **listener name, total, and level**.
+3. Use `if`, `elif`, and `else` to set `level`.
+4. Print the listener's name, total minutes, and level.
 
-## Listening levels
+## 2. Listening levels
 - **Superfan:** 60 or more minutes
-- **Regular:** 30 to 59 minutes
+- **Regular:** 30–59 minutes
 - **Casual:** fewer than 30 minutes
 
-## Test your program
-- **5, 10, 10** → total 25 → Casual
-- **10, 15, 15** → total 40 → Regular
-- **20, 20, 20** → total 60 → Superfan
+## 3. How you'll be graded — 12 points
+- **Loop (3):** Collects exactly three listening times.
+- **Conditionals (3):** Assigns the correct level.
+- **Running total (2):** Adds minutes correctly.
+- **Input and output (2):** Shows the listener's name, total, and level.
+- **Testing (1):** Checks all three examples.
+- **Explanation (1):** Explains how the program chooses a level.
 
-## Submit your work
-1. Download your completed `main.py` from Python Lab.
-2. Upload the file to the Google Form.
-3. Paste your complete code into the paragraph box.
-4. Report your test results and explain how the level is chosen.`,
+## 4. Test your program
+- **5, 10, 10** → 25 → Casual
+- **10, 15, 15** → 40 → Regular
+- **20, 20, 20** → 60 → Superfan
+
+## 5. Submit
+1. Download your completed `main.py` file.
+2. Upload it to the assessment Google Form.
+3. Paste your complete Python code into the form.
+4. Record your test results and explain how your level conditions work.`,
     'main.py':`# Music Listening Tracker
 # Read README.md before starting.
 
@@ -297,6 +313,8 @@ total = 0
   }
  };
  function get(id){
+  if(id==='python-skills-pong')id='python-skills-pong-v2';
+  if(id==='python-skills-music')id='python-skills-music-v2';
   if(Object.hasOwn(privateAssessments,id))return JSON.parse(JSON.stringify(privateAssessments[id]));
   const trace=tracingStarter(id);
   if(trace)return trace;
