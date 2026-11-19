@@ -217,9 +217,9 @@
 **Your mission:** Create a Python program that tracks a player's scores across three rounds.
 
 ## What you will build
-1. Use a `for` loop to ask for **three whole-number scores**.
-2. Add each score to `total`.
-3. Use `if`, `elif`, and `else` to set `rank`.
+1. Use a \`for\` loop to ask for **three whole-number scores**.
+2. Add each score to \`total\`.
+3. Use \`if\`, \`elif\`, and \`else\` to set \`rank\`.
 4. Print the player's name, total score, and rank.
 
 ## Rules for the rank
@@ -241,7 +241,7 @@
 - **8, 7, 5** → 20 → Champion
 
 ## Turn in your work
-1. Download your completed `main.py` file.
+1. Download your completed \`main.py\` file.
 2. Upload it to the assessment Google Form.
 3. Paste your complete Python code into the form.
 4. Record your test results and explain how your rank conditions work.`,
@@ -268,9 +268,9 @@ total = 0
 **Your mission:** Create a Python program that tracks listening time across three sessions.
 
 ## What you will build
-1. Use a `for` loop to ask for **three whole-number listening times**.
-2. Add each time to `total`.
-3. Use `if`, `elif`, and `else` to set `level`.
+1. Use a \`for\` loop to ask for **three whole-number listening times**.
+2. Add each time to \`total\`.
+3. Use \`if\`, \`elif\`, and \`else\` to set \`level\`.
 4. Print the listener's name, total minutes, and level.
 
 ## Rules for the level
@@ -292,7 +292,7 @@ total = 0
 - **20, 20, 20** → 60 → Superfan
 
 ## Turn in your work
-1. Download your completed `main.py` file.
+1. Download your completed \`main.py\` file.
 2. Upload it to the assessment Google Form.
 3. Paste your complete Python code into the form.
 4. Record your test results and explain how your level conditions work.`,
