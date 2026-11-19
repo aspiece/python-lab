@@ -204,7 +204,7 @@ function renderStarterGuide(){
  const folder=parent(filename),readme=folder?folder+'/README.md':'README.md';
  const guide=filename.endsWith('.py')&&openTabs.includes(readme)?starterGuideParts(files[readme]):null;
  panel.hidden=!guide;panel.textContent='';panel.classList.remove('assessment-compact');if(!guide)return;
- if(folder.startsWith('python-skills-')){renderCompactAssessment(panel,folder,readme,guide);return;}
+ if(folder.startsWith('python-skills-')||activeProjectName.startsWith('python-skills-')){renderCompactAssessment(panel,folder,readme,guide);return;}
  const heading=document.createElement('h2');heading.textContent='YOUR CHALLENGE';
  panel.append(heading);
  const body=document.createElement('div');body.className='starter-guide-text';
