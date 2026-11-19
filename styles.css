@@ -443,3 +443,8 @@ dialog.challenge-choice-dialog{
 .assessment-mini-tests summary{cursor:pointer;font-weight:700}
 .assessment-mini-tests p{font-size:11px!important;margin:6px 0!important}
 @media(max-width:800px){.editor-area>.starter-guide.assessment-compact:not([hidden]){width:100%;min-width:0;max-width:100%;max-height:48vh;resize:none;flex:0 0 auto}}
+
+/* Full mission, compact and visible in assessment side panel. */
+.assessment-compact .assessment-mini-mission{margin:9px 0 10px;padding:8px 10px;background:#20334c;border-left:3px solid #73b9ff;border-radius:5px}
+.assessment-compact .assessment-mini-mission h4{margin:0 0 4px;font-size:11px;line-height:1.2;color:#acd6ff;letter-spacing:.05em}
+.assessment-compact .assessment-mini-mission p{margin:0!important;font-size:11px!important;line-height:1.4!important;color:#e4efff}
