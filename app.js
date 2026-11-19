@@ -162,7 +162,6 @@ function starterGuideParts(source){
 function renderCompactAssessment(panel,folder,readme,guide){
  const music=(folder+' '+activeProjectName).includes('music');
  const title=music?'Music Listening Tracker':'Pong Scoreboard';
- const mission=music?'Track three listening sessions in minutes.':'Track three rounds of Pong scores.';
  const steps=music?[
   'Write a for loop for 3 sessions (minutes).',
   'Add each session to total.',
@@ -182,7 +181,7 @@ function renderCompactAssessment(panel,folder,readme,guide){
  const img=el('img','assessment-mini-art');img.src=music?'assets/assessment/music-banner.svg':'assets/assessment/pong-banner.svg';img.alt=music?'Music headphones illustration':'Pong arcade illustration';
  const headText=el('div');headText.append(el('div','assessment-mini-kicker','PROGRAMMING CHALLENGE · 12 PTS'),el('h3','',title));
  header.append(img,headText);panel.append(header);
- panel.append(el('p','assessment-mini-mission',mission));
+
  const grid=el('div','assessment-mini-grid');
  const build=el('section');build.append(el('h4','','BUILD'));
  const ol=el('ol');steps.forEach(v=>ol.append(el('li','',v)));build.append(ol);
@@ -197,7 +196,7 @@ function renderCompactAssessment(panel,folder,readme,guide){
  panel.append(el('p','assessment-mini-submit','SUBMIT  Download main.py → Upload file → Paste code in Google Form.'));
  const details=el('details','assessment-mini-tests');details.append(el('summary','','Optional test examples'));
  tests.forEach(v=>details.append(el('p','',v)));panel.append(details);
- const open=el('button','assessment-mini-open','Open full README');open.type='button';open.onclick=()=>switchToFile(readme);panel.append(open);
+
 }
 function renderStarterGuide(){
  const panel=$('starterGuide');if(!panel)return;
