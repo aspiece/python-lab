@@ -165,6 +165,7 @@ function renderStarterGuide(){
  const guide=filename.endsWith('.py')&&openTabs.includes(readme)?starterGuideParts(files[readme]):null;
  panel.hidden=!guide;panel.textContent='';if(!guide)return;
  const heading=document.createElement('h2');heading.textContent='YOUR CHALLENGE';
+ panel.append(heading);
  const isAssessment=folder.startsWith('python-skills-')||activeProjectName.startsWith('python-skills-');
  if(isAssessment){
   const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Refresh assignment instructions';
@@ -178,7 +179,7 @@ function renderStarterGuide(){
    files[readme]=latest;
    persist(true);renderStarterGuide();
   };
-  panel.append(heading,refresh);
+  panel.append(refresh);
  }
  const body=document.createElement('div');body.className='starter-guide-text';
  let paragraph=[],code=[],inCode=false,list=null;
