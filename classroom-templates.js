@@ -209,12 +209,15 @@
   return [...originals,...traces];
  }
  const privateAssessments={
-  'python-skills-pong-v4':{
-   id:'python-skills-pong-v4',title:'Pong Scoreboard Challenge',folderName:'python-skills-pong-v4',entryFile:'main.py',
+  'python-skills-pong-v5':{
+   id:'python-skills-pong-v5',title:'Pong Scoreboard Challenge',folderName:'python-skills-pong-v5',entryFile:'main.py',
    files:{
     'README.md':`![Pong arcade scoreboard](assets/assessment/pong-banner.svg)
 # Pong Scoreboard
-**Your mission:** Create a Python program that tracks a player's scores across three rounds.
+## Your mission
+You are building the scoreboard logic for a simple Pong game. The player completes three rounds, and your program must ask for each round's score, calculate the total, and assign a player rank based on that total.
+
+The starter code already asks for the player's name and creates the \`total\` variable. **Your job is to write the loop, update the total, make the ranking decision, and display the result.**
 
 ## What you will build
 1. Use a \`for\` loop to ask for **three whole-number scores**.
@@ -234,7 +237,7 @@
 - **Input and output (2):** Shows the player's name, total, and rank.
 - **Correct execution (2):** Runs successfully and produces the expected results.
 
-## Optional self-check (all values are minutes)
+## Optional self-check (all values are points)
 - **3, 4, 2** → 9 → Rookie
 - **5, 5, 5** → 15 → Competitor
 - **8, 7, 5** → 20 → Champion
@@ -259,12 +262,15 @@ total = 0
 `
    }
   },
-  'python-skills-music-v5':{
-   id:'python-skills-music-v5',title:'Music Listening Tracker Challenge',folderName:'python-skills-music-v5',entryFile:'main.py',
+  'python-skills-music-v6':{
+   id:'python-skills-music-v6',title:'Music Listening Tracker Challenge',folderName:'python-skills-music-v6',entryFile:'main.py',
    files:{
     'README.md':`![Music headphones and equalizer](assets/assessment/music-banner.svg)
 # Music Listening Tracker
-**Your mission:** Create a Python program that tracks listening time across three sessions. All listening times are measured in **minutes**, not hours or seconds.
+## Your mission
+You are building a music listening tracker. The listener completes three sessions, and your program must ask how many minutes each session lasted, calculate the total listening time, and assign a listening level based on that total.
+
+The starter code already asks for the listener's name and creates the \`total\` variable. **Your job is to write the loop, update the total, make the classification decision, and display the result.** All times are **whole minutes**, not hours or seconds.
 
 ## What you will build
 1. Use a \`for\` loop to ask for **three whole-number listening times in minutes**.
@@ -311,10 +317,12 @@ total = 0
   }
  };
  function get(id){
-  if(id==='python-skills-pong')id='python-skills-pong-v4';
+  if(id==='python-skills-pong')id='python-skills-pong-v5';
+  if(id==='python-skills-pong-v4')id='python-skills-pong-v5';
   if(id==='python-skills-pong-v3')id='python-skills-pong-v4';
   if(id==='python-skills-pong-v2')id='python-skills-pong-v3';
-  if(id==='python-skills-music')id='python-skills-music-v5';
+  if(id==='python-skills-music')id='python-skills-music-v6';
+  if(id==='python-skills-music-v5')id='python-skills-music-v6';
   if(id==='python-skills-music-v3')id='python-skills-music-v5';
   if(id==='python-skills-music-v4')id='python-skills-music-v5';
   if(id==='python-skills-music-v2')id='python-skills-music-v3';
