@@ -234,7 +234,7 @@
 - **Input and output (2):** Shows the player's name, total, and rank.
 - **Correct execution (2):** Runs successfully and produces the expected results.
 
-## Optional self-check
+## Optional self-check (all values are minutes)
 - **3, 4, 2** → 9 → Rookie
 - **5, 5, 5** → 15 → Competitor
 - **8, 7, 5** → 20 → Champion
@@ -259,16 +259,16 @@ total = 0
 `
    }
   },
-  'python-skills-music-v4':{
-   id:'python-skills-music-v4',title:'Music Listening Tracker Challenge',folderName:'python-skills-music-v4',entryFile:'main.py',
+  'python-skills-music-v5':{
+   id:'python-skills-music-v5',title:'Music Listening Tracker Challenge',folderName:'python-skills-music-v5',entryFile:'main.py',
    files:{
     'README.md':`![Music headphones and equalizer](assets/assessment/music-banner.svg)
 # Music Listening Tracker
-**Your mission:** Create a Python program that tracks listening time across three sessions.
+**Your mission:** Create a Python program that tracks listening time across three sessions. All listening times are measured in **minutes**, not hours or seconds.
 
 ## What you will build
-1. Use a \`for\` loop to ask for **three whole-number listening times**.
-2. Add each time to \`total\`.
+1. Use a \`for\` loop to ask for **three whole-number listening times in minutes**.
+2. Add each session's **minutes** to \`total\` (total minutes).
 3. Use \`if\`, \`elif\`, and \`else\` to set \`level\`.
 4. Print the listener's name, total minutes, and level.
 
@@ -300,8 +300,8 @@ total = 0
 listener = input("Listener name: ").strip()
 total = 0
 
-# TODO 1: Write a for loop to ask for 3 listening times.
-# TODO 2: Add each time to total.
+# TODO 1: Write a for loop to ask for 3 listening times in minutes.
+# TODO 2: Add each session's minutes to total.
 
 # TODO 3: Write if, elif, and else to set level.
 
@@ -314,8 +314,9 @@ total = 0
   if(id==='python-skills-pong')id='python-skills-pong-v4';
   if(id==='python-skills-pong-v3')id='python-skills-pong-v4';
   if(id==='python-skills-pong-v2')id='python-skills-pong-v3';
-  if(id==='python-skills-music')id='python-skills-music-v4';
-  if(id==='python-skills-music-v3')id='python-skills-music-v4';
+  if(id==='python-skills-music')id='python-skills-music-v5';
+  if(id==='python-skills-music-v3')id='python-skills-music-v5';
+  if(id==='python-skills-music-v4')id='python-skills-music-v5';
   if(id==='python-skills-music-v2')id='python-skills-music-v3';
   if(Object.hasOwn(privateAssessments,id))return JSON.parse(JSON.stringify(privateAssessments[id]));
   const trace=tracingStarter(id);
