@@ -382,3 +382,36 @@
 .starter-guide-text ol,.starter-guide-text ul{padding-left:22px;margin:8px 0 15px}
 .starter-guide-text li{margin:0 0 8px;line-height:1.5}
 @media(max-width:650px){.challenge-choice-dialog{padding:14px}.challenge-choice-grid{grid-template-columns:1fr}.challenge-choice-card img{height:140px}.challenge-choice-head h2{font-size:21px}}
+
+/* Assessment chooser: override the generic 360px dialog constraint. */
+dialog.challenge-choice-dialog{
+ box-sizing:border-box;
+ width:min(920px,calc(100vw - 48px));
+ max-width:calc(100vw - 48px);
+ max-height:min(790px,calc(100dvh - 48px));
+ margin:auto;
+ padding:28px;
+ overflow-y:auto;
+ overflow-x:hidden;
+ border-radius:20px;
+}
+.challenge-choice-head{margin-bottom:22px}
+.challenge-choice-head h2{font-size:clamp(23px,2.4vw,32px);line-height:1.15;margin:8px 0}
+.challenge-choice-head p{font-size:15px;line-height:1.5}
+.challenge-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:stretch}
+.challenge-choice-card{min-width:0;display:flex;flex-direction:column}
+.challenge-choice-card img{height:190px;object-fit:cover;object-position:center}
+.challenge-choice-body{flex:1;gap:10px;padding:20px}
+.challenge-choice-body h3{font-size:20px;line-height:1.25}
+.challenge-choice-body p{font-size:14px;line-height:1.5;min-height:0}
+.challenge-choice-body button{width:100%;min-height:44px;font-size:14px}
+.challenge-choice-note{margin:18px 0 4px;font-size:13px}
+.challenge-choice-close{margin-top:10px}
+@media(max-width:700px){
+ dialog.challenge-choice-dialog{width:calc(100vw - 24px);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:16px}
+ .challenge-choice-grid{grid-template-columns:1fr;gap:12px}
+ .challenge-choice-card img{height:130px}
+ .challenge-choice-body{padding:14px}
+ .challenge-choice-head{margin-bottom:14px}
+ .challenge-choice-head h2{font-size:23px}
+}
