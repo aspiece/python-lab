@@ -163,43 +163,42 @@ function renderStarterGuide(){
  const panel=$('starterGuide');if(!panel)return;
  const folder=parent(filename),readme=folder?folder+'/README.md':'README.md';
  const guide=filename.endsWith('.py')&&openTabs.includes(readme)?starterGuideParts(files[readme]):null;
- panel.hidden=!guide;
- panel.textContent='';
- if(!guide)return;
- const heading=document.createElement('h2');heading.textContent='PROJECT INSTRUCTIONS · README.md';
+ panel.hidden=!guide;panel.textContent='';if(!guide)return;
+ const heading=document.createElement('h2');heading.textContent='PROJECT INSTRUCTIONS';
  const body=document.createElement('div');body.className='starter-guide-text';
- let paragraph=[],code=[],inCode=false;
- const flushParagraph=()=>{
-  if(!paragraph.length)return;
-  const part=document.createElement('p');part.textContent=paragraph.join(' ');body.append(part);paragraph=[];
+ let paragraph=[],code=[],inCode=false,list=null;
+ const inline=(node,source)=>{
+  // Only text and safe semantic elements; never interpret README content as HTML.
+  const parts=String(source).split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  for(const part of parts){
+   if(part.startsWith('**')&&part.endsWith('**')){const b=document.createElement('strong');b.textContent=part.slice(2,-2);node.append(b);}
+   else if(part.startsWith('`')&&part.endsWith('`')){const c=document.createElement('code');c.textContent=part.slice(1,-1);node.append(c);}
+   else node.append(document.createTextNode(part));
+  }
  };
- const flushCode=()=>{
-  if(!code.length)return;
-  const pre=document.createElement('pre');pre.textContent=code.join('\n');body.append(pre);code=[];
- };
- for(const line of guide.text.replace(/\r\n/g,'\n').split('\n')){
-  if(line.trim().startsWith('```')){flushParagraph();if(inCode)flushCode();inCode=!inCode;continue;}
+ const flushParagraph=()=>{if(!paragraph.length)return;const p=document.createElement('p');inline(p,paragraph.join(' '));body.append(p);paragraph=[];};
+ const flushCode=()=>{if(!code.length)return;const pre=document.createElement('pre');pre.textContent=code.join('\\n');body.append(pre);code=[];};
+ for(const line of guide.text.replace(/\\r\\n/g,'\\n').split('\\n')){
+  const trimmed=line.trim();
+  if(trimmed.startsWith('```')){flushParagraph();list=null;if(inCode)flushCode();inCode=!inCode;continue;}
   if(inCode){code.push(line);continue;}
-  if(!line.trim()){flushParagraph();continue;}
-  const title=line.match(/^(#{1,3})\s+(.+)$/);
-  if(title){
-   flushParagraph();
-   const element=document.createElement(title[1].length===1?'h3':'h4');
-   element.textContent=title[2];body.append(element);continue;
+  if(!trimmed){flushParagraph();list=null;continue;}
+  const title=trimmed.match(/^(#{1,3})\\s+(.+)$/);
+  if(title){flushParagraph();list=null;const h=document.createElement(title[1].length===1?'h3':'h4');inline(h,title[2]);body.append(h);continue;}
+  const numbered=trimmed.match(/^(\\d+)\\.\\s+(.+)$/);
+  const bullet=trimmed.match(/^[-*]\\s+(.+)$/);
+  if(numbered||bullet){
+   flushParagraph();const tag=numbered?'ol':'ul';
+   if(!list||list.tagName.toLowerCase()!==tag){list=document.createElement(tag);body.append(list);}
+   const li=document.createElement('li');inline(li,numbered?numbered[2]:bullet[1]);list.append(li);continue;
   }
-  const bullet=line.match(/^\s*[-*]\s+(.+)$/);
-  if(bullet){
-   flushParagraph();const element=document.createElement('p');element.className='starter-guide-bullet';
-   element.textContent='• '+bullet[1];body.append(element);continue;
-  }
-  paragraph.push(line.trim());
+  list=null;paragraph.push(trimmed);
  }
  flushParagraph();flushCode();
- if(guide.image){
-  const image=document.createElement('img');image.src=guide.image;image.alt=guide.alt;
-  panel.append(heading,image,body);
- }else panel.append(heading,body);
+ if(guide.image){const image=document.createElement('img');image.src=guide.image;image.alt=guide.alt;panel.append(heading,image,body);}
+ else panel.append(heading,body);
 }
+
 function renderTabs(){
  const host=$('openTabs');if(!host)return;
  host.textContent='';openTabs=openTabs.filter(path=>Object.hasOwn(files,path));
