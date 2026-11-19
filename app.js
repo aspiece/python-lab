@@ -165,6 +165,22 @@ function renderStarterGuide(){
  const guide=filename.endsWith('.py')&&openTabs.includes(readme)?starterGuideParts(files[readme]):null;
  panel.hidden=!guide;panel.textContent='';if(!guide)return;
  const heading=document.createElement('h2');heading.textContent='YOUR CHALLENGE';
+ panel.append(heading);
+ const isAssessment=folder.startsWith('python-skills-')||activeProjectName.startsWith('python-skills-');
+ if(isAssessment){
+  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Refresh assignment instructions';
+  refresh.className='starter-guide-refresh';
+  refresh.onclick=()=>{
+   const isMusic=(folder+' '+activeProjectName).includes('music');
+   const id=isMusic?'python-skills-music-v3':'python-skills-pong-v3';
+   const latest=window.pythonLabTemplates?.get(id)?.files?.['README.md'];
+   if(typeof latest!=='string')return alert('Updated instructions are not available. Please refresh Python Lab.');
+   if(files[readme]===latest)return alert('These instructions are already up to date.');
+   files[readme]=latest;
+   persist(true);renderStarterGuide();
+  };
+  panel.append(refresh);
+ }
  const body=document.createElement('div');body.className='starter-guide-text';
  let paragraph=[],code=[],inCode=false,list=null;
  const inline=(node,source)=>{
@@ -185,7 +201,7 @@ function renderStarterGuide(){
   if(!trimmed){flushParagraph();list=null;continue;}
   const title=trimmed.match(/^(#{1,3})\s+(.+)$/);
   if(title){flushParagraph();list=null;const h=document.createElement(title[1].length===1?'h3':'h4');inline(h,title[2]);body.append(h);continue;}
-  const numbered=trimmed.match(/^(\d+)\\.\s+(.+)$/);
+  const numbered=trimmed.match(/^(\d+)\.\s+(.+)$/);
   const bullet=trimmed.match(/^[-*]\s+(.+)$/);
   if(numbered||bullet){
    flushParagraph();const tag=numbered?'ol':'ul';
@@ -195,7 +211,7 @@ function renderStarterGuide(){
   list=null;paragraph.push(trimmed);
  }
  flushParagraph();flushCode();
- if(guide.image){const image=document.createElement('img');image.src=guide.image;image.alt=guide.alt;panel.append(heading,image,body);}
+ if(guide.image){const image=document.createElement('img');image.src=guide.image;image.alt=guide.alt;panel.append(image,body);}
  else panel.append(heading,body);
 }
 
