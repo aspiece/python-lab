@@ -164,7 +164,7 @@ function renderStarterGuide(){
  const folder=parent(filename),readme=folder?folder+'/README.md':'README.md';
  const guide=filename.endsWith('.py')&&openTabs.includes(readme)?starterGuideParts(files[readme]):null;
  panel.hidden=!guide;panel.textContent='';if(!guide)return;
- const heading=document.createElement('h2');heading.textContent='PROJECT INSTRUCTIONS';
+ const heading=document.createElement('h2');heading.textContent='YOUR CHALLENGE';
  const body=document.createElement('div');body.className='starter-guide-text';
  let paragraph=[],code=[],inCode=false,list=null;
  const inline=(node,source)=>{
@@ -177,16 +177,16 @@ function renderStarterGuide(){
   }
  };
  const flushParagraph=()=>{if(!paragraph.length)return;const p=document.createElement('p');inline(p,paragraph.join(' '));body.append(p);paragraph=[];};
- const flushCode=()=>{if(!code.length)return;const pre=document.createElement('pre');pre.textContent=code.join('\\n');body.append(pre);code=[];};
- for(const line of guide.text.replace(/\\r\\n/g,'\\n').split('\\n')){
+ const flushCode=()=>{if(!code.length)return;const pre=document.createElement('pre');pre.textContent=code.join('\n');body.append(pre);code=[];};
+ for(const line of guide.text.replace(/\r\n/g,'\n').split('\n')){
   const trimmed=line.trim();
   if(trimmed.startsWith('```')){flushParagraph();list=null;if(inCode)flushCode();inCode=!inCode;continue;}
   if(inCode){code.push(line);continue;}
   if(!trimmed){flushParagraph();list=null;continue;}
-  const title=trimmed.match(/^(#{1,3})\\s+(.+)$/);
+  const title=trimmed.match(/^(#{1,3})\s+(.+)$/);
   if(title){flushParagraph();list=null;const h=document.createElement(title[1].length===1?'h3':'h4');inline(h,title[2]);body.append(h);continue;}
-  const numbered=trimmed.match(/^(\\d+)\\.\\s+(.+)$/);
-  const bullet=trimmed.match(/^[-*]\\s+(.+)$/);
+  const numbered=trimmed.match(/^(\d+)\\.\s+(.+)$/);
+  const bullet=trimmed.match(/^[-*]\s+(.+)$/);
   if(numbered||bullet){
    flushParagraph();const tag=numbered?'ol':'ul';
    if(!list||list.tagName.toLowerCase()!==tag){list=document.createElement(tag);body.append(list);}
